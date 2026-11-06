@@ -24,7 +24,9 @@ SOURCE_RE = re.compile(r"^https?://\S+$")
 # A match sends the question to "needs a look" instead of the batch.
 REGIONAL_RE = re.compile(
     r"\b(our|we|here in|state of|county|congress|senate|NFL|NBA|MLB|NHL|Super Bowl|"
-    r"Thanksgiving|Fourth of July|miles?|mph|Fahrenheit|°F|feet|foot|inches|pounds|ounces)\b",
+    r"Thanksgiving|Fourth of July|mph|Fahrenheit|°F)\b"
+    # imperial units only count after a number ("300 feet"), so "four feet" on an elephant is fine
+    r"|\d[\d,.]*\s*(miles?|feet|foot|ft|inches|pounds|lbs?|ounces|oz)\b",
     re.IGNORECASE,
 )
 

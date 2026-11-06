@@ -123,11 +123,14 @@ def euro(data: Path, rng) -> list[dict]:
 def areas(data: Path, rng) -> list[dict]:
     """'X is bigger than Y' (by total area)."""
     src = "https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_area"
-    fmt = lambda km2: f"{km2 / 1e6:.1f} million km²" if km2 >= 1e6 else f"{round(km2, -3):,.0f} km²"
+    def fmt(km2: float, digits: int) -> str:
+        return f"{km2 / 1e6:.{digits}f} million km²" if km2 >= 1e6 else f"{round(km2, -3):,.0f} km²"
     out = []
     for _, r in pd.read_csv(data / "areas.csv").iterrows():
         bigger = r["a_km2"] > r["b_km2"]
-        expl = f"{r['a']} covers about {fmt(r['a_km2'])}, {r['b']} about {fmt(r['b_km2'])}."
+        # use enough decimals that the two sizes never look the same (1.56 vs 1.65, not 1.6 vs 1.6)
+        digits = 1 if fmt(r["a_km2"], 1) != fmt(r["b_km2"], 1) else 2
+        expl = f"{r['a']} covers about {fmt(r['a_km2'], digits)}, {r['b']} about {fmt(r['b_km2'], digits)}."
         if isinstance(r["note"], str):
             expl += " " + r["note"]
         out.append(_ff(f"{r['a']} is bigger than {r['b']}.", bool(bigger), explanation=expl,
