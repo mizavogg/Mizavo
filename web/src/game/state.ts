@@ -59,22 +59,23 @@ export const S = {
   busy: false,                  // waiting on the database
 };
 
-/* Ink & Cream answer colors: muted blue and orange (told apart by colorblind viewers too),
-   plus sage and lilac for the 3rd and 4th Odd One Out answers. */
+/* Copper & Charcoal answer colors: slate blue and copper (still a blue/orange pair, so colorblind
+   viewers can tell them apart), plus sage and lilac for the 3rd and 4th Odd One Out answers. */
+export const SLATE = '#7F95AD', COPPER = '#B76935';
 export const OPT_COLORS: Record<RoundType, string[]> = {
-  ff: ['#7C9CC4', '#C48A58'],
-  ooo: ['#7C9CC4', '#C48A58', '#8FB39A', '#A99BC9'],
+  ff: [SLATE, COPPER],
+  ooo: [SLATE, COPPER, '#8FB39A', '#A99BC9'],
 };
 export const KEYS: Record<RoundType, string[]> = { ff: ['1', '2'], ooo: ['A', 'B', 'C', 'D'] };
 
 /** Light, base and dark shade of each ball color: drawn as a sphere (light top-left, dark edge).
  *  White is the neutral ball (blind-mode pool, the logo). Skins can add their own entries later. */
 export const SHADES: Record<string, { hi: string; base: string; lo: string; text: string }> = {
-  '#7C9CC4': { hi: '#C9D7EA', base: '#7C9CC4', lo: '#3E5677', text: '#A9C0DE' },
-  '#C48A58': { hi: '#EBCBAE', base: '#C48A58', lo: '#6E4526', text: '#DDAA80' },
+  '#7F95AD': { hi: '#DCE5EF', base: '#7F95AD', lo: '#3B4C5E', text: '#A9BCD0' },
+  '#B76935': { hi: '#F1CDAE', base: '#B76935', lo: '#5E3218', text: '#E09A62' },
   '#8FB39A': { hi: '#D3E3D7', base: '#8FB39A', lo: '#465E4D', text: '#B3CDBA' },
   '#A99BC9': { hi: '#DCD4EC', base: '#A99BC9', lo: '#544870', text: '#C6BCE0' },
-  '#F1F0EC': { hi: '#FFFFFF', base: '#F1F0EC', lo: '#7E848F', text: '#ECE3D2' },
+  '#F1F0EC': { hi: '#FFFFFF', base: '#F1F0EC', lo: '#7E7A72', text: '#F2E8DC' },
 };
 export const WHITE = '#F1F0EC';
 export function shade(c: string) { return SHADES[c] || SHADES[WHITE]; }
@@ -83,7 +84,7 @@ export const SPHERE: Record<string, string> = Object.fromEntries(Object.entries(
   [c, `radial-gradient(circle at 35% 30%, ${s.hi} 0%, ${s.base} 45%, ${s.lo} 100%)`]));
 
 /** Viewer name colors (labels, MVP list): soft tones that sit on the dark page. */
-export const PALETTE = ['#ECE3D2', '#A9C0DE', '#DDAA80', '#B3CDBA', '#C6BCE0', '#E2CFA6', '#C9D7EA', '#EBCBAE'];
+export const PALETTE = ['#F2E8DC', '#A9BCD0', '#E09A62', '#B3CDBA', '#C6BCE0', '#E7C39B', '#DCE5EF', '#F1CDAE'];
 export function colorFor(k: string): string {
   let h = 0;
   for (const c of k) h = (h * 31 + c.charCodeAt(0)) >>> 0;

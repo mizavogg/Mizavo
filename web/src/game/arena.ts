@@ -2,7 +2,7 @@
 import { $, clamp, rnd } from '../lib/dom';
 import { S, KEYS, WHITE, hexA, shade, type Orb, type Vote } from './state';
 
-const INK = '#0B0F17', PAPER = '#ECE3D2', MUTED = '#B5AB98', SAND = '#E2CFA6';
+const INK = '#121516', PAPER = '#F2E8DC', MUTED = '#B3ADA3', SAND = '#E7C39B';
 const SANS = '"DM Sans", system-ui, sans-serif';
 const RADIUS = 20;
 
@@ -185,29 +185,30 @@ function draw(): void {
     ctx.fillText("Chat's answers stay hidden until you pick", pool.x + 16, pool.y + 24);
   }
 
-  // bins: sunken wells with a soft glow of their color at the bottom
+  // bins: frosted panes with a light cream tint and a soft glow of their color at the bottom
   bins.forEach((b, i) => {
     const col = R.colors[i], sh = shade(col);
     const right = reveal && i === R.answer, wrong = reveal && i !== R.answer;
     ctx.save();
     ctx.globalAlpha = wrong ? .35 : 1;
     rr(b.x, b.y, b.w, b.h, RADIUS);
-    const well = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
-    well.addColorStop(0, '#090C12'); well.addColorStop(1, '#131925');
-    ctx.fillStyle = well; ctx.fill();
+    const pane = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
+    pane.addColorStop(0, 'rgba(232,226,214,.16)'); pane.addColorStop(1, 'rgba(232,226,214,.08)');
+    ctx.fillStyle = 'rgba(18,21,22,.55)'; ctx.fill();               // darken whatever is behind, then tint it cream
+    ctx.fillStyle = pane; ctx.fill();
     ctx.save(); ctx.clip();
     const glow = ctx.createRadialGradient(b.x + b.w / 2, b.y + b.h, 0, b.x + b.w / 2, b.y + b.h, Math.max(b.w, b.h) * 0.8);
-    glow.addColorStop(0, hexA(col, right ? .30 : .15)); glow.addColorStop(1, hexA(col, 0));
+    glow.addColorStop(0, hexA(col, right ? .38 : .2)); glow.addColorStop(1, hexA(col, 0));
     ctx.fillStyle = glow; ctx.fillRect(b.x, b.y, b.w, b.h);
-    const lip = ctx.createLinearGradient(0, b.y, 0, b.y + 26);       // inner shadow along the top edge
-    lip.addColorStop(0, 'rgba(0,0,0,.55)'); lip.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = lip; ctx.fillRect(b.x, b.y, b.w, 26);
+    const lip = ctx.createLinearGradient(0, b.y, 0, b.y + 18);       // light catching the top edge of the glass
+    lip.addColorStop(0, 'rgba(242,232,220,.14)'); lip.addColorStop(1, 'rgba(242,232,220,0)');
+    ctx.fillStyle = lip; ctx.fillRect(b.x, b.y, b.w, 18);
     ctx.restore();
     rr(b.x + .5, b.y + .5, b.w - 1, b.h - 1, RADIUS);
     ctx.lineWidth = right ? 2 : 1;
     // the streamer's pick stays secret until the reveal, so chat can't copy it
     const showPick = R.pick === i && S.phase === 'reveal';
-    ctx.strokeStyle = right ? col : showPick ? hexA(SAND, .65) : hexA(PAPER, .10);
+    ctx.strokeStyle = right ? col : showPick ? hexA(SAND, .65) : hexA(PAPER, .2);
     ctx.stroke();
     // label: small ball with the key, then the answer
     const narrow = b.w < 170;
