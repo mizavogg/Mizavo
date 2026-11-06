@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mizavo — Streamer vs Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-phase="setup">
+<div class="app">
+<div class="main">
+<div class="wrap">
+  <header class="mast">
+    <div class="logo">MIZAVO</div>
+    <div class="edition" id="edition">Night edition · streamer vs chat</div>
+    <div class="pill" id="status"><span class="dot"></span><span id="statusTxt">chat off</span></div>
+    <div class="spacer"></div>
+    <div class="score hidden" id="scoreboard"><span class="me">STREAMER <b id="sMe">0</b></span><span class="ch">CHAT <b id="sCh">0</b></span></div>
+  </header>
+
+  <!-- SETUP -->
+  <section id="setup">
+    <div class="hero">
+      <span class="sticker">STREAMER VS CHAT</span>
+      <h1><span class="f">Fact</span> or <span class="k">Fake?</span><br>Chat decides.</h1>
+      <p>Every vote in chat becomes a dot that drops into its answer and piles up live. The streamer picks a side, chat picks theirs, and the wrong pile pops.</p>
+    </div>
+    <div class="modes" id="modes">
+      <button class="mode sel" data-mode="ff"><b>Fact or Fake</b><span>One statement. Is it true?</span><span class="ex">chat types 1 or 2</span></button>
+      <button class="mode" data-mode="ooo"><b>Odd One Out</b><span>Four things. Which doesn't belong?</span><span class="ex">chat types A B C D</span></button>
+      <button class="mode" data-mode="mix"><b>Mix</b><span>A bit of both, shuffled.</span><span class="ex">best for long streams</span></button>
+    </div>
+    <div class="form">
+      <label class="f">Twitch channel (optional)<input id="channel" placeholder="e.g. yourchannel" autocomplete="off" spellcheck="false"></label>
+      <label class="f">Rounds<select id="rounds"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
+      <label class="f">Seconds per round<select id="secs"><option>10</option><option selected>15</option><option>20</option><option>30</option></select></label>
+    </div>
+    <div class="toggles">
+      <label class="tog"><input type="checkbox" id="blind" checked><span class="sw"></span><span>Blind mode <small>— chat's votes stay mixed until you lock in</small></span></label>
+      <label class="tog"><input type="checkbox" id="demo" checked><span class="sw"></span><span>Simulated chat <small>— demo viewers</small></span></label>
+      <label class="tog"><input type="checkbox" id="streamer"><span class="sw"></span><span>Streamer mode <small>— clear space on the right for your webcam and chat overlay</small></span></label>
+    </div>
+    <div class="zonectl hidden" id="zoneCtl">
+      <label for="zoneRange">Overlay space</label>
+      <input type="range" id="zoneRange" min="12" max="45" step="1" value="25">
+      <span class="val" id="zoneVal">25%</span>
+      <small>Or drag the edge of the dashed box. The game always keeps at least 720px.</small>
+    </div>
+    <p class="note hidden" id="zoneNote">This window is too narrow for streamer mode. Widen it (or use a 1280px+ browser source) and the space will appear.</p>
+    <div class="startrow"><button class="btn primary" id="startBtn">Start game <kbd>Enter</kbd></button></div>
+    <p class="note">Reads Twitch chat anonymously — no login, no bot account. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's latest vote counts. Streamer picks with the number keys, arrow keys or by tapping.</p>
+  </section>
+
+  <!-- GAME -->
+  <section class="hidden" id="game">
+    <div class="gtop"><span class="chip" id="gMode"></span><span class="chip" id="gRound"></span><div class="stamp" id="stamp"><b id="tnum"></b><small>SEC</small></div></div>
+    <span class="sticker" id="prompt"></span>
+    <div class="statement" id="statement"></div>
+    <div class="arena" id="arena">
+      <div class="timer" id="timer"><i id="timerBar"></i></div>
+      <canvas id="cv"></canvas>
+      <div class="callout" id="callout"></div>
+      <div class="banner" id="banner"></div>
+    </div>
+    <div class="opts" id="opts"></div>
+    <div class="below" id="below">
+      <div class="hint" id="hint"></div>
+      <button class="btn ghost" id="revealBtn">Reveal now</button>
+    </div>
+    <div class="explain hidden" id="explain">
+      <p id="exText"></p>
+      <button class="btn primary" id="nextBtn">Next <kbd>Enter</kbd></button>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section class="hidden final" id="final">
+    <span class="sticker">FINAL EDITION</span>
+    <h2 id="fTitle"></h2>
+    <div class="vsrow">
+      <div class="side me"><div class="k">STREAMER</div><div class="v" id="fMe"></div></div>
+      <div class="x">VS</div>
+      <div class="side ch"><div class="k">CHAT</div><div class="v" id="fCh"></div></div>
+    </div>
+    <div class="cp"><h3><span>Chat MVPs</span><span id="fN"></span></h3><ul class="mvp" id="mvp"></ul></div>
+    <div class="actions">
+      <button class="btn primary" id="againBtn">Play again <kbd>Enter</kbd></button>
+      <button class="btn ghost" id="copyBtn">Copy results</button>
+      <button class="btn ghost" id="homeBtn">Settings</button>
+    </div>
+    <textarea class="copy hidden" id="copyBox" readonly></textarea>
+  </section>
+</div>
+</div>
+<aside class="zone" id="zone" aria-label="Streamer overlay space">
+  <div class="grip" id="grip" title="Drag to resize"></div>
+  <div class="guide"><b>YOUR WEBCAM + CHAT</b><span>Line up your OBS sources here. During the game this space stays empty and matches the background.</span><span>Drag the left edge to resize.</span></div>
+</aside>
+</div>
+
+<script src="js/questions.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/streamer-mode.js"></script>
+<script src="js/arena.js"></script>
+<script src="js/game.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
