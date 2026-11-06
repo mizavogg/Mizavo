@@ -188,10 +188,11 @@ export function tick(): void {
 export function pick(i: number): void {
   const R = S.R; if (S.phase !== 'vote' || !R || R.pick != null) return;
   R.pick = i;
-  ($('#opts').children[i] as HTMLElement).classList.add('picked'); $('#opts').classList.add('locked');
+  // Secret pick: viewers watch this screen, so nothing shows WHICH answer was picked until the reveal.
+  $('#opts').classList.add('locked');
   if (S.blind) sortPool();
   $('#hint').innerHTML = '';
-  $('#hint').append('You picked ', el('b', null, R.opts[i]), '. Chat still has time…');
+  $('#hint').append(el('b', null, 'Streamer locked in ✓'), ' Chat still has time…');
 }
 /** Streamer pressed Enter / Reveal now. Early reveal needs a pick first (database rule). */
 export function revealNow(): void {
@@ -242,7 +243,7 @@ async function reveal(): Promise<void> {
   S.history.push({ round: R, meRight, chatRight, pctRight, votes: n });
 
   popWrong(R.answer);
-  [...$('#opts').children].forEach((b, i) => b.classList.add(i === R.answer ? 'right' : 'wrong'));
+  [...$('#opts').children].forEach((b, i) => b.classList.add(i === R.answer ? 'right' : 'wrong', ...(i === R.pick ? ['picked'] : [])));
 
   let head: string, color: string;
   if (meRight && chatRight) { head = 'Both nailed it'; color = 'var(--mint)'; }

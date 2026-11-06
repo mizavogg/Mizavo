@@ -205,7 +205,9 @@ function draw(): void {
     ctx.restore();
     rr(b.x + .5, b.y + .5, b.w - 1, b.h - 1, RADIUS);
     ctx.lineWidth = right ? 2 : 1;
-    ctx.strokeStyle = right ? col : R.pick === i ? hexA(SAND, .65) : hexA(PAPER, .10);
+    // the streamer's pick stays secret until the reveal, so chat can't copy it
+    const showPick = R.pick === i && S.phase === 'reveal';
+    ctx.strokeStyle = right ? col : showPick ? hexA(SAND, .65) : hexA(PAPER, .10);
     ctx.stroke();
     // label: small ball with the key, then the answer
     const narrow = b.w < 170;
@@ -218,7 +220,7 @@ function draw(): void {
       while (ctx.measureText(name).width > maxW && name.length > 3) name = name.slice(0, -2) + '…';
       ctx.fillText(name, b.x + 46, b.y + 31);
     }
-    if (R.pick === i) {
+    if (showPick) {
       const label = narrow ? 'Pick' : "Streamer's pick";
       ctx.font = `600 12px ${SANS}`;
       const w = ctx.measureText(label).width + 20, y = b.y + 48;
