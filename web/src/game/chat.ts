@@ -27,7 +27,7 @@ export function onChat(m: ChatMessage): void {
   if (choice == null || choice >= R.opts.length) return;
   const key = m.login.toLowerCase();
   if (R.votes.has(key)) return; // already answered this round: first answer stands
-  const col = m.color || colorFor(key);
+  const col = colorFor(key);   // soft palette color (Twitch name colors can be neon)
   const hidden = S.blind && R.pick == null && S.phase === 'vote';
   const v = { key, id: m.id, login: m.login, name: m.name, color: col, choice, bot: m.bot } as Vote;
   R.votes.set(key, v);

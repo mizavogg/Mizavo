@@ -1,11 +1,10 @@
 /* Mizavo — the arena: vote dots, bins, physics and all canvas drawing. */
 import { $, clamp, rnd } from '../lib/dom';
-import { S, KEYS, hexA, type Orb, type Vote } from './state';
+import { S, KEYS, WHITE, hexA, shade, type Orb, type Vote } from './state';
 
-const INK = '#161616', PAPER = '#f1ebdd', YELLOW = '#ffe14d';
-const DISPLAY = '"Archivo Black", Impact, sans-serif';
-const MONO = '"IBM Plex Mono", ui-monospace, monospace';
-const SH = 6; // hard shadow offset, like ink printed slightly off
+const INK = '#0B0F17', PAPER = '#ECE3D2', MUTED = '#B5AB98', SAND = '#E2CFA6';
+const SANS = '"DM Sans", system-ui, sans-serif';
+const RADIUS = 20;
 
 interface Rect { x: number; y: number; w: number; h: number }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; color: string; r: number }
@@ -17,14 +16,31 @@ let W = 0, H = 0, DPR = 1;
 export let bins: Rect[] = [];
 let pool: Rect = { x: 0, y: 0, w: 0, h: 0 };
 let orbs: Orb[] = [], parts: Particle[] = [], labels: Label[] = [];
-const patterns: Record<string, CanvasPattern> = {};
 
-function halftone(col: string): CanvasPattern {
-  if (patterns[col]) return patterns[col];
-  const c = document.createElement('canvas'); c.width = c.height = 9;
-  const g = c.getContext('2d')!;
-  g.fillStyle = hexA(col, .3); g.beginPath(); g.arc(4.5, 4.5, 1.6, 0, Math.PI * 2); g.fill();
-  return (patterns[col] = ctx.createPattern(c, 'repeat')!);
+/** Rounded rectangle path (drawn by hand so older OBS browsers work too). */
+function rr(x: number, y: number, w: number, h: number, r: number): void {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+/** A ball's color: its answer's color once it's in (or flying to) a bin; white while hidden in the pool. */
+function ballColor(o: Orb): string {
+  const R = S.R; if (!R) return WHITE;
+  const i = o.state === 'bin' ? o.bin : (o.state === 'fly' && typeof o.dest === 'number' ? o.dest : null);
+  return i == null ? WHITE : (R.colors[i] || WHITE);
+}
+
+/** Draw one round 3D-looking ball: soft shadow, then a sphere lit from the top left. */
+function drawBall(x: number, y: number, r: number, color: string): void {
+  const s = shade(color);
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(x, y + r * 0.55, r * 0.95, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+  const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.08, x, y, r);
+  g.addColorStop(0, s.hi); g.addColorStop(0.45, s.base); g.addColorStop(1, s.lo);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
 }
 
 /** Size the canvas to the page and work out where the bins go. */
@@ -37,8 +53,8 @@ export function layout(): void {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   const n = S.R ? S.R.opts.length : 2;
   const gap = window.innerWidth < 820 ? 14 : 24;
-  const bw = (W - SH - gap * (n - 1)) / n, top = Math.round(H * 0.38);
-  bins = Array.from({ length: n }, (_, i) => ({ x: i * (bw + gap), y: top, w: bw, h: H - top - SH }));
+  const bw = (W - gap * (n - 1)) / n, top = Math.round(H * 0.38);
+  bins = Array.from({ length: n }, (_, i) => ({ x: i * (bw + gap), y: top, w: bw, h: H - top - 4 }));
   pool = { x: W * 0.12, y: 10, w: W * 0.76, h: top - 30 };
 }
 
@@ -138,7 +154,8 @@ function step(): void {
   for (const o of orbs) {
     if (o.popAt && now >= o.popAt && !o.dead) {
       o.dead = true;
-      for (let k = 0; k < 7; k++) { const a = rnd(0, Math.PI * 2), s = rnd(1.5, 4.5); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, color: o.color, r: rnd(1.5, 3) }); }
+      const pc = ballColor(o);
+      for (let k = 0; k < 7; k++) { const a = rnd(0, Math.PI * 2), s = rnd(1.5, 4.5); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, color: pc, r: rnd(1.5, 3) }); }
     }
   }
   orbs = orbs.filter((o) => !o.dead);
@@ -156,65 +173,88 @@ function draw(): void {
   const total = R.votes.size;
   const keys = KEYS[R.type];
 
+  // blind mode: the mixed pool of hidden votes
   if (S.blind && R.pick == null && S.phase === 'vote') {
     ctx.save();
-    ctx.setLineDash([7, 7]); ctx.strokeStyle = hexA(PAPER, .45); ctx.lineWidth = 2; ctx.strokeRect(pool.x, pool.y, pool.w, pool.h);
+    rr(pool.x, pool.y, pool.w, pool.h, 18);
+    ctx.fillStyle = 'rgba(236,227,210,.025)'; ctx.fill();
+    ctx.setLineDash([6, 8]); ctx.strokeStyle = hexA(PAPER, .22); ctx.lineWidth = 1.5; ctx.stroke();
     ctx.restore();
-    if (total === 0) { ctx.fillStyle = '#a39a8a'; ctx.font = `700 14px ${MONO}`; ctx.textAlign = 'center'; ctx.fillText('waiting for chat…', pool.x + pool.w / 2, pool.y + pool.h / 2 + 5); }
-    ctx.fillStyle = PAPER; ctx.font = `700 11px ${MONO}`; ctx.textAlign = 'left';
-    ctx.fillText("CHAT'S VOTES · HIDDEN UNTIL YOU PICK", pool.x + 12, pool.y + 20);
+    if (total === 0) { ctx.fillStyle = MUTED; ctx.font = `500 15px ${SANS}`; ctx.textAlign = 'center'; ctx.fillText('Waiting for chat…', pool.x + pool.w / 2, pool.y + pool.h / 2 + 5); }
+    ctx.fillStyle = MUTED; ctx.font = `500 13px ${SANS}`; ctx.textAlign = 'left';
+    ctx.fillText("Chat's answers stay hidden until you pick", pool.x + 16, pool.y + 24);
   }
+
+  // bins: sunken wells with a soft glow of their color at the bottom
   bins.forEach((b, i) => {
-    const col = R.colors[i];
+    const col = R.colors[i], sh = shade(col);
     const right = reveal && i === R.answer, wrong = reveal && i !== R.answer;
     ctx.save();
-    ctx.globalAlpha = wrong ? .3 : 1;
-    ctx.fillStyle = col; ctx.fillRect(b.x + SH, b.y + SH, b.w, b.h);
-    ctx.fillStyle = INK; ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.fillStyle = halftone(col); ctx.fillRect(b.x, b.y, b.w, b.h);
-    const lw = right ? 5 : 3;
-    ctx.lineWidth = lw; ctx.strokeStyle = right ? col : PAPER;
-    ctx.strokeRect(b.x + lw / 2, b.y + lw / 2, b.w - lw, b.h - lw);
+    ctx.globalAlpha = wrong ? .35 : 1;
+    rr(b.x, b.y, b.w, b.h, RADIUS);
+    const well = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
+    well.addColorStop(0, '#090C12'); well.addColorStop(1, '#131925');
+    ctx.fillStyle = well; ctx.fill();
+    ctx.save(); ctx.clip();
+    const glow = ctx.createRadialGradient(b.x + b.w / 2, b.y + b.h, 0, b.x + b.w / 2, b.y + b.h, Math.max(b.w, b.h) * 0.8);
+    glow.addColorStop(0, hexA(col, right ? .30 : .15)); glow.addColorStop(1, hexA(col, 0));
+    ctx.fillStyle = glow; ctx.fillRect(b.x, b.y, b.w, b.h);
+    const lip = ctx.createLinearGradient(0, b.y, 0, b.y + 26);       // inner shadow along the top edge
+    lip.addColorStop(0, 'rgba(0,0,0,.55)'); lip.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = lip; ctx.fillRect(b.x, b.y, b.w, 26);
+    ctx.restore();
+    rr(b.x + .5, b.y + .5, b.w - 1, b.h - 1, RADIUS);
+    ctx.lineWidth = right ? 2 : 1;
+    ctx.strokeStyle = right ? col : R.pick === i ? hexA(SAND, .65) : hexA(PAPER, .10);
+    ctx.stroke();
+    // label: small ball with the key, then the answer
     const narrow = b.w < 170;
-    ctx.font = `400 ${narrow ? 15 : 20}px ${DISPLAY}`;
-    let tab = keys[i] + ' ' + R.opts[i];
-    if (narrow || ctx.measureText(tab).width > b.w * 0.55) tab = keys[i];
-    const tw = ctx.measureText(tab).width + 20;
-    ctx.fillStyle = col; ctx.fillRect(b.x, b.y, tw, narrow ? 26 : 32);
-    ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.fillText(tab, b.x + 10, b.y + (narrow ? 19 : 24));
+    drawBall(b.x + 26, b.y + 26, 11, col);
+    ctx.fillStyle = INK; ctx.font = `700 11px ${SANS}`; ctx.textAlign = 'center'; ctx.fillText(keys[i], b.x + 26, b.y + 30);
+    if (!narrow) {
+      ctx.font = `600 16px ${SANS}`; ctx.textAlign = 'left'; ctx.fillStyle = PAPER;
+      let name = R.opts[i];
+      const maxW = b.w * 0.5;
+      while (ctx.measureText(name).width > maxW && name.length > 3) name = name.slice(0, -2) + '…';
+      ctx.fillText(name, b.x + 46, b.y + 31);
+    }
+    if (R.pick === i) {
+      const label = narrow ? 'Pick' : "Streamer's pick";
+      ctx.font = `600 12px ${SANS}`;
+      const w = ctx.measureText(label).width + 20, y = b.y + 48;
+      rr(b.x + 14, y, w, 24, 12); ctx.fillStyle = PAPER; ctx.fill();
+      ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.fillText(label, b.x + 24, y + 16);
+    }
     ctx.restore();
     if (showSplit && total) {
       const pct = Math.round(counts[i] / total * 100);
-      ctx.save(); ctx.globalAlpha = wrong ? .35 : 1; ctx.fillStyle = col;
+      ctx.save(); ctx.globalAlpha = wrong ? .4 : 1; ctx.textAlign = 'right';
       if (narrow) {
-        ctx.font = `400 18px ${DISPLAY}`; ctx.textAlign = 'left';
-        ctx.fillText(pct + '%', b.x + 8, b.y + 50);
+        ctx.font = `600 20px ${SANS}`; ctx.fillStyle = sh.text;
+        ctx.fillText(pct + '%', b.x + b.w - 12, b.y + 33);
       } else {
-        const fs = clamp(b.w * 0.14, 22, 52);
-        ctx.font = `400 ${fs}px ${DISPLAY}`; ctx.textAlign = 'right';
-        ctx.fillText(pct + '%', b.x + b.w - 12, b.y + fs + 6);
-        ctx.font = `700 12px ${MONO}`; ctx.fillStyle = hexA(PAPER, .8);
-        ctx.fillText(counts[i] + ' vote' + (counts[i] === 1 ? '' : 's'), b.x + b.w - 12, b.y + fs + 24);
+        const fs = clamp(b.w * 0.12, 24, 44);
+        ctx.font = `600 ${fs}px ${SANS}`; ctx.fillStyle = sh.text;
+        ctx.fillText(pct + '%', b.x + b.w - 16, b.y + fs + 8);
+        ctx.font = `500 13px ${SANS}`; ctx.fillStyle = MUTED;
+        ctx.fillText(counts[i] + ' vote' + (counts[i] === 1 ? '' : 's'), b.x + b.w - 16, b.y + fs + 27);
       }
       ctx.restore();
     }
-    if (R.pick === i) {
-      ctx.save(); ctx.translate(b.x + b.w / 2, b.y - 6); ctx.rotate(-0.05);
-      const label = b.w < 140 ? 'PICK' : "STREAMER'S PICK", w = b.w < 140 ? 56 : 136;
-      ctx.fillStyle = YELLOW; ctx.fillRect(-w / 2, -14, w, 24);
-      ctx.fillStyle = INK; ctx.font = `700 11px ${MONO}`; ctx.textAlign = 'center'; ctx.fillText(label, 0, 2);
-      ctx.restore();
-    }
   });
+
+  // balls
   for (const o of orbs) {
     if (o.state === 'fly' && o.t0 != null && now < o.t0 && o.y < 0) continue;
-    ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
-    ctx.fillStyle = o.color; ctx.fill();
-    ctx.lineWidth = Math.max(1.5, o.r * 0.2); ctx.strokeStyle = PAPER; ctx.stroke();
+    drawBall(o.x, o.y, o.r, ballColor(o));
   }
-  for (const p of parts) { ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2); }
+  for (const p of parts) {
+    ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = shade(p.color).base;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+  }
   ctx.globalAlpha = 1;
-  ctx.font = `700 12px ${MONO}`; ctx.textAlign = 'center';
+  // viewer names as their ball lands
+  ctx.font = `600 13px ${SANS}`; ctx.textAlign = 'center';
   labels = labels.filter((l) => now - l.t0 < 1500);
   for (const l of labels) { const k = (now - l.t0) / 1500; ctx.globalAlpha = 1 - k; ctx.fillStyle = l.color; ctx.fillText(l.text, l.x, l.y - k * 22); }
   ctx.globalAlpha = 1;

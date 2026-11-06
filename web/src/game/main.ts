@@ -5,7 +5,7 @@ import { S, type Mode } from './state';
 import { api, friendly, type Channel } from './api';
 import { startLoop } from './arena';
 import { disconnectTwitch } from './chat';
-import { startAttract, stopAttract } from './attract';
+import { startLaunch, stopLaunch } from './launch';
 import { initStreamerMode } from './streamer-mode';
 import { openReport } from './report';
 import {
@@ -52,15 +52,13 @@ function enterGate(msg?: string, closedFor?: string, inviteProblem?: string | nu
   show($('#closedLink'), !!inviteProblem);
   $('#gateIntro').textContent = store.get(INVITE_KEY)
     ? "You've been invited to the Mizavo closed test. Log in with Twitch to join and play against your chat."
-    : 'Play against your own Twitch chat. Log in so your games, scores and questions stay with your channel.';
+    : 'A quick trivia game for your stream. You answer on screen, your viewers answer in chat, and whoever gets more right wins.';
   setPhase('gate'); show3('game');
   show($('#who'), closedFor != null); show($('#scoreboard'), false);
-  $('#edition').textContent = 'Night edition · streamer vs chat';
-  $('#prompt').textContent = 'STREAMER VS CHAT';
-  $('#statement').textContent = 'Fact or Fake? Your chat decides, live.';
+  $('#edition').textContent = 'Streamer vs chat';
   $('#gateMsg').textContent = msg || '';
   show($('#gateMsg'), !!msg);
-  startAttract();
+  startLaunch();
 }
 
 /* ---------- logged in: channel + settings ---------- */
@@ -74,7 +72,7 @@ function applySettings(ch: Channel): void {
   $<HTMLInputElement>('#channel').value = saved != null && saved !== '' ? saved : ch.login;
 }
 async function enterSetup(name: string): Promise<void> {
-  stopAttract();
+  stopLaunch();
   $('#whoName').textContent = name; show($('#who'), true);
   try {
     const ch = await api.ensureChannel();

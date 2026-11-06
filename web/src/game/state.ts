@@ -59,13 +59,31 @@ export const S = {
   busy: false,                  // waiting on the database
 };
 
+/* Ink & Cream answer colors: muted blue and orange (told apart by colorblind viewers too),
+   plus sage and lilac for the 3rd and 4th Odd One Out answers. */
 export const OPT_COLORS: Record<RoundType, string[]> = {
-  ff: ['#3d9be0', '#ff48b0'],
-  ooo: ['#3d9be0', '#ff48b0', '#5fd39a', '#ff8c3b'],
+  ff: ['#7C9CC4', '#C48A58'],
+  ooo: ['#7C9CC4', '#C48A58', '#8FB39A', '#A99BC9'],
 };
 export const KEYS: Record<RoundType, string[]> = { ff: ['1', '2'], ooo: ['A', 'B', 'C', 'D'] };
 
-export const PALETTE = ['#3d9be0', '#ff48b0', '#ffe14d', '#f1ebdd', '#5fd39a', '#ff8c3b', '#7cc4ec', '#ffa3d6', '#c9a6ff', '#b8e86a'];
+/** Light, base and dark shade of each ball color: drawn as a sphere (light top-left, dark edge).
+ *  White is the neutral ball (blind-mode pool, the logo). Skins can add their own entries later. */
+export const SHADES: Record<string, { hi: string; base: string; lo: string; text: string }> = {
+  '#7C9CC4': { hi: '#C9D7EA', base: '#7C9CC4', lo: '#3E5677', text: '#A9C0DE' },
+  '#C48A58': { hi: '#EBCBAE', base: '#C48A58', lo: '#6E4526', text: '#DDAA80' },
+  '#8FB39A': { hi: '#D3E3D7', base: '#8FB39A', lo: '#465E4D', text: '#B3CDBA' },
+  '#A99BC9': { hi: '#DCD4EC', base: '#A99BC9', lo: '#544870', text: '#C6BCE0' },
+  '#F1F0EC': { hi: '#FFFFFF', base: '#F1F0EC', lo: '#7E848F', text: '#ECE3D2' },
+};
+export const WHITE = '#F1F0EC';
+export function shade(c: string) { return SHADES[c] || SHADES[WHITE]; }
+/** The same sphere as a CSS background (for buttons and the launch screen). */
+export const SPHERE: Record<string, string> = Object.fromEntries(Object.entries(SHADES).map(([c, s]) =>
+  [c, `radial-gradient(circle at 35% 30%, ${s.hi} 0%, ${s.base} 45%, ${s.lo} 100%)`]));
+
+/** Viewer name colors (labels, MVP list): soft tones that sit on the dark page. */
+export const PALETTE = ['#ECE3D2', '#A9C0DE', '#DDAA80', '#B3CDBA', '#C6BCE0', '#E2CFA6', '#C9D7EA', '#EBCBAE'];
 export function colorFor(k: string): string {
   let h = 0;
   for (const c of k) h = (h * 31 + c.charCodeAt(0)) >>> 0;

@@ -6,7 +6,7 @@
 <title>Mizavo — Streamer vs Chat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/src/styles/theme.css">
 <link rel="stylesheet" href="/src/styles/game.css">
 </head>
@@ -15,12 +15,12 @@
 <div class="main">
 <div class="wrap">
   <header class="mast">
-    <div class="logo">MIZAVO</div>
-    <div class="edition" id="edition">Night edition · streamer vs chat</div>
+    <div class="logo">Mizavo</div>
+    <div class="edition" id="edition">Streamer vs chat</div>
     <div class="pill" id="status"><span class="dot"></span><span id="statusTxt">chat off</span></div>
-    <span class="chip test hidden" id="testTag">TEST GAME</span>
+    <span class="chip test hidden" id="testTag">Test game</span>
     <div class="spacer"></div>
-    <div class="score hidden" id="scoreboard"><span class="me">STREAMER <b id="sMe">0</b></span><span class="ch">CHAT <b id="sCh">0</b></span></div>
+    <div class="score hidden" id="scoreboard"><span class="me">You <b id="sMe">0</b></span><span class="ch"><b id="sCh">0</b> Chat</span></div>
     <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
   </header>
 
@@ -31,14 +31,14 @@
       <div class="row"><button class="btn primary small" id="resumeBtn">Resume</button><button class="btn ghost small" id="endOldBtn">End it</button></div>
     </div>
     <div class="hero">
-      <span class="sticker">STREAMER VS CHAT</span>
-      <h1><span class="f">Fact</span> or <span class="k">Fake?</span><br>Chat decides.</h1>
-      <p>Every vote in chat becomes a dot that drops into its answer and piles up live. The streamer picks a side, chat picks theirs, and the wrong pile pops.</p>
+      <span class="sticker">Set up your game</span>
+      <h1><span class="f">Fact</span> or <span class="k">Fake?</span> Chat decides.</h1>
+      <p>Every answer in chat becomes a ball that drops into its pile live. You pick a side, chat picks theirs, and the wrong pile pops.</p>
     </div>
     <div class="modes" id="modes">
-      <button class="mode sel" data-mode="ff"><b>Fact or Fake</b><span>One statement. Is it true?</span><span class="ex">chat types 1 or 2</span></button>
-      <button class="mode" data-mode="ooo"><b>Odd One Out</b><span>Four things. Which doesn't belong?</span><span class="ex">chat types A B C D</span></button>
-      <button class="mode" data-mode="mix"><b>Mix</b><span>A bit of both, shuffled.</span><span class="ex">best for long streams</span></button>
+      <button class="mode sel" data-mode="ff"><b><span class="ball blue"></span>Fact or Fake</b><span>One statement. Is it true?</span><span class="ex">chat types 1 or 2</span></button>
+      <button class="mode" data-mode="ooo"><b><span class="ball orange"></span>Odd One Out</b><span>Four things. Which doesn't belong?</span><span class="ex">chat types A B C D</span></button>
+      <button class="mode" data-mode="mix"><b><span class="ball"></span>Mix</b><span>A bit of both, shuffled.</span><span class="ex">best for long streams</span></button>
     </div>
     <div class="form">
       <label class="f">Twitch chat to read<input id="channel" placeholder="e.g. yourchannel" autocomplete="off" spellcheck="false"></label>
@@ -73,18 +73,6 @@
       <div class="callout" id="callout"></div>
       <div class="banner" id="banner"></div>
     </div>
-    <div class="gate" id="gatePanel">
-      <p id="gateIntro">Play against your own Twitch chat. Log in so your games, scores and questions stay with your channel.</p>
-      <div class="closed hidden" id="closedBox">
-        <span class="sticker">CLOSED TEST</span>
-        <p><b>Mizavo is invite-only for now.</b> <span id="closedWho">This channel</span> isn't on the invite list yet. If a streamer friend shared Mizavo with you, send them your Twitch name and they can add you. This page will let you in as soon as you're on the list.</p>
-        <p class="hidden" id="closedLink" role="alert"></p>
-        <button class="btn ghost small" id="closedRetry">Check again</button>
-      </div>
-      <button class="btn twitch" id="loginBtn">Log in with Twitch to play</button>
-      <p class="err hidden" id="gateMsg" role="alert"></p>
-      <a class="guideLink" href="/guide.html">New here? Read the streamer guide →</a>
-    </div>
     <div class="opts" id="opts"></div>
     <div class="below hidden" id="below">
       <div class="hint" id="hint"></div>
@@ -101,10 +89,10 @@
 
   <!-- FINAL -->
   <section class="hidden final" id="final">
-    <span class="sticker">FINAL EDITION</span>
+    <span class="sticker">Final results</span>
     <h2 id="fTitle"></h2>
     <div class="vsrow">
-      <div class="side me"><div class="k">STREAMER</div><div class="v" id="fMe"></div></div>
+      <div class="side me"><div class="k">YOU</div><div class="v" id="fMe"></div></div>
       <div class="x">VS</div>
       <div class="side ch"><div class="k">CHAT</div><div class="v" id="fCh"></div></div>
     </div>
@@ -118,6 +106,31 @@
     <textarea class="copy hidden" id="copyBox" readonly></textarea>
   </section>
 </div>
+
+  <!-- LAUNCH (logged out): the M-scale forms, then the balls scatter -->
+  <section class="launch" id="launch">
+    <div class="launchIn">
+      <div class="mscale" id="mscale" aria-hidden="true"></div>
+      <div class="launchText">
+        <h1>You vs. your chat.</h1>
+        <p id="gateIntro">A quick trivia game for your stream. You answer on screen, your viewers answer in chat, and whoever gets more right wins.</p>
+        <div class="closed hidden" id="closedBox">
+          <span class="sticker">Closed test</span>
+          <p><b>Mizavo is invite-only for now.</b> <span id="closedWho">This channel</span> isn't on the invite list yet. If a streamer friend shared Mizavo with you, send them your Twitch name and they can add you. This page will let you in as soon as you're on the list.</p>
+          <p class="hidden" id="closedLink" role="alert"></p>
+          <button class="btn ghost small" id="closedRetry">Check again</button>
+        </div>
+        <button class="btn twitch" id="loginBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3v15h5v3l3-3h4l5-5V3z"/><line x1="11" y1="8" x2="11" y2="12"/><line x1="16" y1="8" x2="16" y2="12"/></svg>Log in with Twitch</button>
+        <p class="err hidden" id="gateMsg" role="alert"></p>
+      </div>
+      <div class="launchModes">
+        <div class="lmode"><b><span class="ball blue"></span>Fact or Fake</b><span>Is it true? Chat types 1 or 2.</span></div>
+        <div class="lmode"><b><span class="ball orange"></span>Odd One Out</b><span>Which one doesn't belong? Chat types A to D.</span></div>
+        <div class="lmode"><b><span class="ball"></span>Mix</b><span>Both, shuffled. Good for longer streams.</span></div>
+      </div>
+      <p class="launchHow">Viewers don't need an account: their first answer in chat counts. <a class="guideLink" href="/guide.html">Streamer guide</a></p>
+    </div>
+  </section>
 </div>
 <aside class="zone" id="zone" aria-label="Streamer overlay space">
   <div class="grip" id="grip" title="Drag to resize"></div>

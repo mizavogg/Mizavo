@@ -1,8 +1,8 @@
 /* Mizavo — game flow: start, rounds, timer, picking, reveal, final results.
    Questions come from the database one round at a time, never with the answer.
    The answer only arrives from reveal_round, after the timer ends or the streamer locks in. */
-import { $, el, pad2, show } from '../lib/dom';
-import { S, OPT_COLORS, KEYS, type Mode, type Round, type Viewer } from './state';
+import { $, el, show } from '../lib/dom';
+import { S, OPT_COLORS, KEYS, SPHERE, type Mode, type Round, type Viewer } from './state';
 import { api, friendly, type ActiveGame, type RoundData, type ViewerResult } from './api';
 import { layout, popWrong, resetArena, sortPool } from './arena';
 import { clearBots, makeBots, scheduleBots } from './demo';
@@ -114,14 +114,14 @@ export async function quitGame(): Promise<void> {
 export function goHome(): void {
   clearInterval(S.timer); clearBots();
   S.R = null; show($('#scoreboard'), false); show($('#testTag'), false);
-  $('#edition').textContent = 'Night edition · streamer vs chat';
+  $('#edition').textContent = 'Streamer vs chat';
   setPhase('setup'); show3('setup');
   checkActiveGame();
 }
 
 /* ---------- a round ---------- */
 function buildRound(d: RoundData): Round {
-  const opts = d.type === 'ff' ? ['FACT', 'FAKE'] : (d.items || []);
+  const opts = d.type === 'ff' ? ['Fact', 'Fake'] : (d.items || []);
   return {
     idx: d.idx, type: d.type, category: d.category,
     statement: d.type === 'ff' ? (d.statement || '') : "Which one doesn't belong?",
@@ -144,20 +144,22 @@ function startRound(): void {
   resetArena();
   setPhase('vote'); layout();
   const modeName = R.type === 'ff' ? 'Fact or Fake' : 'Odd One Out';
-  $('#edition').textContent = `No. ${pad2(R.idx)} of ${pad2(S.rounds)} — ${modeName}`;
+  $('#edition').textContent = 'Streamer vs chat';
   $('#gMode').textContent = modeName;
-  $('#gRound').textContent = `Round ${R.idx} / ${S.rounds}`;
-  $('#prompt').textContent = R.type === 'ff' ? 'TRUE OR NOT?' : 'ODD ONE OUT';
+  $('#gRound').textContent = `Round ${R.idx} of ${S.rounds}`;
+  $('#prompt').textContent = R.type === 'ff' ? 'True or not?' : 'Odd one out';
   $('#statement').textContent = R.statement;
   const keys = KEYS[R.type];
   const box = $('#opts'); box.replaceChildren(); box.className = 'opts';
   box.style.gridTemplateColumns = `repeat(${R.opts.length},1fr)`;
   R.opts.forEach((o, i) => {
-    const b = el('button', 'opt'); b.style.setProperty('--c', R.colors[i]);
+    const b = el('button', 'opt'); b.style.setProperty('--c', R.colors[i]); b.style.setProperty('--ball', SPHERE[R.colors[i]]);
     b.append(el('span', 'key', keys[i]), document.createTextNode(o));
     b.onclick = () => pick(i); box.append(b);
   });
-  $('#hint').innerHTML = R.type === 'ff' ? 'CHAT: TYPE <code>1</code> FOR FACT OR <code>2</code> FOR FAKE' : 'CHAT: TYPE <code>A</code> <code>B</code> <code>C</code> OR <code>D</code>';
+  $('#hint').innerHTML = R.type === 'ff'
+    ? 'Chat: type <code>1</code> for Fact or <code>2</code> for Fake. Your first answer counts.'
+    : 'Chat: type <code>A</code>, <code>B</code>, <code>C</code> or <code>D</code>. Your first answer counts.';
   show($('#below'), true); show($('#explain'), false);
   $('#banner').className = 'banner'; $('#callout').className = 'callout';
   S.deadline = Date.now() + S.secs * 1000;
@@ -189,12 +191,12 @@ export function pick(i: number): void {
   ($('#opts').children[i] as HTMLElement).classList.add('picked'); $('#opts').classList.add('locked');
   if (S.blind) sortPool();
   $('#hint').innerHTML = '';
-  $('#hint').append('LOCKED IN ', el('b', null, R.opts[i]), ' — CHAT STILL HAS TIME…');
+  $('#hint').append('You picked ', el('b', null, R.opts[i]), '. Chat still has time…');
 }
 /** Streamer pressed Enter / Reveal now. Early reveal needs a pick first (database rule). */
 export function revealNow(): void {
   const R = S.R; if (S.phase !== 'vote' || !R) return;
-  if (R.pick == null) { $('#hint').textContent = 'PICK AN ANSWER FIRST, THEN YOU CAN REVEAL EARLY.'; return; }
+  if (R.pick == null) { $('#hint').textContent = 'Pick an answer first, then you can reveal early.'; return; }
   S.deadline = Date.now(); tick();
 }
 
@@ -248,11 +250,11 @@ async function reveal(): Promise<void> {
   else if (chatRight) { head = 'Chat carried'; color = 'var(--blue)'; }
   else { head = R.pick == null && !n ? 'Nobody answered' : 'Everyone got fooled'; color = 'var(--pink)'; }
   const sub = n ? (pctRight >= 90 ? `In sync — ${pctRight}% of chat was right` : pctRight <= 25 ? `Bamboozled — only ${pctRight}% of chat was right` : `${pctRight}% of chat was right`) : 'no chat votes';
-  const bn = $('#banner'); bn.replaceChildren(head, el('small', null, sub)); bn.style.background = color;
+  const bn = $('#banner'); bn.replaceChildren(head, el('small', null, sub)); bn.style.setProperty('--c', color);
   setTimeout(() => bn.classList.add('show'), 200);
 
   const ex = $('#exText'); ex.replaceChildren();
-  const b = el('b', null, R.type === 'ff' ? (R.answer === 0 ? 'FACT.' : 'FAKE.') : `${R.opts[R.answer]}.`);
+  const b = el('b', null, R.type === 'ff' ? (R.answer === 0 ? 'Fact' : 'Fake') : R.opts[R.answer]);
   b.style.background = R.colors[R.answer];
   let top: Viewer | null = null; for (const r of S.viewers.values()) if (!top || r.streak > top.streak) top = r;
   ex.append(b, ' ' + res.explanation, el('span', 'meta', top && top.streak >= 3 ? `${top.name} is on a ${top.streak}-round streak` : `Streamer picked: ${R.pick == null ? 'nothing' : R.opts[R.pick]}`));
@@ -310,10 +312,10 @@ async function finish(): Promise<void> {
   } catch (e) { today = 'Your result could not be saved: ' + friendly(e); }
   S.session = null;
 
-  $('#edition').textContent = 'Final edition';
+  $('#edition').textContent = 'Final results';
   const win = S.me > S.chat ? 'me' : S.chat > S.me ? 'ch' : 'tie';
   $('#fTitle').textContent = win === 'me' ? 'The streamer outsmarted chat.' : win === 'ch' ? 'Chat wins. The crowd was right.' : 'Dead even. Rematch?';
-  $('#fTitle').style.color = win === 'me' ? 'var(--yellow)' : win === 'ch' ? 'var(--blue)' : '';
+  $('#fTitle').style.color = win === 'me' ? 'var(--yellow)' : win === 'ch' ? 'var(--blue-hi)' : '';
   $('#fMe').textContent = S.me + ' / ' + S.rounds; $('#fCh').textContent = S.chat + ' / ' + S.rounds;
   $('#fToday').textContent = (S.isTest ? 'Test game (simulated chat): it doesn\'t count toward question stats. ' : '') + today;
   show($('#fToday'), !!$('#fToday').textContent);
