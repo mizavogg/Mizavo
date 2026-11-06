@@ -4,7 +4,7 @@
    After a short hold they scatter and keep floating gently behind the page.
    All the motion is CSS (game.css: mzOut, mzFloat, mzFloor); this file only places the balls. */
 import { $ } from '../lib/dom';
-import { SPHERE } from './state';
+import { SPHERE, SLATE, COPPER } from './state';
 
 type Tone = 'white' | 'blue' | 'orange';
 interface Pt { x: number; y: number; tone: Tone }
@@ -54,7 +54,7 @@ export function startLaunch(): void {
     outer.style.setProperty('--o', (0.16 + depth * 0.32).toFixed(2));
     outer.style.animationDelay = (Math.hypot(p.x - 300, p.y - 200) / 1400).toFixed(2) + 's';
     const ball = document.createElement('span'); ball.className = 'mb';
-    ball.style.background = SPHERE[p.tone === 'blue' ? '#7C9CC4' : p.tone === 'orange' ? '#C48A58' : '#F1F0EC'];
+    ball.style.background = SPHERE[p.tone === 'blue' ? SLATE : p.tone === 'orange' ? COPPER : '#F1F0EC'];
     ball.style.setProperty('--wx', Math.round((r() - 0.5) * 50) + 'px');
     ball.style.setProperty('--wy', Math.round((r() - 0.5) * 36) + 'px');
     outer.append(ball);

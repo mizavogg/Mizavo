@@ -15,7 +15,7 @@ web/                    the website (Vite + TypeScript)
   admin.html            admin page: review drafts, retire live questions, handle reports, manage closed-test invites; import batches; download the bank
   guide.html            streamer setup guide (login, OBS, chat commands, reporting)
   login-test.html       Twitch login test page
-  src/styles/           theme.css (shared Night Edition look), game.css, admin.css
+  src/styles/           theme.css (shared Copper & Charcoal look), game.css, admin.css
   src/lib/              supabase.ts (database connection + login), dom.ts (small helpers)
   src/game/
     main.ts             login, settings, buttons and keys: everything starts here
@@ -25,7 +25,8 @@ web/                    the website (Vite + TypeScript)
     arena.ts            vote dots, bins, physics, canvas drawing
     chat.ts             reading votes from Twitch chat (anonymous, read-only)
     demo.ts             simulated viewers (games with them are saved as test games)
-    attract.ts          the looping preview shown to logged-out visitors
+    hero-glass.ts       the frosted glass hero on the login page (MIZAVO cut out of the glass)
+    launch.ts           the M-scale ball animation (not shown right now)
     streamer-mode.ts    clear space on the right for a webcam + chat overlay
   src/admin/main.ts     admin page logic
   vite.config.ts        build settings (one entry per page)

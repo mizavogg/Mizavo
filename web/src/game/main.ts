@@ -5,7 +5,8 @@ import { S, type Mode } from './state';
 import { api, friendly, type Channel } from './api';
 import { startLoop } from './arena';
 import { disconnectTwitch } from './chat';
-import { startLaunch, stopLaunch } from './launch';
+// Test design: the frosted glass hero replaces the M-scale animation (still in ./launch) on this branch.
+import { startGlass as startLaunch, stopGlass as stopLaunch } from './hero-glass';
 import { initStreamerMode } from './streamer-mode';
 import { openReport } from './report';
 import {

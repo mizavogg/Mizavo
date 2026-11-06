@@ -1,47 +1,51 @@
 /* Mizavo — theme.css
-   Shared "Ink & Cream" look: colors, fonts, header, buttons. Used by every page.
-   Dark midnight ink, cream text, muted blue and orange. All sans-serif (DM Sans).
-   Depth comes from soft light, raised panels and round 3D-looking balls. */
+   Shared "Copper & Charcoal" look: colors, fonts, header, buttons. Used by every page.
+   Neutral charcoal (no blue), cream text, copper accents, slate and copper vote balls.
+   Depth comes from frosted, ribbed glass (see game.css), soft light and round 3D-looking balls.
+   DM Sans for everything, Newsreader (serif) for big headlines. */
 :root{
   /* surfaces */
-  --bg:#0B0F17;                 /* page */
-  --ink:#0B0F17;                /* (old name) page / dark text on cream */
-  --ink2:#151B26;               /* raised panel */
-  --ink3:#1C2433;               /* raised panel, top edge of gradient */
-  --well:#0A0D14;               /* sunken areas (bins, inputs) */
-  --rule:rgba(236,227,210,.10); /* hairlines */
-  --rule2:rgba(236,227,210,.18);
+  --bg:#121516;                 /* page: neutral charcoal */
+  --ink:#121516;                /* (old name) page / dark text on cream */
+  --ink2:#1A1E1F;               /* raised panel */
+  --ink3:#22272A;               /* raised panel, top edge of gradient */
+  --well:#0D0F10;               /* sunken areas (inputs) */
+  --rule:rgba(242,232,220,.10); /* hairlines */
+  --rule2:rgba(242,232,220,.18);
   /* text */
-  --paper:#ECE3D2;              /* cream: main text, primary button */
-  --muted:#B5AB98;              /* secondary text (passes 4.5:1 on --bg) */
-  --dim:#7D7568;
-  /* accents (muted, never neon) */
-  --blue:#7C9CC4; --blue-hi:#A9C0DE;
-  --orange:#C48A58; --orange-hi:#DDAA80;
+  --paper:#F2E8DC;              /* cream: main text */
+  --muted:#B3ADA3;              /* secondary text (passes 4.5:1 on --bg) */
+  --dim:#7E7A72;
+  /* accents */
+  --blue:#7F95AD; --blue-hi:#A9BCD0;        /* slate: Fact / first answer */
+  --orange:#B76935; --orange-hi:#E09A62;    /* copper: Fake / second answer, main buttons */
+  --copper-btn:#93552C;                     /* copper dark enough for cream button text (4.8:1) */
   --sage:#8FB39A; --lilac:#A99BC9;
   --mint:var(--sage);           /* (old names kept so every page still works) */
-  --yellow:#E2CFA6;             /* warm sand: highlights, focus, "your pick" */
+  --yellow:#E7C39B;             /* warm sand: highlights, focus, "your pick" */
   --pink:#D9826E;               /* soft brick: errors, low timer, danger */
-  /* fonts: all sans */
+  /* fonts */
   --sans:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
   --display:var(--sans);
   --mono:var(--sans);
   /* depth */
   --raise:0 1px 0 rgba(255,255,255,.05) inset,0 24px 44px -26px rgba(0,0,0,.85);
   --sink:0 10px 24px rgba(0,0,0,.55) inset,0 -1px 0 rgba(255,255,255,.04) inset,0 1px 0 rgba(255,255,255,.05);
   --panel:linear-gradient(180deg,var(--ink3) 0%,var(--ink2) 100%);
+  --glass:rgba(26,30,31,.72);   /* frosted dark pane over the ribbed glass */
   --r:16px;
   --zone:25%;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased}
 body{min-height:100vh;
-  background:radial-gradient(1100px 700px at 50% -180px,rgba(110,140,185,.13),transparent 70%) no-repeat,var(--bg)}
+  background:radial-gradient(1100px 700px at 50% -180px,rgba(183,105,53,.10),transparent 70%) no-repeat,var(--bg)}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 a{color:var(--paper)}
-::selection{background:rgba(124,156,196,.35)}
+::selection{background:rgba(183,105,53,.35)}
 
 /* header */
 .mast{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:6px 0 18px;margin-bottom:18px;border-bottom:1px solid var(--rule)}
@@ -62,8 +66,8 @@ a{color:var(--paper)}
 .chip{display:inline-flex;align-items:center;font-size:13px;font-weight:500;padding:5px 11px;border:1px solid var(--rule2);border-radius:999px;color:var(--muted)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;min-height:44px;border-radius:12px;font-weight:600;font-size:15px;transition:transform .08s,background .15s,border-color .15s,box-shadow .15s;text-decoration:none}
 .btn:active{transform:translateY(1px)}
-.btn.primary{background:linear-gradient(180deg,#F3EBDD 0%,#E0D5C1 100%);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 -2px 0 rgba(120,95,60,.22) inset,0 14px 28px -14px rgba(236,227,210,.35)}
-.btn.primary:hover{background:linear-gradient(180deg,#F8F1E5 0%,#E6DCC9 100%)}
+.btn.primary,.btn.copper{background:var(--copper-btn);color:var(--paper);box-shadow:0 1px 0 rgba(242,232,220,.22) inset,0 -2px 0 rgba(0,0,0,.18) inset,0 14px 28px -14px rgba(183,105,53,.6)}
+.btn.primary:hover,.btn.copper:hover{background:#864D28}
 .btn.ghost{border:1px solid var(--rule2);background:var(--panel);box-shadow:var(--raise)}
 .btn.ghost:hover{border-color:rgba(236,227,210,.32)}
 .btn:focus-visible,.mode:focus-visible,.opt:focus-visible,a:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
@@ -80,14 +84,14 @@ dialog::backdrop{background:rgba(5,7,11,.72);backdrop-filter:blur(3px)}
 dialog h2{font-weight:600;font-size:24px;letter-spacing:-.02em;margin-bottom:12px}
 dialog p{line-height:1.55;margin-bottom:6px;color:var(--muted)}
 .dlgActions{display:flex;justify-content:flex-end;gap:12px;margin-top:22px;flex-wrap:wrap}
-.btn.twitch{background:linear-gradient(180deg,#F3EBDD 0%,#E0D5C1 100%);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 -2px 0 rgba(120,95,60,.22) inset,0 14px 28px -14px rgba(236,227,210,.35)}
+.btn.twitch{background:var(--copper-btn);color:var(--paper);box-shadow:0 1px 0 rgba(242,232,220,.22) inset,0 -2px 0 rgba(0,0,0,.18) inset}
 .muted{color:var(--muted)}
 
 /* a round 3D ball, for small markers anywhere */
 .ball{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 3px 6px rgba(0,0,0,.5);
   background:radial-gradient(circle at 35% 30%,#fff 0%,var(--paper) 42%,#7E848F 100%)}
-.ball.blue{background:radial-gradient(circle at 35% 30%,#C9D7EA 0%,#7C9CC4 45%,#3E5677 100%)}
-.ball.orange{background:radial-gradient(circle at 35% 30%,#EBCBAE 0%,#C48A58 45%,#6E4526 100%)}
+.ball.blue{background:radial-gradient(circle at 35% 30%,#DCE5EF 0%,#7F95AD 45%,#3B4C5E 100%)}
+.ball.orange{background:radial-gradient(circle at 35% 30%,#F1CDAE 0%,#B76935 45%,#5E3218 100%)}
 .ball.sage{background:radial-gradient(circle at 35% 30%,#D3E3D7 0%,#8FB39A 45%,#465E4D 100%)}
 .ball.lilac{background:radial-gradient(circle at 35% 30%,#DCD4EC 0%,#A99BC9 45%,#544870 100%)}
 
