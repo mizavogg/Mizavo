@@ -5,6 +5,7 @@ A browser game for Twitch streamers: the streamer plays against their own chat o
 The name comes from the Arabic word *mizan* (ميزان): balance, scale, measuring instrument.
 
 Live site: https://mizavo.mizavogg.workers.dev
+Admi site: https://mizavo.mizavogg.workers.dev/admi
 
 ## Repo layout
 
