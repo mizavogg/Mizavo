@@ -41,3 +41,17 @@ input,select{font:inherit;color:inherit}
 .btn.ghost:hover{background:var(--ink2)}
 .btn:focus-visible,.mode:focus-visible,.opt:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
 kbd{font-family:var(--mono);font-size:11px;padding:1px 5px;border:1px solid currentColor;margin-left:6px;opacity:.7}
+
+/* shared: logged-in user, small buttons, errors, dialogs */
+.who{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:700}
+.btn.small{padding:8px 12px;font-size:12px;min-height:44px}
+.btn.danger{background:var(--pink);color:var(--ink);box-shadow:4px 4px 0 var(--paper)}
+.btn:disabled{opacity:.4;cursor:default}
+.err{border:2px solid var(--pink);color:var(--pink);padding:10px 12px;margin:14px 0;font-size:13px;font-weight:700}
+dialog{background:var(--ink);color:var(--paper);border:3px solid var(--paper);box-shadow:8px 8px 0 var(--pink);padding:22px;max-width:min(620px,calc(100% - 24px));width:100%;margin:auto}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+dialog h2{font-family:var(--display);font-weight:400;font-size:26px;margin-bottom:12px}
+dialog p{line-height:1.55;margin-bottom:6px}
+.dlgActions{display:flex;justify-content:flex-end;gap:14px;margin-top:20px;flex-wrap:wrap}
+.btn.twitch{background:#9146ff;color:#fff;box-shadow:4px 4px 0 var(--paper)}
+.muted{color:var(--muted)}

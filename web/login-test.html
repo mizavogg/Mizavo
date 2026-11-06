@@ -43,13 +43,7 @@
 </div>
 
 <script type="module">
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-  // Public project address + publishable key (safe to be in a web page; access is controlled by the database rules)
-  const supabase = createClient(
-    'https://puhnuwstlujkvevsromj.supabase.co',
-    'sb_publishable_hu0RB8qzJWkgLMXkVh7tgg_GrV5EpA9'
-  );
+  import { supabase } from './src/lib/supabase';
 
   const $ = (id) => document.getElementById(id);
   const show = (id, on) => $(id).classList.toggle('hidden', !on);

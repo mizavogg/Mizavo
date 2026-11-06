@@ -9,41 +9,56 @@ Live site: https://mizavo.mizavogg.workers.dev
 ## Repo layout
 
 ```
-web/                  everything the website serves (uploaded to Cloudflare)
-  index.html          the game page (layout only)
-  admin.html          admin page: review, approve, edit or retire draft questions (admins only)
-  login-test.html     Twitch login test page
-  css/theme.css       shared "Night Edition" look: colors, fonts, header, buttons
-  css/style.css       game page styles
-  css/admin.css       admin page styles
-  js/questions.js     question list (temporary, until questions load from Supabase)
-  js/helpers.js       shared helpers, colors, game state
-  js/streamer-mode.js clear space on the right for a webcam + chat overlay
-  js/arena.js         vote dots, bins, physics, canvas drawing
-  js/game.js          rounds, timer, reveal, final results
-  js/chat.js          reading votes from Twitch chat (anonymous, read-only)
-  js/demo.js          simulated viewers for testing
-  js/main.js          connects buttons, keys and settings, starts the game
-  js/supabase.js      shared database connection (for pages that log in)
-  js/admin.js         admin page logic
+web/                    the website (Vite + TypeScript)
+  index.html            game page: logged-out preview, setup, game, results
+  admin.html            admin page: review, approve, edit or retire draft questions (admins only)
+  login-test.html       Twitch login test page
+  src/styles/           theme.css (shared Night Edition look), game.css, admin.css
+  src/lib/              supabase.ts (database connection + login), dom.ts (small helpers)
+  src/game/
+    main.ts             login, settings, buttons and keys: everything starts here
+    flow.ts             game flow: start, rounds, timer, reveal, results, resume, end game
+    api.ts              the game's database calls, with their exact shapes
+    state.ts            the shared game state and types
+    arena.ts            vote dots, bins, physics, canvas drawing
+    chat.ts             reading votes from Twitch chat (anonymous, read-only)
+    demo.ts             simulated viewers (games with them are saved as test games)
+    attract.ts          the looping preview shown to logged-out visitors
+    streamer-mode.ts    clear space on the right for a webcam + chat overlay
+  src/admin/main.ts     admin page logic
+  vite.config.ts        build settings (one entry per page)
 supabase/
-  migrations/         database: tables, game API, nightly pool builder, admin tools, Twitch login
+  migrations/           database: tables, game API, pool builder, admin tools, Twitch login, test games
 docs/
-  decisions.md        product decisions, in order
+  decisions.md          product decisions, in order
 ```
 
-Folders added later, when their work starts: `content/` (question source files), `pipeline/` (Python + pandas), `analytics/` (SQL + Tableau).
+Questions are never stored in this repo. They live only in Supabase, and the game receives one question at a time, without its answer, until the round is revealed.
+
+Folders added later, when their work starts: `pipeline/` (Python + pandas content pipeline), `analytics/` (SQL + Tableau).
 
 ## Run locally
 
-Open `web/index.html` in a browser. No build step yet. The game's scripts load in the order listed above (questions.js through main.js), and later files use things from earlier ones, so keep that order. The admin page needs a real web address for Twitch login, so test it on the live site.
+```
+cd web
+npm install
+npm run dev        # local preview at http://localhost:5173
+npm run check      # type-check only
+```
+
+Twitch login only works on the live address (it's the only one Supabase allows), so test logged-in features there.
 
 ## Deploy
 
-Zip the **contents** of `web/` (not the folder itself) and upload to the Cloudflare Worker "mizavo".
+```
+cd web
+npm run build      # type-checks, then writes the finished site to web/dist/
+```
+
+Zip the **contents** of `web/dist/` and upload them to the Cloudflare Worker "mizavo".
 
 ## Tech
 
-Supabase (Postgres, Auth with Twitch login, Edge Functions, pg_cron) · Cloudflare · HTML/CSS/JavaScript client (moving to Vite + TypeScript) · Python + pandas content pipeline · Tableau/Excel analytics.
+Supabase (Postgres, Auth with Twitch login, Edge Functions, pg_cron) · Cloudflare · Vite + TypeScript client · Python + pandas content pipeline · Tableau/Excel analytics.
 
 Built by Aiden Jajo, with AI assistance (Claude) for code.

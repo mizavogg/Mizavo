@@ -1,4 +1,4 @@
-/* Mizavo — style.css
+/* Mizavo — game.css
    Game page only. Load theme.css first. */
 
 /* layout: game area + optional streamer overlay zone */
@@ -112,3 +112,26 @@ textarea.copy{width:100%;margin-top:14px;background:var(--ink);border:2px solid 
   .side .v{font-size:38px}
   .stamp{width:62px;height:62px} .stamp b{font-size:24px}
 }
+
+/* logged-out preview: the game screen runs a demo behind the login panel */
+.gate{display:none;flex-direction:column;align-items:flex-start;gap:16px;margin-top:22px;border-top:2px solid var(--paper);padding-top:18px}
+.gate p{font-size:15px;line-height:1.55;max-width:620px;color:var(--muted)}
+body[data-phase="gate"] .gate{display:flex}
+body[data-phase="gate"] .gtop,
+body[data-phase="gate"] #opts,
+body[data-phase="gate"] #below,
+body[data-phase="gate"] #explain{display:none!important}
+body[data-phase="gate"] .statement{color:var(--paper)}
+body[data-phase="loading"] .stamp{visibility:hidden}
+
+/* resume an unfinished game */
+.resume{border:3px solid var(--yellow);box-shadow:5px 5px 0 var(--yellow);padding:14px 16px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.resume p{flex:1;min-width:240px;font-weight:700;font-size:14px;line-height:1.5}
+.resume .row{display:flex;gap:12px}
+.chip.test{border-color:var(--yellow);color:var(--yellow)}
+.gtop .quit{margin-left:auto}
+.gtop .stamp{margin-left:14px}
+
+/* keep the header to one line while playing */
+body:not([data-phase="setup"]):not([data-phase="final"]) #who{display:none!important}
+body[data-phase="gate"] #status{display:none}

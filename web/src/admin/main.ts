@@ -1,62 +1,55 @@
-/* Mizavo — admin.js
+/* Mizavo — admin page (src/admin/main.ts)
    The admin review page: log in with Twitch, then approve, edit or retire draft questions.
    Every action goes through the database's admin functions, which check that you're an admin.
    This page never decides who is an admin; the database does. */
-import { supabase } from './supabase.js';
+import { supabase, rpc, loginWithTwitch } from '../lib/supabase';
+import { $, el, show } from '../lib/dom';
 
 /* ---------- constants ---------- */
 const UNDO_MS = 5000;   // approving waits this long before saving, so a mis-tap can be undone
+type Status = 'draft' | 'approved' | 'retired';
+interface Question {
+  id: string; mode: 'ff' | 'ooo'; payload: { statement?: string; items?: string[] }; answer: boolean | number;
+  explanation: string; difficulty: 1 | 2 | 3; category: string; fact_key: string; source_url: string;
+  origin: string; status: Status; open_reports?: number;
+}
+interface Dashboard { drafts: number; approved: number; retired: number; approved_by_mode_and_difficulty: Record<string, number> | null }
+interface Pending { q: Question; at: number; ends: number; timer: number; tick: number }
+
 const CATEGORIES = ['animals', 'space', 'geography', 'history', 'food', 'science', 'human_body', 'pop_culture', 'language'];
-const DIFF = { 1: 'easy', 2: 'medium', 3: 'hard' };
-const MODE = { ff: 'Fact or Fake', ooo: 'Odd One Out' };
+const DIFF: Record<number, string> = { 1: 'easy', 2: 'medium', 3: 'hard' };
+const MODE: Record<string, string> = { ff: 'Fact or Fake', ooo: 'Odd One Out' };
 const KEYS = ['A', 'B', 'C', 'D'];
 
 /* ---------- page state ---------- */
 const A = {
-  tab: 'draft',
-  drafts: [],        // the review queue
-  idx: 0,            // which draft is on screen
-  lists: {},         // cached approved / retired lists
-  dash: null,        // counts from admin_dashboard
-  pending: null,     // an approval waiting out its undo window: { q, at, timer, tick }
+  tab: 'draft' as Status,
+  drafts: [] as Question[],                         // the review queue
+  idx: 0,                                           // which draft is on screen
+  lists: {} as Partial<Record<Status, Question[]>>, // cached approved / retired lists
+  dash: null as Dashboard | null,                   // counts from admin_dashboard
+  pending: null as Pending | null,                  // an approval waiting out its undo window
   bootRun: 0,
 };
 
 /* ---------- small helpers ---------- */
-const $ = (s) => document.querySelector(s);
-function el(tag, cls, text) {
-  const n = document.createElement(tag);
-  if (cls) n.className = cls;
-  if (text != null) n.textContent = text;   // always textContent: question text is never treated as HTML
-  return n;
-}
-function chip(text, cls) { return el('span', 'chip' + (cls ? ' ' + cls : ''), text); }
-const prettyCat = (c) => c.replace('_', ' ');
-const show = (node, on) => node.classList.toggle('hidden', !on);
-
-async function rpc(name, args) {
-  const { data, error } = await supabase.rpc(name, args);
-  if (error) throw new Error(error.message);
-  return data;
-}
+function chip(text: string, cls?: string) { return el('span', 'chip' + (cls ? ' ' + cls : ''), text); }
+const prettyCat = (c: string) => c.replace('_', ' ');
+const val = (sel: string) => $<HTMLInputElement>(sel).value;
 
 /* ---------- login gate ---------- */
-function gate(msg, { login = false } = {}) {
+function gate(msg: string, { login = false } = {}) {
   show($('#app'), false); show($('#gate'), true);
   $('#gateMsg').textContent = msg;
   show($('#loginBtn'), login);
 }
 
 $('#loginBtn').onclick = async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'twitch',
-    options: { redirectTo: window.location.origin + window.location.pathname },
-  });
-  if (error) gate('Login failed: ' + error.message, { login: true });
+  try { await loginWithTwitch(); } catch (e) { gate('Login failed: ' + (e as Error).message, { login: true }); }
 };
 $('#logoutBtn').onclick = async () => { await flushPending(); await supabase.auth.signOut(); };
 
-async function boot(session) {
+async function boot(session: { user: { user_metadata?: Record<string, string> } } | null) {
   const run = ++A.bootRun;
   if (!session) { show($('#who'), false); return gate('Log in with Twitch to review questions.', { login: true }); }
 
@@ -66,8 +59,9 @@ async function boot(session) {
   gate('Checking admin access…');
 
   try {
-    A.dash = await rpc('admin_dashboard');
-  } catch (e) {
+    A.dash = await rpc<Dashboard>('admin_dashboard');
+  } catch (err) {
+    const e = err as Error;
     if (run !== A.bootRun) return;
     if (/not_admin/.test(e.message)) return gate("This Twitch account isn't a Mizavo admin, so there's nothing to review here.");
     return gate('Something went wrong loading the admin data: ' + e.message);
@@ -79,17 +73,17 @@ async function boot(session) {
 }
 
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') boot(session);
+  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') setTimeout(() => boot(session), 0);
 });
 
 /* ---------- counts + difficulty balance ---------- */
 async function refreshDash() {
-  try { A.dash = await rpc('admin_dashboard'); renderStats(); } catch (e) { /* counts are a nice-to-have; keep going */ }
+  try { A.dash = await rpc<Dashboard>('admin_dashboard'); renderStats(); } catch { /* counts are a nice-to-have; keep going */ }
 }
 function renderStats() {
   const d = A.dash; if (!d) return;
   const box = $('#stats'); box.replaceChildren();
-  const stat = (k, v, cls) => { const s = el('div', 'stat ' + (cls || '')); s.append(el('div', 'k', k), el('div', 'v', String(v))); return s; };
+  const stat = (k: string, v: number, cls?: string) => { const s = el('div', 'stat ' + (cls || '')); s.append(el('div', 'k', k), el('div', 'v', String(v))); return s; };
   box.append(stat('DRAFTS', d.drafts, 'drafts'), stat('APPROVED', d.approved), stat('RETIRED', d.retired));
 
   const bal = el('div', 'bal');
@@ -111,10 +105,10 @@ function renderStats() {
 }
 
 /* ---------- tabs ---------- */
-document.querySelectorAll('.tab').forEach((b) => b.onclick = () => setTab(b.dataset.tab));
-async function setTab(tab) {
+document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.onclick = () => setTab(b.dataset.tab as Status));
+async function setTab(tab: Status) {
   A.tab = tab;
-  document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('sel', b.dataset.tab === tab));
+  document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.classList.toggle('sel', b.dataset.tab === tab));
   show($('#reviewPane'), tab === 'draft'); show($('#listPane'), tab !== 'draft');
   if (tab === 'draft') return renderCard();
   await renderList(tab);
@@ -124,17 +118,17 @@ async function setTab(tab) {
 async function loadDrafts() {
   $('#reviewPane').replaceChildren(el('p', 'empty', 'Loading drafts…'));
   try {
-    A.drafts = await rpc('admin_list_questions', { p_status: 'draft', p_limit: 500 });
+    A.drafts = await rpc<Question[]>('admin_list_questions', { p_status: 'draft', p_limit: 500 });
   } catch (e) {
-    $('#reviewPane').replaceChildren(el('p', 'err', 'Could not load drafts: ' + e.message));
+    $('#reviewPane').replaceChildren(el('p', 'err', 'Could not load drafts: ' + (e as Error).message));
     return;
   }
   A.idx = 0;
   if (A.tab === 'draft') renderCard();
 }
-const current = () => A.drafts[A.idx] || null;
+const current = (): Question | null => A.drafts[A.idx] || null;
 
-function renderCard(errMsg) {
+function renderCard(errMsg?: string) {
   const pane = $('#reviewPane'); pane.replaceChildren();
   if (errMsg) pane.append(el('p', 'err', errMsg));
   const q = current();
@@ -154,12 +148,12 @@ function renderCard(errMsg) {
   // the question, the way players see it, with the answer marked
   const pv = el('div', 'preview');
   if (q.mode === 'ff') {
-    pv.append(el('span', 'sticker', 'TRUE OR NOT?'), el('div', 'statement', q.payload.statement));
+    pv.append(el('span', 'sticker', 'TRUE OR NOT?'), el('div', 'statement', q.payload.statement ?? ''));
     pv.append(el('span', 'verdict ' + (q.answer ? 'fact' : 'fake'), 'ANSWER: ' + (q.answer ? 'FACT' : 'FAKE')));
   } else {
     pv.append(el('span', 'sticker', 'ODD ONE OUT'));
     const grid = el('div', 'items');
-    q.payload.items.forEach((it, i) => {
+    (q.payload.items ?? []).forEach((it, i) => {
       const box = el('div', 'item' + (i === q.answer ? ' odd' : ''));
       box.append(el('span', 'key', KEYS[i] + (i === q.answer ? ' · THE ODD ONE' : '')), document.createTextNode(it));
       grid.append(box);
@@ -181,7 +175,7 @@ function renderCard(errMsg) {
 
   // actions
   const act = el('div', 'actions');
-  const btn = (label, key, cls, fn) => { const b = el('button', 'btn ' + cls); b.append(document.createTextNode(label)); const k = el('kbd', null, key); b.append(k); b.onclick = fn; return b; };
+  const btn = (label: string, key: string, cls: string, fn: () => void) => { const b = el('button', 'btn ' + cls); b.append(document.createTextNode(label)); const k = el('kbd', null, key); b.append(k); b.onclick = fn; return b; };
   act.append(
     btn('Approve', 'A', 'primary', approveCurrent),
     btn('Edit', 'E', 'ghost', openEdit),
@@ -205,14 +199,14 @@ function approveCurrent() {
   if (A.pending) commitPending();             // a second approve saves the first one right away
   A.drafts.splice(A.idx, 1);
   if (A.idx >= A.drafts.length) A.idx = 0;
-  const p = { q, at: A.idx, ends: Date.now() + UNDO_MS };
-  p.timer = setTimeout(commitPending, UNDO_MS);
-  p.tick = setInterval(() => updateToast(p), 250);
+  const p: Pending = { q, at: A.idx, ends: Date.now() + UNDO_MS, timer: 0, tick: 0 };
+  p.timer = window.setTimeout(commitPending, UNDO_MS);
+  p.tick = window.setInterval(() => updateToast(p), 250);
   A.pending = p;
   updateToast(p);
   renderCard();
 }
-function updateToast(p) {
+function updateToast(p: Pending) {
   const secs = Math.max(0, Math.ceil((p.ends - Date.now()) / 1000));
   toast(`Approved: saving in ${secs}s`, true);
 }
@@ -228,67 +222,64 @@ async function commitPending() {
   const p = A.pending; if (!p) return;
   clearTimeout(p.timer); clearInterval(p.tick); A.pending = null;
   try {
-    const r = await rpc('admin_approve_questions', { p_ids: [p.q.id] });
+    const r = await rpc<{ approved: number }>('admin_approve_questions', { p_ids: [p.q.id] });
     if (r.approved !== 1) throw new Error('the database did not approve it (it may no longer be a draft)');
     toast('Approved and saved.', false, 1800);
     delete A.lists.approved;
     refreshDash();
   } catch (e) {
     A.drafts.splice(Math.min(p.at, A.drafts.length), 0, p.q);   // put it back so nothing is lost
-    if (A.tab === 'draft') renderCard('Approve failed, so the question is back in the queue: ' + e.message);
+    if (A.tab === 'draft') renderCard('Approve failed, so the question is back in the queue: ' + (e as Error).message);
     hideToast();
   }
 }
 const flushPending = () => (A.pending ? commitPending() : Promise.resolve());
 window.addEventListener('beforeunload', (e) => { if (A.pending) { e.preventDefault(); e.returnValue = ''; } });
 
-let toastTimer = null;
-function toast(msg, withUndo, hideAfter) {
+let toastTimer = 0;
+function toast(msg: string, withUndo: boolean, hideAfter?: number) {
   clearTimeout(toastTimer);
   $('#toastMsg').textContent = msg; show($('#undoBtn'), withUndo); show($('#toast'), true);
-  if (hideAfter) toastTimer = setTimeout(hideToast, hideAfter);
+  if (hideAfter) toastTimer = window.setTimeout(hideToast, hideAfter);
 }
 function hideToast() { show($('#toast'), false); }
 $('#undoBtn').onclick = undoPending;
 
 /* ---------- retire (asks first) ---------- */
-const retireDlg = $('#retireDlg');
+const retireDlg = $<HTMLDialogElement>('#retireDlg');
 function openRetire() { if (current()) retireDlg.showModal(); }
 $('#retireCancel').onclick = () => retireDlg.close();
 $('#retireOk').onclick = async () => {
   const q = current(); retireDlg.close(); if (!q) return;
   try {
-    const r = await rpc('admin_retire_questions', { p_ids: [q.id] });
+    const r = await rpc<{ retired: number }>('admin_retire_questions', { p_ids: [q.id] });
     if (r.retired !== 1) throw new Error('the database did not retire it');
     A.drafts.splice(A.drafts.indexOf(q), 1);
     if (A.idx >= A.drafts.length) A.idx = 0;
     delete A.lists.retired;
     toast('Retired.', false, 1800);
     renderCard(); refreshDash();
-  } catch (e) { renderCard('Retire failed: ' + e.message); }
+  } catch (e) { renderCard('Retire failed: ' + (e as Error).message); }
 };
 
 /* ---------- edit a draft ---------- */
-const editDlg = $('#editDlg');
+const editDlg = $<HTMLDialogElement>('#editDlg');
 $('#fCategory').append(...CATEGORIES.map((c) => { const o = el('option', null, prettyCat(c)); o.value = c; return o; }));
-const countExpl = () => { $('#explCount').textContent = `(${$('#fExplanation').value.trim().length}/300, at least 10)`; };
+const countExpl = () => { $('#explCount').textContent = `(${val('#fExplanation').trim().length}/300, at least 10)`; };
 $('#fExplanation').oninput = countExpl;
 
 function openEdit() {
   const q = current(); if (!q) return;
   show($('#ffFields'), q.mode === 'ff'); show($('#oooFields'), q.mode === 'ooo');
-  if (q.mode === 'ff') {
-    $('#fStatement').value = q.payload.statement;
-    document.querySelector(`input[name=fAnswerFF][value="${q.answer}"]`).checked = true;
-  } else {
-    q.payload.items.forEach((it, i) => { $('#fItem' + i).value = it; });
-    document.querySelector(`input[name=fAnswerOOO][value="${q.answer}"]`).checked = true;
-  }
-  $('#fExplanation').value = q.explanation; countExpl();
-  $('#fDifficulty').value = String(q.difficulty);
-  $('#fCategory').value = q.category;
-  $('#fSource').value = q.source_url;
-  $('#fFactKey').value = q.fact_key;
+  const radio = (name: string, v: unknown) => { $<HTMLInputElement>(`input[name=${name}][value="${String(v)}"]`).checked = true; };
+  const setVal = (sel: string, v: string) => { $<HTMLInputElement>(sel).value = v; };
+  if (q.mode === 'ff') { setVal('#fStatement', q.payload.statement ?? ''); radio('fAnswerFF', q.answer); }
+  else { (q.payload.items ?? []).forEach((it, i) => setVal('#fItem' + i, it)); radio('fAnswerOOO', q.answer); }
+  setVal('#fExplanation', q.explanation); countExpl();
+  setVal('#fDifficulty', String(q.difficulty));
+  setVal('#fCategory', q.category);
+  setVal('#fSource', q.source_url);
+  setVal('#fFactKey', q.fact_key);
   show($('#editErr'), false);
   editDlg.showModal();
 }
@@ -297,22 +288,24 @@ $('#editCancel').onclick = () => editDlg.close();
 $('#editForm').onsubmit = async (e) => {
   e.preventDefault();
   const q = current(); if (!q) return editDlg.close();
-  const changes = {
-    explanation: $('#fExplanation').value.trim(),
-    difficulty: +$('#fDifficulty').value,
-    category: $('#fCategory').value,
-    source_url: $('#fSource').value.trim(),
-    fact_key: $('#fFactKey').value.trim(),
+  const changes: Partial<Question> & { explanation: string; source_url: string; fact_key: string } = {
+    explanation: val('#fExplanation').trim(),
+    difficulty: +val('#fDifficulty') as 1 | 2 | 3,
+    category: val('#fCategory'),
+    source_url: val('#fSource').trim(),
+    fact_key: val('#fFactKey').trim(),
   };
-  const problems = [];
+  const checked = (name: string) => $<HTMLInputElement>(`input[name=${name}]:checked`).value;
+  const problems: string[] = [];
   if (q.mode === 'ff') {
-    changes.payload = { statement: $('#fStatement').value.trim() };
-    changes.answer = document.querySelector('input[name=fAnswerFF]:checked').value === 'true';
-    if (!changes.payload.statement) problems.push('The statement is empty.');
+    const statement = val('#fStatement').trim();
+    changes.payload = { statement };
+    changes.answer = checked('fAnswerFF') === 'true';
+    if (!statement) problems.push('The statement is empty.');
   } else {
-    const items = [0, 1, 2, 3].map((i) => $('#fItem' + i).value.trim());
+    const items = [0, 1, 2, 3].map((i) => val('#fItem' + i).trim());
     changes.payload = { items };
-    changes.answer = +document.querySelector('input[name=fAnswerOOO]:checked').value;
+    changes.answer = +checked('fAnswerOOO');
     if (items.some((x) => !x)) problems.push('All four items need text.');
     if (new Set(items.map((x) => x.toLowerCase())).size < 4) problems.push('The four items must all be different.');
   }
@@ -321,7 +314,7 @@ $('#editForm').onsubmit = async (e) => {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(changes.fact_key)) problems.push('The fact key must be lowercase words joined by dashes, like octopus-hearts.');
   if (problems.length) { $('#editErr').textContent = problems.join(' '); show($('#editErr'), true); return; }
 
-  $('#editSave').disabled = true;
+  $<HTMLButtonElement>('#editSave').disabled = true;
   try {
     await rpc('admin_edit_draft', { p_id: q.id, p_changes: changes });
     Object.assign(q, changes);
@@ -329,30 +322,31 @@ $('#editForm').onsubmit = async (e) => {
     toast('Saved. Still a draft: approve it when it looks right.', false, 2500);
     renderCard();
   } catch (err) {
-    $('#editErr').textContent = 'The database rejected the change: ' + err.message;
+    $('#editErr').textContent = 'The database rejected the change: ' + (err as Error).message;
     show($('#editErr'), true);
-  } finally { $('#editSave').disabled = false; }
+  } finally { $<HTMLButtonElement>('#editSave').disabled = false; }
 };
 
 /* ---------- approved / retired lists (read-only) ---------- */
-async function renderList(status) {
+async function renderList(status: Status) {
   const pane = $('#listPane');
   if (!A.lists[status]) {
     pane.replaceChildren(el('p', 'empty', 'Loading…'));
-    try { A.lists[status] = await rpc('admin_list_questions', { p_status: status, p_limit: 500 }); }
-    catch (e) { pane.replaceChildren(el('p', 'err', 'Could not load: ' + e.message)); return; }
+    try { A.lists[status] = await rpc<Question[]>('admin_list_questions', { p_status: status, p_limit: 500 }); }
+    catch (e) { pane.replaceChildren(el('p', 'err', 'Could not load: ' + (e as Error).message)); return; }
   }
   if (A.tab !== status) return;
-  const rows = A.lists[status];
+  const rows = A.lists[status] ?? [];
   pane.replaceChildren();
   if (!rows.length) { pane.append(el('p', 'empty', status === 'approved' ? 'Nothing approved yet.' : 'Nothing retired.')); return; }
   const ul = el('ul', 'list');
   for (const q of rows) {
     const li = el('li'), text = el('div', 'q');
     if (q.mode === 'ff') {
-      text.append(document.createTextNode(q.payload.statement + ' '), el('span', 'ans', '→ ' + (q.answer ? 'FACT' : 'FAKE')));
+      text.append(document.createTextNode((q.payload.statement ?? '') + ' '), el('span', 'ans', '→ ' + (q.answer ? 'FACT' : 'FAKE')));
     } else {
-      text.append(document.createTextNode(q.payload.items.join(' · ') + ' '), el('span', 'ans', '→ ' + q.payload.items[q.answer]));
+      const items = q.payload.items ?? [];
+      text.append(document.createTextNode(items.join(' · ') + ' '), el('span', 'ans', '→ ' + items[q.answer as number]));
     }
     const tags = el('div', 'tags');
     tags.append(chip(q.mode === 'ff' ? 'FF' : 'OOO'), chip(DIFF[q.difficulty], DIFF[q.difficulty]), chip(prettyCat(q.category)));
@@ -365,7 +359,7 @@ async function renderList(status) {
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (document.querySelector('dialog[open]')) return;
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement).tagName)) return;
   const k = e.key.toLowerCase();
   if (k === 'u' && A.pending) { e.preventDefault(); return undoPending(); }
   if (A.tab !== 'draft' || $('#app').classList.contains('hidden')) return;

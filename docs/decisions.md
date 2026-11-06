@@ -29,3 +29,7 @@ Every product decision, newest at the bottom.
 | Nov 5, 2026 | Game code split into separate files (page, styles, scripts); repo organized into web/, supabase/, docs/ | Clean, organized and easy to keep running smoothly |
 | Nov 5, 2026 | GitHub repo is public | Portfolio project; the database is protected by its access rules, not by hiding the code |
 | Nov 5, 2026 | Question content never goes in the public repo. Real questions live only in Supabase; the test questions come out of the code when the game connects to the database | Viewers could read the answers |
+| Nov 5, 2026 | Logged-out visitors see a "Log in with Twitch to play" panel over a looping demo of votes pouring in; questions only load for logged-in streamers | The site still looks alive to curious viewers, and answers never reach anyone who isn't playing |
+| Nov 5, 2026 | Simulated chat stays for now (I'll remove it eventually). Games played with it are saved as test games: fake votes never touch question stats or the daily numbers, while real viewers who vote still get their points | Handy for testing and practice without skewing real data |
+| Nov 5, 2026 | The game now gets its questions from the database one round at a time, and the answer only after the reveal; the test questions are out of the code | No answers in the public repo or in the page |
+| Nov 5, 2026 | Client moved to Vite + TypeScript, as planned in the tech stack | Catches mistakes before they reach players; the deploy is still one zip |

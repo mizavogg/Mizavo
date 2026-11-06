@@ -2,12 +2,6 @@
    Admin review page only. Load theme.css first. */
 
 .wrap{max-width:920px;margin:0 auto;padding:16px 20px 120px}
-.edition{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.spacer{flex:1}
-.who{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:700}
-.btn.small{padding:8px 12px;font-size:12px;min-height:44px}
-.btn.danger{background:var(--pink);color:var(--ink);box-shadow:4px 4px 0 var(--paper)}
-.btn:disabled{opacity:.4;cursor:default}
 a{color:var(--blue)} a:hover{color:var(--paper)}
 
 /* gate (logged out / not admin) */
@@ -60,7 +54,6 @@ a{color:var(--blue)} a:hover{color:var(--paper)}
 .actions .btn.retire{border:2px solid var(--pink);color:var(--pink)}
 .empty{padding:50px 0;font-size:16px;line-height:1.6}
 .empty b{font-family:var(--display);font-weight:400;font-size:28px;display:block;margin-bottom:8px}
-.err{border:2px solid var(--pink);color:var(--pink);padding:10px 12px;margin:14px 0;font-size:13px;font-weight:700}
 
 /* approved / retired lists */
 .list{list-style:none;display:flex;flex-direction:column}
@@ -76,11 +69,6 @@ a{color:var(--blue)} a:hover{color:var(--paper)}
 .toast .btn.ghost:hover{background:#e3dccb}
 
 /* dialogs */
-dialog{background:var(--ink);color:var(--paper);border:3px solid var(--paper);box-shadow:8px 8px 0 var(--pink);padding:22px;max-width:min(620px,calc(100% - 24px));width:100%;margin:auto}
-dialog::backdrop{background:rgba(0,0,0,.7)}
-dialog h2{font-family:var(--display);font-weight:400;font-size:26px;margin-bottom:12px}
-dialog p{line-height:1.55;margin-bottom:6px}
-.dlgActions{display:flex;justify-content:flex-end;gap:14px;margin-top:20px;flex-wrap:wrap}
 .fld{display:flex;flex-direction:column;gap:6px;margin-top:14px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:0}
 .fld small{text-transform:none;letter-spacing:0;font-weight:500}
 .fld legend{margin-bottom:6px}
