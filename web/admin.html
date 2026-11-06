@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Mizavo — Admin · Question review</title>
+<title>Mizavo — Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
 <div class="wrap">
   <header class="mast">
     <div class="logo">MIZAVO</div>
-    <div class="edition">Admin · question review</div>
+    <div class="edition">Admin</div>
     <div class="spacer"></div>
     <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
   </header>
@@ -40,10 +40,27 @@
       <button class="tab sel" data-tab="draft">Drafts <span id="nDraft"></span></button>
       <button class="tab" data-tab="approved">Approved <span id="nApproved"></span></button>
       <button class="tab" data-tab="retired">Retired <span id="nRetired"></span></button>
+      <button class="tab" data-tab="reports">Reports <span id="nReports"></span></button>
+      <button class="tab" data-tab="invites">Invites <span id="nInvites"></span></button>
     </nav>
 
     <div id="reviewPane"></div>
     <div class="hidden" id="listPane"></div>
+    <div class="hidden" id="reportsPane"></div>
+
+    <div class="hidden" id="invitesPane">
+      <div class="inviteMode" id="inviteMode">
+        <p id="inviteModeText">Loading…</p>
+        <button class="btn ghost small" id="inviteModeBtn"></button>
+      </div>
+      <form class="inviteAdd" id="inviteForm" novalidate>
+        <label class="fld">Twitch name or link<input id="invLogin" placeholder="e.g. twitch.tv/somestreamer" autocomplete="off" spellcheck="false"></label>
+        <label class="fld">Note <small>(optional, only you see it)</small><input id="invNote" maxlength="100" placeholder="e.g. friend from Discord"></label>
+        <button class="btn primary small" type="submit" id="invAddBtn">Invite</button>
+      </form>
+      <p class="formErr hidden" id="invErr" role="alert"></p>
+      <div id="inviteList"></div>
+    </div>
   </section>
 </div>
 
@@ -71,6 +88,16 @@
   <div class="dlgActions">
     <button class="btn ghost" id="retireCancel">Cancel</button>
     <button class="btn danger" id="retireOk">Retire it</button>
+  </div>
+</dialog>
+
+<!-- general yes/no -->
+<dialog id="confirmDlg">
+  <h2 id="confirmTitle"></h2>
+  <p id="confirmText"></p>
+  <div class="dlgActions">
+    <button class="btn ghost" id="confirmCancel">Cancel</button>
+    <button class="btn danger" id="confirmOk">OK</button>
   </div>
 </dialog>
 

@@ -2,6 +2,7 @@
    Every call runs as the logged-in streamer; the database checks they own the game. */
 import { rpc } from '../lib/supabase';
 import type { Mode, RoundType } from './state';
+import type { ReportReason } from '../lib/reasons';
 
 export interface Channel {
   channel_id: string; login: string; display_name: string; is_admin: boolean;
@@ -24,8 +25,13 @@ export interface ActiveGame {
   next_round: number | null; streamer_score: number; chat_score: number;
 }
 
+export interface Access { invite_only: boolean; can_play: boolean; login: string | null }
+
 export const api = {
   ensureChannel: () => rpc<Channel>('ensure_my_channel'),
+  access: () => rpc<Access>('my_access'),
+  report: (question: string, reason: ReportReason, note: string | null) =>
+    rpc<{ report_id: string }>('report_question', { p_question: question, p_reason: reason, p_note: note }),
   activeGame: () => rpc<ActiveGame | null>('get_active_game'),
   start: (mode: Mode, rounds: number, seconds: number, blind: boolean, test: boolean) =>
     rpc<Started>('start_game', { p_mode: mode, p_rounds: rounds, p_seconds: seconds, p_blind: blind, p_test: test }),
@@ -44,6 +50,8 @@ export function friendly(e: unknown): string {
     case 'not_enough_questions':
       return "There aren't enough new questions for that game right now. Try fewer rounds or another mode (Odd One Out needs more hard questions).";
     case 'game_in_progress': return 'You already have a game in progress.';
+    case 'not_invited': return "Mizavo is in a closed test, and this channel isn't on the invite list yet.";
+    case 'already_reported': return "You've already reported this question. Thanks, it's in the queue.";
     case 'no_channel': return 'Your Mizavo channel isn\'t set up yet. Try logging out and back in.';
     case 'channel_conflict': return 'This Twitch channel is linked to a different Mizavo login.';
     case 'game_not_found': case 'game_over': return 'That game has already ended.';

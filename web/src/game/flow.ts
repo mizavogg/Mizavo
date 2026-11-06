@@ -220,7 +220,7 @@ async function reveal(): Promise<void> {
     try { res = await api.reveal(S.session!, R.idx, R.pick, counts); }
     catch (e2) { showRoundError(friendly(e2), reveal); return; }
   }
-  R.answer = res.correct_position; R.explanation = res.explanation;
+  R.answer = res.correct_position; R.explanation = res.explanation; R.questionId = res.question_id;
   setPhase('reveal');
   $('#callout').classList.remove('show');
   S.me = res.streamer_score; S.chat = res.chat_score; updateScore();
@@ -257,7 +257,16 @@ async function reveal(): Promise<void> {
   let top: Viewer | null = null; for (const r of S.viewers.values()) if (!top || r.streak > top.streak) top = r;
   ex.append(b, ' ' + res.explanation, el('span', 'meta', top && top.streak >= 3 ? `${top.name} is on a ${top.streak}-round streak` : `Streamer picked: ${R.pick == null ? 'nothing' : R.opts[R.pick]}`));
   $('#nextBtn').replaceChildren(res.is_last ? 'Final results' : 'Next', el('kbd', null, 'Enter'));
+  resetReportBtn(false);
   show($('#below'), false); show($('#explain'), true);
+}
+
+/** The small "Report this question" button on the reveal panel. */
+export function resetReportBtn(done: boolean): void {
+  const b = $<HTMLButtonElement>('#reportBtn');
+  b.textContent = done ? 'Reported. Thanks!' : 'Report this question';
+  b.disabled = done;
+  show(b, !!S.R?.questionId);
 }
 
 /** Something failed mid-game: say so plainly and offer to retry exactly that step. */
@@ -267,6 +276,7 @@ function showRoundError(msg: string, retry: () => Promise<void>): void {
   retryStep = retry;
   $('#exText').replaceChildren(el('b', null, 'Hmm.'), ' ' + msg + ' Try again, or use End game.');
   $('#nextBtn').replaceChildren('Try again', el('kbd', null, 'Enter'));
+  show($('#reportBtn'), false);
   show($('#below'), false); show($('#explain'), true);
 }
 

@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         game: 'index.html',
         admin: 'admin.html',
+        guide: 'guide.html',
         login: 'login-test.html',
       },
     },

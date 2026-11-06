@@ -30,6 +30,8 @@ export interface Round {
   votes: Map<string, Vote>;
   pick: number | null;
   explanation?: string;
+  questionId?: string;          // arrives with the reveal; used for "Report this question"
+  reported?: boolean;
 }
 
 /** A viewer's running totals for this game (sent to the database at the end). */

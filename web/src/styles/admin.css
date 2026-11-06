@@ -88,7 +88,34 @@ input[type=radio]{accent-color:var(--yellow);width:20px;height:20px;flex:none}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .formErr{color:var(--pink);font-weight:700;font-size:13px;margin-top:14px}
 
+/* approved list: retire button */
+.list .tags .btn.small{min-height:32px;padding:4px 10px;font-size:11px}
+.btn.retire{border-color:var(--pink);color:var(--pink)}
+
+/* reports */
+.subtabs{display:flex;gap:12px;margin-bottom:18px}
+.report{border:3px solid var(--paper);padding:16px 18px;margin-bottom:18px}
+.report .cardTop{margin-bottom:10px}
+.report .from{font-size:12px;color:var(--muted);font-weight:700}
+.report .q{font-weight:700;font-size:16px;line-height:1.45}
+.report .q .ans{color:var(--mint)}
+.report .why{margin-top:8px;font-size:14px;line-height:1.5;color:var(--muted)}
+.report .src{display:block;margin-top:6px;font-size:12px;word-break:break-all}
+.report .note{margin-top:12px;border-left:4px solid var(--yellow);padding:6px 12px;font-size:14px;line-height:1.5}
+.report .resolved{margin-top:12px;font-size:13px;font-weight:700;color:var(--mint)}
+.report .actions{margin-top:14px;gap:12px}
+
+/* invites */
+.inviteMode{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border:3px solid var(--yellow);box-shadow:5px 5px 0 var(--yellow);padding:12px 16px;margin-bottom:20px}
+.inviteMode.open{border-color:var(--mint);box-shadow:5px 5px 0 var(--mint)}
+.inviteMode p{flex:1;min-width:240px;font-size:14px;line-height:1.5}
+.inviteAdd{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-bottom:6px}
+.inviteAdd .fld{margin-top:0}
+.list.invites a{color:var(--paper)}
+.list .sub{font-size:12px;color:var(--muted);font-weight:500;margin-top:4px}
+
 @media (max-width:720px){
+  .inviteAdd{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
   .bal{grid-column:1/-1}
   .stat .v{font-size:26px}

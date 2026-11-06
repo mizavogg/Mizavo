@@ -59,7 +59,7 @@
     <p class="note hidden" id="zoneNote">This window is too narrow for streamer mode. Widen it (or use a 1280px+ browser source) and the space will appear.</p>
     <p class="err hidden" id="setupErr" role="alert"></p>
     <div class="startrow"><button class="btn primary" id="startBtn">Start game <kbd>Enter</kbd></button></div>
-    <p class="note">Reads Twitch chat anonymously — no bot account, and Mizavo never posts in your chat. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's latest vote counts. Pick with the number keys, arrow keys or by tapping.</p>
+    <p class="note">Reads Twitch chat anonymously — no bot account, and Mizavo never posts in your chat. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's latest vote counts. Pick with the number keys, arrow keys or by tapping. <a href="/guide.html">Streamer guide (OBS setup, tips) →</a></p>
   </section>
 
   <!-- GAME (also the logged-out preview) -->
@@ -74,9 +74,15 @@
       <div class="banner" id="banner"></div>
     </div>
     <div class="gate" id="gatePanel">
-      <p>Play against your own Twitch chat. Log in so your games, scores and questions stay with your channel.</p>
+      <p id="gateIntro">Play against your own Twitch chat. Log in so your games, scores and questions stay with your channel.</p>
+      <div class="closed hidden" id="closedBox">
+        <span class="sticker">CLOSED TEST</span>
+        <p><b>Mizavo is invite-only for now.</b> <span id="closedWho">This channel</span> isn't on the invite list yet. If a streamer friend shared Mizavo with you, send them your Twitch name and they can add you. This page will let you in as soon as you're on the list.</p>
+        <button class="btn ghost small" id="closedRetry">Check again</button>
+      </div>
       <button class="btn twitch" id="loginBtn">Log in with Twitch to play</button>
       <p class="err hidden" id="gateMsg" role="alert"></p>
+      <a class="guideLink" href="/guide.html">New here? Read the streamer guide →</a>
     </div>
     <div class="opts" id="opts"></div>
     <div class="below hidden" id="below">
@@ -85,7 +91,10 @@
     </div>
     <div class="explain hidden" id="explain">
       <p id="exText"></p>
-      <button class="btn primary" id="nextBtn">Next <kbd>Enter</kbd></button>
+      <div class="exActions">
+        <button class="btn link hidden" id="reportBtn">Report this question</button>
+        <button class="btn primary" id="nextBtn">Next <kbd>Enter</kbd></button>
+      </div>
     </div>
   </section>
 
@@ -122,6 +131,20 @@
     <button class="btn ghost" id="confirmCancel">Cancel</button>
     <button class="btn danger" id="confirmOk">OK</button>
   </div>
+</dialog>
+
+<dialog id="reportDlg">
+  <form id="reportForm" novalidate>
+    <h2>Report this question</h2>
+    <p class="what" id="reportWhat"></p>
+    <fieldset class="reasons" id="reportReasons"><legend>What's wrong with it?</legend></fieldset>
+    <label class="fld">Note <small>(optional; needed for "Something else")</small><textarea id="reportNote" rows="3" maxlength="500" placeholder="e.g. this changed in 2024, or a better source"></textarea></label>
+    <p class="err hidden" id="reportErr" role="alert"></p>
+    <div class="dlgActions">
+      <button class="btn ghost" type="button" id="reportCancel">Cancel</button>
+      <button class="btn danger" type="submit" id="reportSend">Send report</button>
+    </div>
+  </form>
 </dialog>
 
 <script type="module" src="/src/game/main.ts"></script>

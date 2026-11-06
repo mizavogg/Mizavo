@@ -36,3 +36,7 @@ Every product decision, newest at the bottom.
 | Nov 5, 2026 | Content pipeline: questions come from both generated real-world data (for volume and hard Odd One Out) and handwritten batches (for fun facts data can't produce) | Volume and variety, plus real data work for my portfolio |
 | Nov 5, 2026 | Drafts go into the database through an "Import drafts" button on the admin page | No secret service key needed anywhere |
 | Nov 5, 2026 | First batch: about 300 drafts | Real variety, still reviewable over a few sessions |
+| Nov 5, 2026 | Start a small closed test with a few invited streamers before launch; the beta is a test, not the launch | Real streamers find problems I can't, while the "no launch until the backend is done" rule still holds |
+| Nov 5, 2026 | Beta prep: streamers can report a bad question from the reveal screen; I handle reports and can retire live questions from the admin page | Mistakes get caught and pulled fast during the test |
+| Nov 5, 2026 | Mizavo is invite-only during the closed test. I add streamers by Twitch name on the admin page, and one switch opens it to everyone later | Only the testers I chose can play |
+| Nov 5, 2026 | Testers get a streamer setup guide page (login, OBS, chat commands, reporting, feedback) | Less hand-holding over DMs |

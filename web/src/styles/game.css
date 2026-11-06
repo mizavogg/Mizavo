@@ -135,3 +135,30 @@ body[data-phase="loading"] .stamp{visibility:hidden}
 /* keep the header to one line while playing */
 body:not([data-phase="setup"]):not([data-phase="final"]) #who{display:none!important}
 body[data-phase="gate"] #status{display:none}
+
+/* reveal panel: report link + next */
+.exActions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.btn.link{padding:8px 4px;font-size:12px;letter-spacing:.04em;color:#5a5246;text-decoration:underline;text-underline-offset:3px;min-height:44px}
+.btn.link:hover{color:var(--ink)}
+.btn.link:disabled{text-decoration:none;opacity:.8}
+.btn.link:active{transform:none}
+
+/* report dialog */
+#reportDlg .what{font-weight:700;line-height:1.45;border-left:4px solid var(--pink);padding:4px 12px;margin:4px 0 14px}
+.reasons{border:0;display:flex;flex-direction:column;gap:2px}
+.reasons legend{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.radio{display:flex;align-items:center;gap:10px;font-size:15px;min-height:40px;cursor:pointer}
+.radio input{accent-color:var(--yellow);width:20px;height:20px;flex:none}
+.fld{display:flex;flex-direction:column;gap:6px;margin-top:14px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fld small{text-transform:none;letter-spacing:0;font-weight:500}
+.fld textarea{background:var(--ink);border:2px solid var(--paper);border-radius:0;padding:10px 12px;font:500 15px var(--mono);color:var(--paper);width:100%;resize:vertical}
+.fld textarea:focus{outline:none;border-color:var(--yellow)}
+
+/* logged in but not invited (closed test) */
+.closed{border:3px solid var(--yellow);box-shadow:5px 5px 0 var(--yellow);padding:16px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;max-width:680px}
+.closed p{color:var(--paper)!important}
+body.closedTest #gateIntro,body.closedTest #loginBtn{display:none}
+body.closedTest[data-phase="gate"] #who{display:flex!important}
+.guideLink{color:var(--blue);font-size:13px;font-weight:700}
+.guideLink:hover,.note a:hover{color:var(--paper)}
+.note a{color:var(--blue)}

@@ -7,17 +7,21 @@ import { startLoop } from './arena';
 import { disconnectTwitch } from './chat';
 import { startAttract, stopAttract } from './attract';
 import { initStreamerMode } from './streamer-mode';
+import { openReport } from './report';
 import {
   confirmBox, endUnfinished, goHome, next, pick, quitGame, resumeGame, revealNow,
   setMode, setPhase, setupError, show3, startGame, summary,
 } from './flow';
 
 /* ---------- logged out: preview + login ---------- */
-function enterGate(msg?: string): void {
+function enterGate(msg?: string, closedFor?: string): void {
   disconnectTwitch();
   S.session = null;
+  document.body.classList.toggle('closedTest', closedFor != null);
+  show($('#closedBox'), closedFor != null);
+  if (closedFor != null) $('#closedWho').textContent = closedFor ? 'twitch.tv/' + closedFor : 'This channel';
   setPhase('gate'); show3('game');
-  show($('#who'), false); show($('#scoreboard'), false);
+  show($('#who'), closedFor != null); show($('#scoreboard'), false);
   $('#edition').textContent = 'Night edition · streamer vs chat';
   $('#prompt').textContent = 'STREAMER VS CHAT';
   $('#statement').textContent = 'Fact or Fake? Your chat decides, live.';
@@ -42,10 +46,13 @@ async function enterSetup(name: string): Promise<void> {
   try {
     const ch = await api.ensureChannel();
     $('#whoName').textContent = ch.display_name;
+    const access = await api.access();
+    if (!access.can_play) return enterGate(undefined, access.login ?? ch.login);   // closed test, not invited yet
     applySettings(ch);
   } catch (e) {
     return enterGate(friendly(e));
   }
+  document.body.classList.remove('closedTest');
   goHome();
 }
 
@@ -83,6 +90,12 @@ $('#endOldBtn').onclick = endUnfinished;
 $('#quitBtn').onclick = quitGame;
 $('#revealBtn').onclick = revealNow;
 $('#nextBtn').onclick = next;
+$('#reportBtn').onclick = openReport;
+$('#closedRetry').onclick = async () => {
+  const b = $<HTMLButtonElement>('#closedRetry'); b.disabled = true; b.textContent = 'Checking…';
+  try { await enterSetup($('#whoName').textContent || 'Streamer'); }
+  finally { b.disabled = false; b.textContent = document.body.classList.contains('closedTest') ? 'Not yet. Check again' : 'Check again'; }
+};
 $('#againBtn').onclick = () => { goHome(); setupError(null); startGame(); };
 $('#homeBtn').onclick = goHome;
 $('#copyBtn').onclick = async () => {

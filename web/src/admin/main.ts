@@ -1,19 +1,22 @@
 /* Mizavo — admin page (src/admin/main.ts)
-   The admin review page: log in with Twitch, then approve, edit or retire draft questions.
+   The admin page: log in with Twitch, then review drafts, retire approved questions,
+   handle streamers' reports, and manage the closed-test invite list.
    Every action goes through the database's admin functions, which check that you're an admin.
    This page never decides who is an admin; the database does. */
 import { supabase, rpc, loginWithTwitch } from '../lib/supabase';
 import { $, el, show } from '../lib/dom';
+import { REPORT_REASONS, type ReportReason } from '../lib/reasons';
 
 /* ---------- constants ---------- */
 const UNDO_MS = 5000;   // approving waits this long before saving, so a mis-tap can be undone
 type Status = 'draft' | 'approved' | 'retired';
+type Tab = Status | 'reports' | 'invites';
 interface Question {
   id: string; mode: 'ff' | 'ooo'; payload: { statement?: string; items?: string[] }; answer: boolean | number;
   explanation: string; difficulty: 1 | 2 | 3; category: string; fact_key: string; source_url: string;
   origin: string; status: Status; open_reports?: number;
 }
-interface Dashboard { drafts: number; approved: number; retired: number; approved_by_mode_and_difficulty: Record<string, number> | null }
+interface Dashboard { drafts: number; approved: number; retired: number; open_reports: number; approved_by_mode_and_difficulty: Record<string, number> | null }
 interface Pending { q: Question; at: number; ends: number; timer: number; tick: number }
 
 const CATEGORIES = ['animals', 'space', 'geography', 'history', 'food', 'science', 'human_body', 'pop_culture', 'language'];
@@ -23,7 +26,7 @@ const KEYS = ['A', 'B', 'C', 'D'];
 
 /* ---------- page state ---------- */
 const A = {
-  tab: 'draft' as Status,
+  tab: 'draft' as Tab,
   drafts: [] as Question[],                         // the review queue
   idx: 0,                                           // which draft is on screen
   lists: {} as Partial<Record<Status, Question[]>>, // cached approved / retired lists
@@ -102,15 +105,21 @@ function renderStats() {
   $('#nDraft').textContent = '(' + d.drafts + ')';
   $('#nApproved').textContent = '(' + d.approved + ')';
   $('#nRetired').textContent = '(' + d.retired + ')';
+  $('#nReports').textContent = d.open_reports ? '(' + d.open_reports + ')' : '';
 }
 
 /* ---------- tabs ---------- */
-document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.onclick = () => setTab(b.dataset.tab as Status));
-async function setTab(tab: Status) {
+document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.onclick = () => setTab(b.dataset.tab as Tab));
+async function setTab(tab: Tab) {
   A.tab = tab;
   document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.classList.toggle('sel', b.dataset.tab === tab));
-  show($('#reviewPane'), tab === 'draft'); show($('#listPane'), tab !== 'draft');
+  show($('#reviewPane'), tab === 'draft');
+  show($('#listPane'), tab === 'approved' || tab === 'retired');
+  show($('#reportsPane'), tab === 'reports');
+  show($('#invitesPane'), tab === 'invites');
   if (tab === 'draft') return renderCard();
+  if (tab === 'reports') return renderReports();
+  if (tab === 'invites') return renderInvites();
   await renderList(tab);
 }
 
@@ -350,10 +359,221 @@ async function renderList(status: Status) {
     }
     const tags = el('div', 'tags');
     tags.append(chip(q.mode === 'ff' ? 'FF' : 'OOO'), chip(DIFF[q.difficulty], DIFF[q.difficulty]), chip(prettyCat(q.category)));
+    if (status === 'approved') {
+      const b = el('button', 'btn ghost small retire', 'Retire');
+      b.onclick = () => retireApproved(q, li);
+      tags.append(b);
+    }
     li.append(text, tags); ul.append(li);
   }
   pane.append(ul);
 }
+
+/** Retire a live question (e.g. a mistake found after approving). Asks first. */
+async function retireApproved(q: Question, li: HTMLElement) {
+  const what = q.mode === 'ff' ? `"${q.payload.statement}"` : (q.payload.items ?? []).join(' · ');
+  if (!await confirmBox('Retire this live question?', what + ' leaves the game for good. To fix it, add a corrected draft.', 'Retire it')) return;
+  try {
+    const r = await rpc<{ retired: number }>('admin_retire_questions', { p_ids: [q.id] });
+    if (r.retired !== 1) throw new Error('the database did not retire it');
+    A.lists.approved = (A.lists.approved ?? []).filter((x) => x !== q);
+    delete A.lists.retired;
+    li.remove();
+    toast('Retired. It will not be played again.', false, 2200);
+    refreshDash();
+  } catch (e) { toast('Retire failed: ' + (e as Error).message, false, 4000); }
+}
+
+/** Simple yes/no dialog. Resolves true if you confirm. */
+function confirmBox(title: string, text: string, ok: string): Promise<boolean> {
+  const d = $<HTMLDialogElement>('#confirmDlg');
+  $('#confirmTitle').textContent = title; $('#confirmText').textContent = text; $('#confirmOk').textContent = ok;
+  d.showModal();
+  return new Promise((res) => {
+    $('#confirmOk').onclick = () => { d.close(); res(true); };
+    $('#confirmCancel').onclick = () => { d.close(); res(false); };
+    d.oncancel = () => res(false);
+  });
+}
+
+/* ---------- reports from streamers ---------- */
+interface Report {
+  id: string; reason: ReportReason; note: string | null; status: 'open' | 'accepted' | 'rejected'; created_at: string;
+  channel_login: string | null; channel_name: string | null; resolution_note: string | null; resolved_at: string | null;
+  question_id: string; mode: 'ff' | 'ooo'; payload: { statement?: string; items?: string[] }; answer: boolean | number;
+  explanation: string; source_url: string; question_status: Status; reports_on_question: number;
+}
+let reportView: 'open' | 'resolved' = 'open';
+const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+async function renderReports() {
+  const pane = $('#reportsPane');
+  const bar = el('div', 'subtabs');
+  for (const v of ['open', 'resolved'] as const) {
+    const b = el('button', 'btn small ' + (reportView === v ? 'primary' : 'ghost'), v === 'open' ? 'Open' : 'Resolved');
+    b.onclick = () => { reportView = v; renderReports(); };
+    bar.append(b);
+  }
+  pane.replaceChildren(bar, el('p', 'empty', 'Loading reports…'));
+  let rows: Report[];
+  try {
+    rows = reportView === 'open'
+      ? await rpc<Report[]>('admin_list_reports', { p_status: 'open', p_limit: 200 })
+      : [...await rpc<Report[]>('admin_list_reports', { p_status: 'accepted', p_limit: 100 }),
+         ...await rpc<Report[]>('admin_list_reports', { p_status: 'rejected', p_limit: 100 })]
+          .sort((a, b) => (b.resolved_at ?? '').localeCompare(a.resolved_at ?? ''));
+  } catch (e) { pane.replaceChildren(bar, el('p', 'err', 'Could not load reports: ' + (e as Error).message)); return; }
+  if (A.tab !== 'reports') return;
+  pane.replaceChildren(bar);
+  if (!rows.length) {
+    const box = el('div', 'empty');
+    box.append(el('b', null, reportView === 'open' ? 'No open reports.' : 'Nothing resolved yet.'),
+      el('span', null, 'Streamers report questions from the reveal screen in the game.'));
+    pane.append(box); return;
+  }
+  for (const r of rows) pane.append(reportCard(r, rows));
+}
+
+function reportCard(r: Report, all: Report[]): HTMLElement {
+  const card = el('article', 'report');
+  const top = el('div', 'cardTop');
+  top.append(chip(REPORT_REASONS[r.reason] ?? r.reason, r.reason === 'wrong_answer' || r.reason === 'offensive' ? 'hard' : 'medium'));
+  if (r.reports_on_question > 1 && r.status === 'open') top.append(chip(r.reports_on_question + ' open reports on this question', 'hard'));
+  top.append(el('span', 'from', `from ${r.channel_name || r.channel_login || 'a deleted channel'} · ${day(r.created_at)}`));
+  if (r.question_status !== 'approved') top.append(chip('question ' + r.question_status));
+  card.append(top);
+
+  // the question as it was played, answer marked
+  const q = el('div', 'q');
+  if (r.mode === 'ff') q.append(document.createTextNode((r.payload.statement ?? '') + ' '), el('span', 'ans', '→ ' + (r.answer ? 'FACT' : 'FAKE')));
+  else {
+    const items = r.payload.items ?? [];
+    q.append(document.createTextNode(items.join(' · ') + ' '), el('span', 'ans', '→ ' + items[r.answer as number]));
+  }
+  card.append(q, el('p', 'why', r.explanation));
+  const src = el('a', 'src', r.source_url); src.href = r.source_url; src.target = '_blank'; src.rel = 'noopener noreferrer';
+  card.append(src);
+  if (r.note) { const n = el('blockquote', 'note'); n.append(el('b', null, 'Their note: '), document.createTextNode(r.note)); card.append(n); }
+
+  if (r.status !== 'open') {
+    card.append(el('p', 'resolved', `${r.status === 'accepted' ? 'Accepted' : 'Rejected'}${r.resolved_at ? ' on ' + day(r.resolved_at) : ''}` +
+      (r.resolution_note ? ': ' + r.resolution_note : '')));
+    return card;
+  }
+
+  const noteIn = el('input'); noteIn.maxLength = 500; noteIn.placeholder = 'Your note (optional): what you decided and why';
+  const fld = el('label', 'fld'); fld.append('Resolution note', noteIn);
+  const act = el('div', 'actions');
+  const err = el('p', 'formErr hidden');
+  const resolve = async (decision: 'accepted' | 'rejected', retire: boolean) => {
+    if (retire && !await confirmBox('Accept and retire?', 'The question leaves the game for good. If it can be fixed, add a corrected draft through the pipeline.', 'Retire it')) return;
+    act.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    try {
+      await rpc('admin_resolve_report', { p_report: r.id, p_decision: decision, p_note: noteIn.value.trim() || null, p_retire_question: retire });
+      all.splice(all.indexOf(r), 1);
+      if (retire) {
+        for (const o of all) if (o.question_id === r.question_id) o.question_status = 'retired';
+        delete A.lists.approved; delete A.lists.retired;
+      }
+      for (const o of all) if (o.question_id === r.question_id) o.reports_on_question--;
+      toast(decision === 'rejected' ? 'Rejected: the question stays.' : retire ? 'Accepted and retired.' : 'Accepted: the question stays.', false, 2200);
+      refreshDash();
+      renderReportsFrom(all);
+    } catch (e) {
+      err.textContent = 'Could not save: ' + (e as Error).message; show(err, true);
+      act.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+    }
+  };
+  if (r.question_status !== 'retired') {
+    const b = el('button', 'btn small danger', 'Accept + retire question'); b.onclick = () => resolve('accepted', true); act.append(b);
+  }
+  const keep = el('button', 'btn small ghost', 'Accept, keep it'); keep.title = 'The report was fair but the question is fine as is (e.g. a small wording nit).';
+  keep.onclick = () => resolve('accepted', false);
+  const rej = el('button', 'btn small ghost', 'Reject'); rej.title = 'The question is correct.';
+  rej.onclick = () => resolve('rejected', false);
+  act.append(keep, rej);
+  card.append(fld, act, err);
+  return card;
+}
+/** Re-draw the open list after resolving one, without reloading. */
+function renderReportsFrom(rows: Report[]) {
+  const pane = $('#reportsPane');
+  const bar = pane.querySelector('.subtabs');
+  pane.replaceChildren(...(bar ? [bar] : []));
+  if (!rows.length) { const box = el('div', 'empty'); box.append(el('b', null, 'No open reports.'), el('span', null, 'All handled.')); pane.append(box); return; }
+  for (const r of rows) pane.append(reportCard(r, rows));
+}
+
+/* ---------- closed-test invites ---------- */
+interface Invite { login: string; note: string | null; invited_at: string; display_name: string | null; games_finished: number; last_played: string | null }
+interface InviteList { invite_only: boolean; invites: Invite[] }
+let inviteOnly = true;
+
+async function renderInvites() {
+  const list = $('#inviteList');
+  list.replaceChildren(el('p', 'empty', 'Loading invites…'));
+  let data: InviteList;
+  try { data = await rpc<InviteList>('admin_list_invites'); }
+  catch (e) { list.replaceChildren(el('p', 'err', 'Could not load invites: ' + (e as Error).message)); return; }
+  inviteOnly = data.invite_only;
+  $('#nInvites').textContent = '(' + data.invites.length + ')';
+  $('#inviteMode').classList.toggle('open', !inviteOnly);
+  $('#inviteModeText').replaceChildren(
+    el('b', null, inviteOnly ? 'Closed test: ON.' : 'Closed test: OFF.'),
+    ' ' + (inviteOnly ? 'Only the channels below (and admins) can play. Anyone else who logs in sees a "not on the invite list yet" screen.'
+                      : 'Anyone with a Twitch account can play. The list below is kept in case you turn the closed test back on.'));
+  $('#inviteModeBtn').textContent = inviteOnly ? 'Open to everyone' : 'Turn closed test back on';
+
+  if (!data.invites.length) { list.replaceChildren(el('p', 'empty', 'No one invited yet. Add a streamer above.')); return; }
+  const ul = el('ul', 'list invites');
+  for (const i of data.invites) {
+    const li = el('li'), who = el('div', 'q');
+    const a = el('a', null, i.display_name || i.login); a.href = 'https://www.twitch.tv/' + i.login; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    who.append(a);
+    if (i.note) who.append(el('span', 'muted', ' · ' + i.note));
+    const status = !i.display_name ? 'hasn\'t logged in yet'
+      : i.last_played ? `${i.games_finished} game${i.games_finished === 1 ? '' : 's'} finished · last played ${day(i.last_played)}`
+      : 'logged in, no games yet';
+    who.append(el('div', 'sub', `invited ${day(i.invited_at)} · ${status}`));
+    const tags = el('div', 'tags');
+    const rm = el('button', 'btn ghost small retire', 'Remove');
+    rm.onclick = async () => {
+      if (!await confirmBox(`Remove ${i.login}?`, 'They can no longer start games while the closed test is on. Their past games stay.', 'Remove')) return;
+      try { await rpc('admin_remove_invite', { p_login: i.login }); renderInvites(); }
+      catch (e) { toast('Remove failed: ' + (e as Error).message, false, 4000); }
+    };
+    tags.append(rm);
+    li.append(who, tags); ul.append(li);
+  }
+  list.replaceChildren(ul);
+}
+
+$('#inviteForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const login = val('#invLogin').trim(), note = val('#invNote').trim();
+  const err = $('#invErr'); show(err, false);
+  if (!login) { err.textContent = 'Type their Twitch name, or paste their twitch.tv link.'; show(err, true); return; }
+  const btn = $<HTMLButtonElement>('#invAddBtn'); btn.disabled = true;
+  try {
+    const r = await rpc<{ login: string }>('admin_add_invite', { p_login: login, p_note: note || null });
+    $<HTMLInputElement>('#invLogin').value = ''; $<HTMLInputElement>('#invNote').value = '';
+    toast(`Invited ${r.login}. Send them the game link and the guide.`, false, 3000);
+    renderInvites();
+  } catch (ex) {
+    const m = (ex as Error).message;
+    err.textContent = /bad_login/.test(m) ? "That doesn't look like a Twitch name. Use the name from twitch.tv/name: letters, numbers and underscores only." : 'Could not invite: ' + m;
+    show(err, true);
+  } finally { btn.disabled = false; }
+};
+$('#inviteModeBtn').onclick = async () => {
+  const turnOn = !inviteOnly;
+  const ok = turnOn
+    ? await confirmBox('Turn the closed test back on?', 'Only invited channels and admins will be able to start games.', 'Turn on')
+    : await confirmBox('Open Mizavo to everyone?', 'Any Twitch streamer who finds the site can play. Only do this when you are ready to launch.', 'Open it');
+  if (!ok) return;
+  try { await rpc('admin_set_invite_only', { p_on: turnOn }); renderInvites(); }
+  catch (e) { toast('Could not change it: ' + (e as Error).message, false, 4000); }
+};
 
 /* ---------- keyboard shortcuts (laptop) ---------- */
 document.addEventListener('keydown', (e) => {
