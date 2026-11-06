@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mizavo — Admin · Question review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="logo">MIZAVO</div>
+    <div class="edition">Admin · question review</div>
+    <div class="spacer"></div>
+    <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
+  </header>
+
+  <!-- shown until we know you're an admin -->
+  <section class="gate" id="gate">
+    <p id="gateMsg">Checking your login…</p>
+    <button class="btn primary hidden" id="loginBtn">Log in with Twitch</button>
+  </section>
+
+  <section class="hidden" id="app">
+    <div class="stats" id="stats"></div>
+
+    <nav class="tabs" aria-label="Question lists">
+      <button class="tab sel" data-tab="draft">Drafts <span id="nDraft"></span></button>
+      <button class="tab" data-tab="approved">Approved <span id="nApproved"></span></button>
+      <button class="tab" data-tab="retired">Retired <span id="nRetired"></span></button>
+    </nav>
+
+    <div id="reviewPane"></div>
+    <div class="hidden" id="listPane"></div>
+  </section>
+</div>
+
+<!-- undo bar after approving -->
+<div class="toast hidden" id="toast" role="status">
+  <span id="toastMsg"></span>
+  <button class="btn ghost small hidden" id="undoBtn">Undo <kbd>U</kbd></button>
+</div>
+
+<!-- retire confirmation -->
+<dialog id="retireDlg">
+  <h2>Retire this question?</h2>
+  <p>It leaves the game for good and can't come back. To fix a mistake later, add a corrected draft.</p>
+  <div class="dlgActions">
+    <button class="btn ghost" id="retireCancel">Cancel</button>
+    <button class="btn danger" id="retireOk">Retire it</button>
+  </div>
+</dialog>
+
+<!-- edit a draft -->
+<dialog id="editDlg">
+  <form id="editForm" novalidate>
+    <h2>Edit draft</h2>
+    <div id="ffFields">
+      <label class="fld">Statement<textarea id="fStatement" rows="3"></textarea></label>
+      <fieldset class="fld"><legend>Answer</legend>
+        <label class="radio"><input type="radio" name="fAnswerFF" value="true"> Fact (true)</label>
+        <label class="radio"><input type="radio" name="fAnswerFF" value="false"> Fake (false)</label>
+      </fieldset>
+    </div>
+    <div id="oooFields">
+      <fieldset class="fld"><legend>Items (pick the odd one out)</legend>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="0" aria-label="A is the odd one"><input id="fItem0" aria-label="Item A"></div>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="1" aria-label="B is the odd one"><input id="fItem1" aria-label="Item B"></div>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="2" aria-label="C is the odd one"><input id="fItem2" aria-label="Item C"></div>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="3" aria-label="D is the odd one"><input id="fItem3" aria-label="Item D"></div>
+      </fieldset>
+    </div>
+    <label class="fld">Explanation <small id="explCount"></small><textarea id="fExplanation" rows="3"></textarea></label>
+    <div class="two">
+      <label class="fld">Difficulty<select id="fDifficulty"><option value="1">Easy</option><option value="2">Medium</option><option value="3">Hard</option></select></label>
+      <label class="fld">Category<select id="fCategory"></select></label>
+    </div>
+    <label class="fld">Source link<input id="fSource" type="url"></label>
+    <label class="fld">Fact key <small>(lowercase-words-with-dashes; stops the same fact appearing twice)</small><input id="fFactKey"></label>
+    <p class="formErr hidden" id="editErr"></p>
+    <div class="dlgActions">
+      <button class="btn ghost" type="button" id="editCancel">Cancel</button>
+      <button class="btn primary" type="submit" id="editSave">Save draft</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

@@ -1,18 +1,5 @@
-/* =============== NIGHT EDITION THEME =============== */
-:root{
-  --ink:#161616; --ink2:#1f1f1f; --rule:#3a3a3a;
-  --paper:#f1ebdd; --muted:#a39a8a; --dim:#6d675d;
-  --blue:#3d9be0; --pink:#ff48b0; --yellow:#ffe14d; --mint:#5fd39a; --orange:#ff8c3b;
-  --display:'Archivo Black',Impact,sans-serif;
-  --mono:'IBM Plex Mono',ui-monospace,monospace;
-  --zone:25%;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--ink);color:var(--paper);font-family:var(--mono)}
-body{min-height:100vh}
-button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
-input,select{font:inherit;color:inherit}
-.hidden{display:none!important}
+/* Mizavo — style.css
+   Game page only. Load theme.css first. */
 
 /* layout: game area + optional streamer overlay zone */
 .app{display:flex;min-height:100vh}
@@ -28,33 +15,6 @@ body.streaming .zone{display:block}
 body[data-phase="setup"] .zone .guide{visibility:visible}
 body[data-phase="setup"] .zone .grip{display:block}
 body.dragging{cursor:ew-resize;user-select:none}
-
-/* masthead */
-.mast{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-top:6px solid var(--paper);border-bottom:2px solid var(--paper);padding:8px 0;margin-bottom:22px}
-.logo{font-family:var(--display);font-size:34px;letter-spacing:-.02em;line-height:1}
-.edition{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.pill{font-size:12px;padding:4px 9px;border:2px solid var(--rule);color:var(--muted);display:flex;align-items:center;gap:7px}
-.pill .dot{width:8px;height:8px;background:var(--dim)}
-.pill.on .dot{background:var(--mint)}
-.pill.err .dot{background:var(--pink)}
-.spacer{flex:1}
-.score{display:flex;align-items:stretch;gap:8px;font-size:14px;font-weight:700}
-.score span{display:flex;align-items:center;gap:8px;padding:4px 12px}
-.score .me{background:var(--paper);color:var(--ink)}
-.score .ch{border:2px solid var(--paper)}
-.score b{font-family:var(--display);font-weight:400;font-size:22px}
-
-/* shared bits */
-.sticker{display:inline-block;font-family:var(--display);font-size:18px;padding:4px 12px;background:var(--pink);color:var(--ink);transform:rotate(-3deg);box-shadow:3px 3px 0 var(--paper)}
-.chip{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border:2px solid var(--paper)}
-.btn{padding:13px 20px;font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase;transition:transform .08s}
-.btn:active{transform:translate(3px,3px)}
-.btn.primary{background:var(--paper);color:var(--ink);box-shadow:4px 4px 0 var(--pink)}
-.btn.primary:active{box-shadow:1px 1px 0 var(--pink)}
-.btn.ghost{border:2px solid var(--paper)}
-.btn.ghost:hover{background:var(--ink2)}
-.btn:focus-visible,.mode:focus-visible,.opt:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
-kbd{font-family:var(--mono);font-size:11px;padding:1px 5px;border:1px solid currentColor;margin-left:6px;opacity:.7}
 
 /* setup */
 .hero h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,7vw,92px);line-height:.92;letter-spacing:-.03em;margin-top:16px}

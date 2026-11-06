@@ -11,8 +11,11 @@ Live site: https://mizavo.mizavogg.workers.dev
 ```
 web/                  everything the website serves (uploaded to Cloudflare)
   index.html          the game page (layout only)
+  admin.html          admin page: review, approve, edit or retire draft questions (admins only)
   login-test.html     Twitch login test page
-  css/style.css       all styling ("Night Edition" look)
+  css/theme.css       shared "Night Edition" look: colors, fonts, header, buttons
+  css/style.css       game page styles
+  css/admin.css       admin page styles
   js/questions.js     question list (temporary, until questions load from Supabase)
   js/helpers.js       shared helpers, colors, game state
   js/streamer-mode.js clear space on the right for a webcam + chat overlay
@@ -21,6 +24,8 @@ web/                  everything the website serves (uploaded to Cloudflare)
   js/chat.js          reading votes from Twitch chat (anonymous, read-only)
   js/demo.js          simulated viewers for testing
   js/main.js          connects buttons, keys and settings, starts the game
+  js/supabase.js      shared database connection (for pages that log in)
+  js/admin.js         admin page logic
 supabase/
   migrations/         database: tables, game API, nightly pool builder, admin tools, Twitch login
 docs/
@@ -31,7 +36,7 @@ Folders added later, when their work starts: `content/` (question source files),
 
 ## Run locally
 
-Open `web/index.html` in a browser. No build step yet. The scripts in `web/js/` load in the order listed above, and later files use things from earlier ones, so keep that order.
+Open `web/index.html` in a browser. No build step yet. The game's scripts load in the order listed above (questions.js through main.js), and later files use things from earlier ones, so keep that order. The admin page needs a real web address for Twitch login, so test it on the live site.
 
 ## Deploy
 
