@@ -43,3 +43,4 @@ Every product decision, newest at the bottom.
 | Nov 5, 2026 | Testers send feedback in the Mizavo Discord (a never-expiring invite, linked from the guide) | One place for bug reports and ideas |
 | Nov 5, 2026 | Simulated chat starts off for everyone | Real games by default; practice is opt-in |
 | Nov 5, 2026 | The old name "Hivemind" comes out of the game text (I let Claude make this call): the 90% callout now says "In sync" and the chat-wins title says "Chat wins. The crowd was right." | No leftover old name for testers to trip on |
+| Nov 5, 2026 | Testers can join the closed test with an invite link, without me approving each person. One link per friend (I let Claude pick the safest option); each link has a name, an optional max number of people, and an on/off switch | Friends can pass Mizavo to streamers they know, and if a link spreads too far I turn off just that one; people who already joined stay in |

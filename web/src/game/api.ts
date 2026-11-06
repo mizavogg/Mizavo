@@ -26,10 +26,12 @@ export interface ActiveGame {
 }
 
 export interface Access { invite_only: boolean; can_play: boolean; login: string | null }
+export interface Redeemed { status: 'joined' | 'already' | 'inactive' | 'full' }
 
 export const api = {
   ensureChannel: () => rpc<Channel>('ensure_my_channel'),
   access: () => rpc<Access>('my_access'),
+  redeemInvite: (code: string) => rpc<Redeemed>('redeem_invite', { p_code: code }),
   report: (question: string, reason: ReportReason, note: string | null) =>
     rpc<{ report_id: string }>('report_question', { p_question: question, p_reason: reason, p_note: note }),
   activeGame: () => rpc<ActiveGame | null>('get_active_game'),

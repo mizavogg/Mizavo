@@ -510,6 +510,7 @@ interface InviteList { invite_only: boolean; invites: Invite[] }
 let inviteOnly = true;
 
 async function renderInvites() {
+  renderLinks();
   const list = $('#inviteList');
   list.replaceChildren(el('p', 'empty', 'Loading invites…'));
   let data: InviteList;
@@ -573,6 +574,62 @@ $('#inviteModeBtn').onclick = async () => {
   if (!ok) return;
   try { await rpc('admin_set_invite_only', { p_on: turnOn }); renderInvites(); }
   catch (e) { toast('Could not change it: ' + (e as Error).message, false, 4000); }
+};
+
+/* ---------- invite links ---------- */
+interface InviteLink { id: string; code: string; label: string; max_uses: number | null; active: boolean; created_at: string; joined: number }
+const GAME_URL = window.location.origin + '/';
+const linkUrl = (code: string) => GAME_URL + '?invite=' + code;
+
+async function renderLinks() {
+  const box = $('#linkList');
+  let links: InviteLink[];
+  try { links = await rpc<InviteLink[]>('admin_list_invite_links'); }
+  catch (e) { box.replaceChildren(el('p', 'err', 'Could not load invite links: ' + (e as Error).message)); return; }
+  if (!links.length) { box.replaceChildren(el('p', 'empty', 'No invite links yet. Make one per friend, so you can switch off just theirs if it spreads too far.')); return; }
+  const ul = el('ul', 'list links');
+  for (const l of links) {
+    const li = el('li', l.active ? null : 'off'), q = el('div', 'q');
+    q.append(el('span', null, l.label));
+    const full = l.max_uses != null && l.joined >= l.max_uses;
+    const state = !l.active ? 'off' : full ? 'full' : 'on';
+    q.append(el('div', 'sub', `${l.joined}${l.max_uses != null ? ' / ' + l.max_uses : ''} joined · ${state} · made ${day(l.created_at)}`));
+    q.append(el('div', 'url', linkUrl(l.code)));
+    const tags = el('div', 'tags');
+    const copy = el('button', 'btn ghost small', 'Copy link');
+    copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(linkUrl(l.code)); toast('Link copied. Send it with the guide: ' + GAME_URL + 'guide.html', false, 3000); }
+      catch { window.prompt('Copy this link:', linkUrl(l.code)); }
+    };
+    const tog = el('button', 'btn ghost small' + (l.active ? ' retire' : ''), l.active ? 'Turn off' : 'Turn on');
+    tog.onclick = async () => {
+      if (l.active && !await confirmBox(`Turn off "${l.label}"?`, 'New people can no longer join with this link. Anyone who already joined stays invited.', 'Turn off')) return;
+      try { await rpc('admin_set_invite_link_active', { p_id: l.id, p_active: !l.active }); renderLinks(); }
+      catch (e) { toast('Could not change it: ' + (e as Error).message, false, 4000); }
+    };
+    tags.append(copy, tog);
+    li.append(q, tags); ul.append(li);
+  }
+  box.replaceChildren(ul);
+}
+
+$('#linkForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const label = val('#linkLabel').trim(), maxRaw = val('#linkMax').trim();
+  const err = $('#linkErr'); show(err, false);
+  const fail = (m: string) => { err.textContent = m; show(err, true); };
+  if (!label) return fail('Give the link a name, like who you are sending it to.');
+  const max = maxRaw === '' ? null : Number(maxRaw);
+  if (max != null && !(Number.isInteger(max) && max >= 1 && max <= 1000)) return fail('Max people must be a whole number from 1 to 1000, or blank for no limit.');
+  const btn = $<HTMLButtonElement>('#linkAddBtn'); btn.disabled = true;
+  try {
+    const r = await rpc<{ code: string }>('admin_create_invite_link', { p_label: label, p_max_uses: max });
+    $<HTMLInputElement>('#linkLabel').value = ''; $<HTMLInputElement>('#linkMax').value = '';
+    try { await navigator.clipboard.writeText(linkUrl(r.code)); toast('Link made and copied.', false, 2500); }
+    catch { toast('Link made. Use "Copy link" below.', false, 2500); }
+    renderLinks();
+  } catch (ex) { fail('Could not make the link: ' + (ex as Error).message); }
+  finally { btn.disabled = false; }
 };
 
 /* ---------- keyboard shortcuts (laptop) ---------- */

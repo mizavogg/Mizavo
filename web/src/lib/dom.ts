@@ -21,6 +21,7 @@ export const show = (node: HTMLElement, on: boolean) => node.classList.toggle('h
 export const store = {
   get(k: string): string | null { try { return localStorage.getItem(k); } catch { return null; } },
   set(k: string, v: string): void { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
+  remove(k: string): void { try { localStorage.removeItem(k); } catch { /* ignore */ } },
 };
 
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));

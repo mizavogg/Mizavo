@@ -53,6 +53,16 @@
         <p id="inviteModeText">Loading…</p>
         <button class="btn ghost small" id="inviteModeBtn"></button>
       </div>
+      <h3 class="invHead">Invite links <small>anyone who opens a link and logs in is added below</small></h3>
+      <form class="inviteAdd" id="linkForm" novalidate>
+        <label class="fld">Who is this link for?<input id="linkLabel" maxlength="60" placeholder="e.g. Jake + his friends" autocomplete="off"></label>
+        <label class="fld">Max people <small>(blank = no limit)</small><input id="linkMax" type="number" min="1" max="1000" inputmode="numeric" placeholder="e.g. 10"></label>
+        <button class="btn primary small" type="submit" id="linkAddBtn">Make link</button>
+      </form>
+      <p class="formErr hidden" id="linkErr" role="alert"></p>
+      <div id="linkList"></div>
+
+      <h3 class="invHead">Invite one channel <small>by Twitch name</small></h3>
       <form class="inviteAdd" id="inviteForm" novalidate>
         <label class="fld">Twitch name or link<input id="invLogin" placeholder="e.g. twitch.tv/somestreamer" autocomplete="off" spellcheck="false"></label>
         <label class="fld">Note <small>(optional, only you see it)</small><input id="invNote" maxlength="100" placeholder="e.g. friend from Discord"></label>

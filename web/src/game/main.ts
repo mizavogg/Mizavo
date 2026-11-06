@@ -13,13 +13,46 @@ import {
   setMode, setPhase, setupError, show3, startGame, summary,
 } from './flow';
 
+/* ---------- invite links: ?invite=CODE ----------
+   The code is kept in the browser while the visitor goes through Twitch login
+   (Twitch sends them back without it), then used once they're logged in. */
+const INVITE_KEY = 'mz_invite';
+{
+  const url = new URL(window.location.href);
+  const code = (url.searchParams.get('invite') || '').trim().toUpperCase();
+  if (/^[A-Z0-9]{4,20}$/.test(code)) store.set(INVITE_KEY, code);
+  if (url.searchParams.has('invite')) {           // tidy the address bar (and keep the code out of stream captures)
+    url.searchParams.delete('invite');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  }
+}
+const INVITE_PROBLEM: Record<string, string> = {
+  inactive: "The invite link you used isn't active anymore. Ask the person who sent it for a new one.",
+  full: 'The invite link you used is full. Ask the person who sent it for a new one.',
+};
+/** Use a saved invite code, if any. Returns a problem message, or null. */
+async function useInviteCode(): Promise<string | null> {
+  const code = store.get(INVITE_KEY);
+  if (!code) return null;
+  try {
+    const r = await api.redeemInvite(code);
+    store.remove(INVITE_KEY);                       // one try per link visit
+    return INVITE_PROBLEM[r.status] ?? null;
+  } catch { return null; }                          // keep the code; it gets another try on "Check again"
+}
+
 /* ---------- logged out: preview + login ---------- */
-function enterGate(msg?: string, closedFor?: string): void {
+function enterGate(msg?: string, closedFor?: string, inviteProblem?: string | null): void {
   disconnectTwitch();
   S.session = null;
   document.body.classList.toggle('closedTest', closedFor != null);
   show($('#closedBox'), closedFor != null);
   if (closedFor != null) $('#closedWho').textContent = closedFor ? 'twitch.tv/' + closedFor : 'This channel';
+  $('#closedLink').textContent = inviteProblem || '';
+  show($('#closedLink'), !!inviteProblem);
+  $('#gateIntro').textContent = store.get(INVITE_KEY)
+    ? "You've been invited to the Mizavo closed test. Log in with Twitch to join and play against your chat."
+    : 'Play against your own Twitch chat. Log in so your games, scores and questions stay with your channel.';
   setPhase('gate'); show3('game');
   show($('#who'), closedFor != null); show($('#scoreboard'), false);
   $('#edition').textContent = 'Night edition · streamer vs chat';
@@ -46,8 +79,9 @@ async function enterSetup(name: string): Promise<void> {
   try {
     const ch = await api.ensureChannel();
     $('#whoName').textContent = ch.display_name;
+    const inviteProblem = await useInviteCode();
     const access = await api.access();
-    if (!access.can_play) return enterGate(undefined, access.login ?? ch.login);   // closed test, not invited yet
+    if (!access.can_play) return enterGate(undefined, access.login ?? ch.login, inviteProblem);   // closed test, not invited yet
     applySettings(ch);
   } catch (e) {
     return enterGate(friendly(e));
