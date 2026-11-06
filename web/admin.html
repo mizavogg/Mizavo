@@ -29,6 +29,13 @@
   <section class="hidden" id="app">
     <div class="stats" id="stats"></div>
 
+    <div class="tools">
+      <label class="btn ghost small" for="importFile">Import drafts (.json)</label>
+      <input type="file" id="importFile" accept=".json,application/json" class="visually-hidden">
+      <button class="btn ghost small" id="exportBtn">Download bank (.csv)</button>
+      <span class="toolsNote">Import the pipeline's drafts.json. Download the bank for the pipeline's repeat check.</span>
+    </div>
+
     <nav class="tabs" aria-label="Question lists">
       <button class="tab sel" data-tab="draft">Drafts <span id="nDraft"></span></button>
       <button class="tab" data-tab="approved">Approved <span id="nApproved"></span></button>
@@ -45,6 +52,17 @@
   <span id="toastMsg"></span>
   <button class="btn ghost small hidden" id="undoBtn">Undo <kbd>U</kbd></button>
 </div>
+
+<!-- import drafts -->
+<dialog id="importDlg">
+  <h2 id="importTitle">Import drafts</h2>
+  <p id="importText"></p>
+  <ul class="importErrs hidden" id="importErrs"></ul>
+  <div class="dlgActions">
+    <button class="btn ghost" id="importCancel">Cancel</button>
+    <button class="btn primary" id="importOk">Import</button>
+  </div>
+</dialog>
 
 <!-- retire confirmation -->
 <dialog id="retireDlg">

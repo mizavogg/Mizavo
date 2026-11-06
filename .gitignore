@@ -18,3 +18,8 @@ dist/
 __pycache__/
 .venv/
 *.pyc
+
+# Pipeline: question content never goes in this public repo
+pipeline/data/
+pipeline/input/
+pipeline/out/

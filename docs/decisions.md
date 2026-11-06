@@ -33,3 +33,6 @@ Every product decision, newest at the bottom.
 | Nov 5, 2026 | Simulated chat stays for now (I'll remove it eventually). Games played with it are saved as test games: fake votes never touch question stats or the daily numbers, while real viewers who vote still get their points | Handy for testing and practice without skewing real data |
 | Nov 5, 2026 | The game now gets its questions from the database one round at a time, and the answer only after the reveal; the test questions are out of the code | No answers in the public repo or in the page |
 | Nov 5, 2026 | Client moved to Vite + TypeScript, as planned in the tech stack | Catches mistakes before they reach players; the deploy is still one zip |
+| Nov 5, 2026 | Content pipeline: questions come from both generated real-world data (for volume and hard Odd One Out) and handwritten batches (for fun facts data can't produce) | Volume and variety, plus real data work for my portfolio |
+| Nov 5, 2026 | Drafts go into the database through an "Import drafts" button on the admin page | No secret service key needed anywhere |
+| Nov 5, 2026 | First batch: about 300 drafts | Real variety, still reviewable over a few sessions |

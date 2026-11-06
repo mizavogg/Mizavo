@@ -11,7 +11,7 @@ Live site: https://mizavo.mizavogg.workers.dev
 ```
 web/                    the website (Vite + TypeScript)
   index.html            game page: logged-out preview, setup, game, results
-  admin.html            admin page: review, approve, edit or retire draft questions (admins only)
+  admin.html            admin page: review, approve, edit or retire drafts; import pipeline batches; download the bank
   login-test.html       Twitch login test page
   src/styles/           theme.css (shared Night Edition look), game.css, admin.css
   src/lib/              supabase.ts (database connection + login), dom.ts (small helpers)
@@ -27,6 +27,10 @@ web/                    the website (Vite + TypeScript)
     streamer-mode.ts    clear space on the right for a webcam + chat overlay
   src/admin/main.ts     admin page logic
   vite.config.ts        build settings (one entry per page)
+pipeline/               content pipeline (Python + pandas): builds and checks draft questions
+  build.py              run this; see pipeline/README.md
+  mizavo_pipeline/      rules, checks, templates, report
+  tests/                tests for the checks
 supabase/
   migrations/           database: tables, game API, pool builder, admin tools, Twitch login, test games
 docs/
@@ -35,7 +39,7 @@ docs/
 
 Questions are never stored in this repo. They live only in Supabase, and the game receives one question at a time, without its answer, until the round is revealed.
 
-Folders added later, when their work starts: `pipeline/` (Python + pandas content pipeline), `analytics/` (SQL + Tableau).
+The pipeline's data, inputs and outputs stay out of the repo for the same reason. Added later: `analytics/` (SQL + Tableau).
 
 ## Run locally
 

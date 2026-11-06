@@ -368,3 +368,87 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'r') { e.preventDefault(); openRetire(); }
   else if (k === 'arrowright') { e.preventDefault(); skipCurrent(); }
 });
+
+/* ---------- import drafts from the pipeline (drafts.json) ---------- */
+interface AddResult { added: number; skipped: number; failed: number; skipped_rows: { row: number; reason: string }[]; failed_rows: { row: number; reason: string }[] }
+const importDlg = $<HTMLDialogElement>('#importDlg');
+let toImport: Record<string, unknown>[] = [];
+const CHUNK = 200;
+
+$<HTMLInputElement>('#importFile').onchange = async (e) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0]; input.value = '';
+  if (!file) return;
+  show($('#importErrs'), false);
+  $<HTMLButtonElement>('#importOk').disabled = false; show($('#importOk'), true);
+  $('#importCancel').textContent = 'Cancel';
+  try {
+    const data = JSON.parse(await file.text());
+    if (!Array.isArray(data) || !data.every((q) => q && typeof q === 'object' && (q.mode === 'ff' || q.mode === 'ooo'))) {
+      throw new Error("this doesn't look like the pipeline's drafts.json");
+    }
+    toImport = data;
+    const ff = data.filter((q) => q.mode === 'ff').length;
+    $('#importTitle').textContent = `Import ${data.length} drafts?`;
+    $('#importText').textContent = `${ff} Fact or Fake and ${data.length - ff} Odd One Out, from ${file.name}. ` +
+      'They arrive as drafts: nothing can be played until you approve it. Exact repeats are skipped automatically.';
+  } catch (err) {
+    toImport = [];
+    $('#importTitle').textContent = "Can't import that file";
+    $('#importText').textContent = (err as Error).message;
+    show($('#importOk'), false);
+  }
+  importDlg.showModal();
+};
+$('#importCancel').onclick = () => importDlg.close();
+$('#importOk').onclick = async () => {
+  if (!toImport.length) return;
+  const ok = $<HTMLButtonElement>('#importOk'); ok.disabled = true;
+  let added = 0, skipped = 0, failed = 0;
+  const problems: string[] = [];
+  try {
+    for (let i = 0; i < toImport.length; i += CHUNK) {
+      $('#importText').textContent = `Importing… ${Math.min(i + CHUNK, toImport.length)} of ${toImport.length}`;
+      const r = await rpc<AddResult>('admin_add_questions', { p_questions: toImport.slice(i, i + CHUNK) });
+      added += r.added; skipped += r.skipped; failed += r.failed;
+      for (const f of [...r.skipped_rows, ...r.failed_rows]) problems.push(`Row ${i + f.row}: ${f.reason}`);
+    }
+    $('#importTitle').textContent = 'Import finished';
+    $('#importText').textContent = `${added} added as drafts, ${skipped} skipped as exact repeats, ${failed} failed.`;
+  } catch (err) {
+    $('#importTitle').textContent = 'Import stopped';
+    $('#importText').textContent = `${added} added before an error: ${(err as Error).message}`;
+  }
+  const ul = $('#importErrs'); ul.replaceChildren(...problems.map((p) => el('li', null, p)));
+  show(ul, problems.length > 0);
+  show(ok, false); $('#importCancel').textContent = 'Close';
+  toImport = [];
+  A.lists = {};
+  await Promise.all([refreshDash(), loadDrafts()]);
+};
+
+/* ---------- download the whole bank as CSV (for the pipeline's repeat check) ---------- */
+async function listAll(status: Status): Promise<Question[]> {
+  const out: Question[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const page = await rpc<Question[]>('admin_list_questions', { p_status: status, p_limit: 500, p_offset: offset });
+    out.push(...page);
+    if (page.length < 500) return out;
+  }
+}
+const csvCell = (v: unknown) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+$('#exportBtn').onclick = async () => {
+  const btn = $<HTMLButtonElement>('#exportBtn'); btn.disabled = true; btn.textContent = 'Preparing…';
+  try {
+    const all = [...await listAll('draft'), ...await listAll('approved'), ...await listAll('retired')];
+    const head = ['fact_key', 'mode', 'statement', 'items', 'answer', 'status', 'difficulty', 'category'];
+    const rows = all.map((q) => [q.fact_key, q.mode, q.payload.statement ?? '', (q.payload.items ?? []).join(' | '),
+      q.mode === 'ff' ? (q.answer ? 'fact' : 'fake') : 'ABCD'[q.answer as number], q.status, q.difficulty, q.category].map(csvCell).join(','));
+    const blob = new Blob(['﻿' + [head.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = el('a'); a.href = URL.createObjectURL(blob); a.download = `mizavo-bank-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    toast(`Downloaded ${all.length} questions.`, false, 2500);
+  } catch (err) {
+    toast('Download failed: ' + (err as Error).message, false, 4000);
+  } finally { btn.disabled = false; btn.textContent = 'Download bank (.csv)'; }
+};
