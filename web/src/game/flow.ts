@@ -247,7 +247,7 @@ async function reveal(): Promise<void> {
   else if (meRight) { head = 'Streamer wins it'; color = 'var(--yellow)'; }
   else if (chatRight) { head = 'Chat carried'; color = 'var(--blue)'; }
   else { head = R.pick == null && !n ? 'Nobody answered' : 'Everyone got fooled'; color = 'var(--pink)'; }
-  const sub = n ? (pctRight >= 90 ? `Hivemind — ${pctRight}% of chat was right` : pctRight <= 25 ? `Bamboozled — only ${pctRight}% of chat was right` : `${pctRight}% of chat was right`) : 'no chat votes';
+  const sub = n ? (pctRight >= 90 ? `In sync — ${pctRight}% of chat was right` : pctRight <= 25 ? `Bamboozled — only ${pctRight}% of chat was right` : `${pctRight}% of chat was right`) : 'no chat votes';
   const bn = $('#banner'); bn.replaceChildren(head, el('small', null, sub)); bn.style.background = color;
   setTimeout(() => bn.classList.add('show'), 200);
 
@@ -312,7 +312,7 @@ async function finish(): Promise<void> {
 
   $('#edition').textContent = 'Final edition';
   const win = S.me > S.chat ? 'me' : S.chat > S.me ? 'ch' : 'tie';
-  $('#fTitle').textContent = win === 'me' ? 'The streamer outsmarted chat.' : win === 'ch' ? 'Chat wins. Hivemind confirmed.' : 'Dead even. Rematch?';
+  $('#fTitle').textContent = win === 'me' ? 'The streamer outsmarted chat.' : win === 'ch' ? 'Chat wins. The crowd was right.' : 'Dead even. Rematch?';
   $('#fTitle').style.color = win === 'me' ? 'var(--yellow)' : win === 'ch' ? 'var(--blue)' : '';
   $('#fMe').textContent = S.me + ' / ' + S.rounds; $('#fCh').textContent = S.chat + ' / ' + S.rounds;
   $('#fToday').textContent = (S.isTest ? 'Test game (simulated chat): it doesn\'t count toward question stats. ' : '') + today;

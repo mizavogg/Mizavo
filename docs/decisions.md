@@ -40,3 +40,6 @@ Every product decision, newest at the bottom.
 | Nov 5, 2026 | Beta prep: streamers can report a bad question from the reveal screen; I handle reports and can retire live questions from the admin page | Mistakes get caught and pulled fast during the test |
 | Nov 5, 2026 | Mizavo is invite-only during the closed test. I add streamers by Twitch name on the admin page, and one switch opens it to everyone later | Only the testers I chose can play |
 | Nov 5, 2026 | Testers get a streamer setup guide page (login, OBS, chat commands, reporting, feedback) | Less hand-holding over DMs |
+| Nov 5, 2026 | Testers send feedback in the Mizavo Discord (a never-expiring invite, linked from the guide) | One place for bug reports and ideas |
+| Nov 5, 2026 | Simulated chat starts off for everyone | Real games by default; practice is opt-in |
+| Nov 5, 2026 | The old name "Hivemind" comes out of the game text (I let Claude make this call): the 90% callout now says "In sync" and the chat-wins title says "Chat wins. The crowd was right." | No leftover old name for testers to trip on |
