@@ -24,3 +24,8 @@ Every product decision, newest at the bottom.
 | Nov 4, 2026 | Approved questions are frozen; fix mistakes by retiring and adding a corrected draft | Old game records always stay accurate |
 | Nov 4, 2026 | Hosting on Cloudflare (free, unlimited traffic) at mizavo.mizavogg.workers.dev | Free with no traffic cap if lots of viewers load the game |
 | Nov 5, 2026 | Twitch login: streamers without an email are allowed | Channels are tied to the Twitch ID, not email |
+| Nov 5, 2026 | Visual style is "Night Edition": a dark printed-zine look (ink black, cream, print blue and pink; Archivo Black and IBM Plex Mono fonts) | The old look felt like a generic AI webpage; this feels like its own thing and sits well next to streamers' overlays |
+| Nov 5, 2026 | Streamer mode: off by default. When on, it leaves adjustable clear space on the right (12–45% of the screen) for a webcam and chat overlay. The game never shrinks below 720px, and the space matches the background. The switch lives on the setup screen | Streamers can show their cam and chat without covering the game |
+| Nov 5, 2026 | Game code split into separate files (page, styles, scripts); repo organized into web/, supabase/, docs/ | Clean, organized and easy to keep running smoothly |
+| Nov 5, 2026 | GitHub repo is public | Portfolio project; the database is protected by its access rules, not by hiding the code |
+| Nov 5, 2026 | Question content never goes in the public repo. Real questions live only in Supabase; the test questions come out of the code when the game connects to the database | Viewers could read the answers |
