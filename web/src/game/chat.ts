@@ -17,26 +17,22 @@ export function parseVote(text: string, type: RoundType): number | null {
   return /[a-d]/.test(m[1]) ? m[1].charCodeAt(0) - 97 : +m[1] - 1;
 }
 
-/** A chat message arrived: count it as a vote if it is one. Each viewer's latest vote counts. */
+/** A chat message arrived: count it as a vote if it is one.
+ *  Each viewer's FIRST valid answer in a round counts; later messages are ignored (no switching). */
 export function onChat(m: ChatMessage): void {
   const R = S.R;
   if (S.phase !== 'vote' && S.phase !== 'gate') return;
   if (!R) return;
   const choice = parseVote(m.text, R.type);
   if (choice == null || choice >= R.opts.length) return;
-  const key = m.login.toLowerCase(), col = m.color || colorFor(key);
-  let v = R.votes.get(key);
-  if (v && v.choice === choice) return;
+  const key = m.login.toLowerCase();
+  if (R.votes.has(key)) return; // already answered this round: first answer stands
+  const col = m.color || colorFor(key);
   const hidden = S.blind && R.pick == null && S.phase === 'vote';
-  if (!v) {
-    v = { key, id: m.id, login: m.login, name: m.name, color: col, choice, bot: m.bot } as Vote;
-    R.votes.set(key, v);
-    const o = spawnOrb(v); flyTo(o, hidden ? 'pool' : choice);
-    addLabel(m.name, col, o.to!.x, hidden ? o.to!.y - 12 : bins[choice].y - 6);
-  } else {
-    v.choice = choice;
-    if (!hidden && v.orb) { flyTo(v.orb, choice); addLabel(m.name + ' switched', col, v.orb.to!.x, bins[choice].y - 6); }
-  }
+  const v = { key, id: m.id, login: m.login, name: m.name, color: col, choice, bot: m.bot } as Vote;
+  R.votes.set(key, v);
+  const o = spawnOrb(v); flyTo(o, hidden ? 'pool' : choice);
+  addLabel(m.name, col, o.to!.x, hidden ? o.to!.y - 12 : bins[choice].y - 6);
 }
 
 /* ---------- Twitch: anonymous, read-only chat (no login, no bot account) ---------- */

@@ -14,7 +14,7 @@ export interface Orb {
   t0?: number; dur?: number; popAt?: number; dead?: boolean;
 }
 
-/** One viewer's vote in the current round (their latest choice counts). */
+/** One viewer's vote in the current round (their first answer counts; no switching). */
 export interface Vote {
   key: string;            // lowercase login, unique per viewer
   id: string | null;      // Twitch user id (null for simulated viewers)
