@@ -30,6 +30,8 @@ export interface Round {
   votes: Map<string, Vote>;
   pick: number | null;
   explanation?: string;
+  weight: number;               // 2 on the double-points final round
+  lightning: number | null;     // 1-3 inside the lightning block, else null
   questionId?: string;          // arrives with the reveal; used for "Report this question"
   reported?: boolean;
 }
@@ -45,10 +47,14 @@ export interface HistoryItem { round: Round; meRight: boolean; chatRight: boolea
 export const S = {
   phase: 'gate' as Phase,
   // settings for the next game
-  mode: 'ff' as Mode, rounds: 10, secs: 15, blind: true, demo: true,
+  mode: 'ff' as Mode, rounds: 10, secs: 15, blind: true, demo: true, double: true, lightning: true,
   // the game in progress
   session: null as string | null,
   isTest: false,
+  doubleFinal: false,           // this game's last round counts 2
+  lightningAt: null as number | null,   // first of the 3 lightning rounds
+  lightBuf: [] as { round: Round; meRight: boolean; chatRight: boolean; pctRight: number }[],
+  maxScore: 10,                 // rounds, +1 with a double final
   idx: 0,                       // round number, 1-based like the database
   R: null as Round | null,
   me: 0, chat: 0,

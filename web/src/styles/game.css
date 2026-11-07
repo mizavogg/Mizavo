@@ -277,3 +277,10 @@ body.cards .opts{display:none}
 .cmLinks{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:4px 0 10px}
 .cmLinks .todayLine{flex-basis:100%;font-size:14px;color:var(--paper);font-weight:500}
 .cmLinks .btn.small{min-height:36px;padding:6px 12px;font-size:13px}
+
+/* lightning round + double-points final */
+.chip.special{border-color:#e7c39b99;color:var(--yellow)}
+.banner.intro{top:45%;border-top-color:var(--yellow)}
+.lightList{list-style:none;display:flex;flex-direction:column;gap:10px}
+.lightList li{line-height:1.45}
+.lightList .meta{display:block;font-size:13px;color:var(--muted);margin-top:2px}

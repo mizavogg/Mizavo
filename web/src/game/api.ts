@@ -7,22 +7,23 @@ import type { GameRecord, ViewerRow } from '../lib/boards';
 
 export interface Channel {
   channel_id: string; login: string; display_name: string; is_admin: boolean;
-  settings: { mode?: Mode; rounds?: number; seconds?: number; blind?: boolean } | null;
+  settings: { mode?: Mode; rounds?: number; seconds?: number; blind?: boolean; double?: boolean; lightning?: boolean } | null;
 }
-export interface Started { session_id: string; game_number: number; rounds: number; seconds: number; blind: boolean; is_test: boolean }
-export interface RoundData { idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number }
+export interface Started { session_id: string; game_number: number; rounds: number; seconds: number; blind: boolean; is_test: boolean; double_final: boolean; lightning_at: number | null }
+export interface RoundData { idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; weight?: number; lightning?: number }
 export interface Revealed {
   idx: number; correct_position: number; correct_label: string; explanation: string;
   streamer_correct: boolean | null; chat_correct: boolean | null; chat_total: number; chat_pct_right: number;
-  streamer_score: number; chat_score: number; is_last: boolean; question_id: string;
+  streamer_score: number; chat_score: number; is_last: boolean; question_id: string; weight?: number;
 }
 export interface ViewerResult { id: string; login: string; display_name: string; points: number; answers: number; correct: number; best_streak: number }
 export interface Finished {
-  streamer_score: number; chat_score: number; rounds: number; viewers_saved: number; is_test: boolean;
+  streamer_score: number; chat_score: number; rounds: number; viewers_saved: number; is_test: boolean; max_score?: number;
   today: { games_finished: number; chat_won_pct: number | null; streamer_won_pct: number | null } | null;
 }
 export interface ActiveGame {
   session_id: string; game_number: number; mode: Mode; rounds: number; seconds: number; blind: boolean; is_test: boolean;
+  double_final?: boolean; lightning_at?: number | null;
   next_round: number | null; streamer_score: number; chat_score: number;
 }
 
@@ -44,8 +45,9 @@ export const api = {
   report: (question: string, reason: ReportReason, note: string | null) =>
     rpc<{ report_id: string }>('report_question', { p_question: question, p_reason: reason, p_note: note }),
   activeGame: () => rpc<ActiveGame | null>('get_active_game'),
-  start: (mode: Mode, rounds: number, seconds: number, blind: boolean, test: boolean) =>
-    rpc<Started>('start_game', { p_mode: mode, p_rounds: rounds, p_seconds: seconds, p_blind: blind, p_test: test }),
+  start: (mode: Mode, rounds: number, seconds: number, blind: boolean, test: boolean, double: boolean, lightning: boolean) =>
+    rpc<Started>('start_game', { p_mode: mode, p_rounds: rounds, p_seconds: seconds, p_blind: blind, p_test: test,
+                                 p_double: double, p_lightning: lightning }),
   round: (session: string, idx: number) => rpc<RoundData>('get_round', { p_session: session, p_idx: idx }),
   reveal: (session: string, idx: number, pick: number | null, counts: number[]) =>
     rpc<Revealed>('reveal_round', { p_session: session, p_idx: idx, p_streamer_choice: pick, p_chat_counts: counts }),

@@ -69,6 +69,8 @@ function applySettings(ch: Channel): void {
   if (st.rounds) $<HTMLSelectElement>('#rounds').value = String(st.rounds);
   if (st.seconds) $<HTMLSelectElement>('#secs').value = String(st.seconds);
   if (typeof st.blind === 'boolean') $<HTMLInputElement>('#blind').checked = st.blind;
+  if (typeof st.double === 'boolean') $<HTMLInputElement>('#double').checked = st.double;
+  if (typeof st.lightning === 'boolean') $<HTMLInputElement>('#lightning').checked = st.lightning;
   const saved = store.get('hm_channel');
   $<HTMLInputElement>('#channel').value = saved != null && saved !== '' ? saved : ch.login;
 }
