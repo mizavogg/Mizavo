@@ -6,7 +6,7 @@ import { supabase } from './supabase';
 import { channelUrl } from './boards';
 
 /** Mizavo's Ko-fi page. Empty = every support link stays hidden. Paste the full link here to turn them on. */
-export const SUPPORT_URL = '';
+export const SUPPORT_URL = 'https://ko-fi.com/mizavo';
 
 const LINKS: [key: string, text: string, href: string][] = [
   ['play', 'Play', '/'],
