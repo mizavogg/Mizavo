@@ -19,7 +19,7 @@ interface Question {
 interface Dashboard { drafts: number; approved: number; retired: number; open_reports: number; approved_by_mode_and_difficulty: Record<string, number> | null }
 interface Pending { q: Question; at: number; ends: number; timer: number; tick: number }
 
-const CATEGORIES = ['animals', 'space', 'geography', 'history', 'food', 'science', 'human_body', 'pop_culture', 'language'];
+const CATEGORIES = ['animals', 'space', 'geography', 'history', 'food', 'science', 'human_body', 'pop_culture', 'language', 'music', 'sports'];
 const DIFF: Record<number, string> = { 1: 'easy', 2: 'medium', 3: 'hard' };
 const MODE: Record<string, string> = { ff: 'Fact or Fake', ooo: 'Odd One Out' };
 const KEYS = ['A', 'B', 'C', 'D'];
