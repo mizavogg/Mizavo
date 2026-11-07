@@ -8,6 +8,7 @@ import { disconnectTwitch } from './chat';
 import { startLaunch, stopLaunch } from './launch';
 import { initStreamerMode } from './streamer-mode';
 import { openReport } from './report';
+import { initPublicSwitch } from './community';
 import {
   confirmBox, endUnfinished, goHome, next, pick, quitGame, resumeGame, revealNow,
   setMode, setPhase, setupError, show3, startGame, summary,
@@ -160,4 +161,5 @@ document.addEventListener('keydown', (e) => {
 });
 
 initStreamerMode();
+initPublicSwitch();
 startLoop();

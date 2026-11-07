@@ -263,16 +263,6 @@ body.cards .opts{display:none}
 .community h3 span:last-child{font-size:14px;color:var(--muted);white-space:nowrap}
 .community.final h3 span:first-child{font-size:26px}
 .community .record{font-size:14px;color:var(--muted);margin:12px 0 4px;line-height:1.5}
-.board{list-style:none;display:flex;flex-direction:column}
-.board li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--rule);font-size:16px}
-.board li:last-child{border-bottom:0}
-.board .r{color:var(--dim);font-weight:500;font-size:13px;letter-spacing:.06em}
-.board li:first-child .r{color:var(--orange-hi)}
-.board .nm{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-width:0}
-.board .nm b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.board .nm small{font-size:12px;color:var(--muted)}
-.board .s{font-weight:600;font-variant-numeric:tabular-nums}
-.board li.empty{display:block;color:var(--muted);font-size:14px;padding:14px 2px}
 @media(max-width:600px){
   .community{margin-top:28px}
   .community h3 span:first-child{font-size:23px}
@@ -284,3 +274,6 @@ body.cards .opts{display:none}
   .setupCard{order:1}
   .setupGrid .community{order:2;margin-top:8px}
 }
+.cmLinks{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:4px 0 10px}
+.cmLinks .todayLine{flex-basis:100%;font-size:14px;color:var(--paper);font-weight:500}
+.cmLinks .btn.small{min-height:36px;padding:6px 12px;font-size:13px}

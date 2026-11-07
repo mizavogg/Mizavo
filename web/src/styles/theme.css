@@ -86,6 +86,18 @@ dialog p{line-height:1.55;margin-bottom:6px;color:var(--muted)}
 .btn.twitch{background:var(--copper-btn);color:var(--paper);box-shadow:0 1px 0 rgba(242,232,220,.22) inset,0 -2px 0 rgba(0,0,0,.18) inset}
 .muted{color:var(--muted)}
 
+/* leaderboards (game community panel, today board, channel pages) */
+.board{list-style:none;display:flex;flex-direction:column}
+.board li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--rule);font-size:16px}
+.board li:last-child{border-bottom:0}
+.board .r{color:var(--dim);font-weight:500;font-size:13px;letter-spacing:.06em}
+.board li:first-child .r{color:var(--orange-hi)}
+.board .nm{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-width:0}
+.board .nm b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .nm small{font-size:12px;color:var(--muted)}
+.board .s{font-weight:600;font-variant-numeric:tabular-nums}
+.board li.empty{display:block;color:var(--muted);font-size:14px;padding:14px 2px}
+
 /* a round 3D ball, for small markers anywhere */
 .ball{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 3px 6px rgba(0,0,0,.5);
   background:radial-gradient(circle at 35% 30%,#fff 0%,var(--paper) 42%,#7E848F 100%)}

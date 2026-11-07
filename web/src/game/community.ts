@@ -1,44 +1,64 @@
-/* Mizavo — "Your community": the streamer's record vs chat and the all-time top viewers.
-   One database call (get_my_community) that only ever returns the logged-in streamer's own channel.
+/* Mizavo — "Your community" on the setup and final screens, plus the "show my channel" switch.
+   One call (get_my_community) that only ever returns the logged-in streamer's own channel.
    Test games don't count toward any of it. */
 import { $, el, show } from '../lib/dom';
+import { channelUrl, emptyRow, plural, recordLine, viewerRow } from '../lib/boards';
 import { api, type Community } from './api';
 
-const plural = (n: number, word: string, many = word + 's') => `${n} ${n === 1 ? word : many}`;
-
-function recordLine(c: Community): string {
-  const r = c.record;
-  if (!r.games) return 'No real games yet. Your record against chat starts with your first one.';
-  return `You vs chat: ${plural(r.games, 'game')} · ${plural(r.wins, 'win')} · ${plural(r.losses, 'loss', 'losses')} · ${plural(r.ties, 'tie')}`;
-}
+let mine: Community | null = null;
 
 function fill(c: Community, ids: { box: string; count: string; record: string; board: string }): void {
   $(ids.count).textContent = plural(c.total_viewers, 'viewer') + ' all-time';
-  $(ids.record).textContent = recordLine(c);
+  $(ids.record).textContent = recordLine(c.record);
   const ol = $(ids.board); ol.replaceChildren();
-  if (!c.top.length) {
-    ol.append(el('li', 'empty', 'Nobody on the board yet. Viewers join by answering in chat.'));
-  }
-  for (const v of c.top) {
-    const li = el('li');
-    const stats = [v.accuracy != null ? `${v.accuracy}% right` : null, v.best_streak >= 3 ? `best streak ${v.best_streak}` : null, plural(v.games, 'game')]
-      .filter(Boolean).join(' · ');
-    const who = el('span', 'nm');
-    who.append(el('b', null, v.name), el('small', null, stats));
-    li.append(el('span', 'r', '#' + v.rank), who, el('span', 's', v.points.toLocaleString('en-US')));
-    ol.append(li);
-  }
+  if (!c.top.length) ol.append(emptyRow('Nobody on the board yet. Viewers join by answering in chat.'));
+  for (const v of c.top) ol.append(viewerRow(v));
   show($(ids.box), true);
+}
+
+/** "#3 today" / "hidden" / "N more rounds to get on today's board" */
+function todayLine(c: Community): string {
+  if (c.hidden) return 'Your channel is hidden from the public pages.';
+  if (c.today_rank) return `Your chat is #${c.today_rank} on today's board.`;
+  const left = 10 - c.today_rounds;
+  return left > 0 ? `Play ${plural(left, 'more round')} today to get on today's board.` : '';
+}
+
+function fillLinks(c: Community, linksId: string): void {
+  const box = $(linksId); box.replaceChildren();
+  const line = todayLine(c);
+  if (line) box.append(el('span', 'todayLine', line));
+  const today = el('a', 'btn ghost small', "Today's board"); today.href = '/today.html'; today.target = '_blank';
+  box.append(today);
+  if (!c.hidden) {
+    const page = el('a', 'btn ghost small', 'Your public page'); page.href = channelUrl(c.login); page.target = '_blank';
+    const copy = el('button', 'btn ghost small', 'Copy page link');
+    copy.onclick = async () => {
+      const url = location.origin + channelUrl(c.login);
+      try { await navigator.clipboard.writeText(url); copy.textContent = 'Copied!'; }
+      catch { copy.textContent = url; }
+      setTimeout(() => copy.textContent = 'Copy page link', 1800);
+    };
+    box.append(page, copy);
+  }
+}
+
+function syncSwitch(c: Community): void {
+  const sw = $<HTMLInputElement>('#publicSw');
+  sw.checked = !c.hidden; sw.disabled = false;
 }
 
 let run = 0;
 /** Setup screen: record + top 10. Fails quietly (the panel just stays hidden). */
 export async function loadSetupCommunity(): Promise<void> {
-  const mine = ++run;
+  const me = ++run;
   try {
     const c = await api.community(10);
-    if (mine !== run) return;
+    if (me !== run) return;
+    mine = c;
     fill(c, { box: '#community', count: '#cmCount', record: '#cmRecord', board: '#cmBoard' });
+    fillLinks(c, '#cmLinks');
+    syncSwitch(c);
   } catch { show($('#community'), false); }
 }
 
@@ -47,6 +67,24 @@ export async function loadFinalCommunity(): Promise<void> {
   show($('#fCommunity'), false);
   try {
     const c = await api.community(5);
+    mine = c;
     fill(c, { box: '#fCommunity', count: '#fcCount', record: '#fcRecord', board: '#fcBoard' });
+    fillLinks(c, '#fcLinks');
   } catch { /* stays hidden */ }
+}
+
+/** The "Public channel" switch in game settings. */
+export function initPublicSwitch(): void {
+  const sw = $<HTMLInputElement>('#publicSw');
+  sw.onchange = async () => {
+    const hidden = !sw.checked;
+    sw.disabled = true;
+    try {
+      await api.setVisibility(hidden);
+      if (mine) { mine.hidden = hidden; fillLinks(mine, '#cmLinks'); }
+      loadSetupCommunity();
+    } catch {
+      sw.checked = !sw.checked;   // put it back: the change didn't save
+    } finally { sw.disabled = false; }
+  };
 }

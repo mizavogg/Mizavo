@@ -3,6 +3,7 @@
 import { rpc } from '../lib/supabase';
 import type { Mode, RoundType } from './state';
 import type { ReportReason } from '../lib/reasons';
+import type { GameRecord, ViewerRow } from '../lib/boards';
 
 export interface Channel {
   channel_id: string; login: string; display_name: string; is_admin: boolean;
@@ -25,11 +26,12 @@ export interface ActiveGame {
   next_round: number | null; streamer_score: number; chat_score: number;
 }
 
-export interface CommunityViewer { rank: number; name: string; points: number; accuracy: number | null; best_streak: number; games: number }
 export interface Community {
-  record: { games: number; wins: number; losses: number; ties: number };
+  login: string; hidden: boolean;
+  record: GameRecord;
+  today_rank: number | null; today_rounds: number;
   total_viewers: number;
-  top: CommunityViewer[];
+  top: ViewerRow[];
 }
 
 export interface Access { invite_only: boolean; can_play: boolean; login: string | null }
@@ -49,6 +51,7 @@ export const api = {
     rpc<Revealed>('reveal_round', { p_session: session, p_idx: idx, p_streamer_choice: pick, p_chat_counts: counts }),
   finish: (session: string, viewers: ViewerResult[]) => rpc<Finished>('finish_game', { p_session: session, p_viewers: viewers }),
   community: (top: number) => rpc<Community>('get_my_community', { p_top: top }),
+  setVisibility: (hidden: boolean) => rpc<{ hidden: boolean }>('set_my_visibility', { p_hidden: hidden }),
   abandon: (session: string) => rpc<unknown>('abandon_game', { p_session: session }),
 };
 

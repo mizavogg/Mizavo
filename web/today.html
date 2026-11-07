@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mizavo — Today's top channels</title>
+<meta name="description" content="Which Twitch chats are the smartest today, and the top Mizavo players worldwide.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/theme.css">
+<link rel="stylesheet" href="/src/styles/boards.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <a class="logo" href="/">Mizavo</a>
+    <div class="edition">Leaderboards</div>
+    <div class="spacer"></div>
+    <a class="btn primary small" href="/">Play →</a>
+  </header>
+
+  <section class="hero">
+    <span class="sticker" id="dayLabel">Today</span>
+    <h1>The smartest chats today.</h1>
+    <p>Ranked by how much of chat got each answer right. Real games only, and a channel needs at least 10 rounds today to show up. The board resets every day at midnight UTC.</p>
+  </section>
+
+  <p class="err hidden" id="err" role="alert"></p>
+
+  <div class="cols">
+    <section class="panel">
+      <h2><span>Top channels today</span><span class="sub" id="chCount"></span></h2>
+      <ol class="board" id="channels"><li class="empty">Loading…</li></ol>
+    </section>
+    <section class="panel">
+      <h2><span>Top players worldwide</span><span class="sub">all-time points</span></h2>
+      <ol class="board" id="players"><li class="empty">Loading…</li></ol>
+      <p class="fine">Viewers earn points by answering in any streamer's chat. Points from every channel add up here.</p>
+    </section>
+  </div>
+
+  <footer class="foot"><a href="/">mizavo</a> · <a href="/guide.html">Streamer guide</a></footer>
+</div>
+<script type="module" src="/src/pages/today.ts"></script>
+</body>
+</html>
