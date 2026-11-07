@@ -14,17 +14,19 @@
 <div class="pageGlass" aria-hidden="true"></div>
 <div class="app">
 <div class="main">
+<div class="topbar">
+<header class="mast">
+  <a class="logo" href="/" id="logoLink">Mizavo</a>
+  <nav class="siteNav" data-page="play" aria-label="Mizavo"></nav>
+  <div class="edition" id="edition">Streamer vs chat</div>
+  <div class="pill" id="status"><span class="dot"></span><span id="statusTxt">chat off</span></div>
+  <span class="chip test hidden" id="testTag">Test game</span>
+  <div class="spacer"></div>
+  <div class="score hidden" id="scoreboard"><span class="me">You <b id="sMe">0</b></span><span class="ch"><b id="sCh">0</b> Chat</span></div>
+  <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
+</header>
+</div>
 <div class="wrap">
-  <header class="mast">
-    <a class="logo" href="/" id="logoLink">Mizavo</a>
-    <nav class="siteNav" data-page="play" aria-label="Mizavo"></nav>
-    <div class="edition" id="edition">Streamer vs chat</div>
-    <div class="pill" id="status"><span class="dot"></span><span id="statusTxt">chat off</span></div>
-    <span class="chip test hidden" id="testTag">Test game</span>
-    <div class="spacer"></div>
-    <div class="score hidden" id="scoreboard"><span class="me">You <b id="sMe">0</b></span><span class="ch"><b id="sCh">0</b> Chat</span></div>
-    <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
-  </header>
 
   <!-- SETUP (logged in) -->
   <section class="hidden" id="setup">

@@ -1,6 +1,6 @@
 /* Mizavo — guide.css
    Streamer guide page only. Load theme.css first. */
-.wrap{max-width:860px;margin:0 auto;padding:16px 20px 60px}
+.wrap{max-width:860px;margin:0 auto;padding:0 20px 60px}
 a{color:var(--blue-hi)} a:hover{color:var(--paper)}
 .mast a.logo{color:var(--paper);text-decoration:none}
 .mast .btn{text-decoration:none;display:inline-flex;align-items:center}

@@ -1,7 +1,7 @@
 /* Mizavo — admin.css
    Admin review page only. Load theme.css first. */
 
-.wrap{max-width:920px;margin:0 auto;padding:16px 20px 120px}
+.wrap{max-width:920px;margin:0 auto;padding:0 20px 120px}
 a{color:var(--blue-hi)} a:hover{color:var(--paper)}
 
 /* gate (logged out / not admin) */

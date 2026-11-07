@@ -12,13 +12,15 @@
 <link rel="stylesheet" href="/src/styles/admin.css">
 </head>
 <body>
+<div class="topbar">
+<header class="mast">
+  <a class="logo" href="/">Mizavo</a>
+  <div class="edition">Admin</div>
+  <div class="spacer"></div>
+  <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
+</header>
+</div>
 <div class="wrap">
-  <header class="mast">
-    <a class="logo" href="/">Mizavo</a>
-    <div class="edition">Admin</div>
-    <div class="spacer"></div>
-    <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
-  </header>
 
   <!-- shown until we know you're an admin -->
   <section class="gate" id="gate">
