@@ -25,22 +25,19 @@ function todayLine(c: Community): string {
 }
 
 function fillLinks(c: Community, linksId: string): void {
+  // the pages themselves are in the top bar; here just today's standing and a quick copy of your page link
   const box = $(linksId); box.replaceChildren();
   const line = todayLine(c);
   if (line) box.append(el('span', 'todayLine', line));
-  const today = el('a', 'btn ghost small', "Today's board"); today.href = '/today.html'; today.target = '_blank';
-  const solo = el('a', 'btn ghost small', 'Daily challenge'); solo.href = '/solo.html'; solo.target = '_blank';
-  box.append(today, solo);
   if (!c.hidden) {
-    const page = el('a', 'btn ghost small', 'Your public page'); page.href = channelUrl(c.login); page.target = '_blank';
-    const copy = el('button', 'btn ghost small', 'Copy page link');
+    const copy = el('button', 'btn link', 'Copy your page link');
     copy.onclick = async () => {
       const url = location.origin + channelUrl(c.login);
       try { await navigator.clipboard.writeText(url); copy.textContent = 'Copied!'; }
       catch { copy.textContent = url; }
-      setTimeout(() => copy.textContent = 'Copy page link', 1800);
+      setTimeout(() => copy.textContent = 'Copy your page link', 1800);
     };
-    box.append(page, copy);
+    box.append(copy);
   }
 }
 

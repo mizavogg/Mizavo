@@ -6,6 +6,7 @@
 import { $, el, show } from '../lib/dom';
 import { rpc, supabase, loginWithTwitch } from '../lib/supabase';
 import { plural } from '../lib/boards';
+import { initNav, rememberLogin } from '../lib/nav';
 import { OPT_COLORS, KEYS, SPHERE } from '../game/state';
 
 type RoundType = 'ff' | 'ooo';
@@ -94,7 +95,8 @@ function doneScreen(s: State): void {
 async function loggedIn(name: string): Promise<void> {
   $('#whoName').textContent = name; show($('#who'), true);
   try {
-    await rpc('ensure_my_channel');
+    const ch = await rpc<{ login: string }>('ensure_my_channel');
+    rememberLogin(ch.login);
     const s = await api.status();
     lastState = s;
     if (s.state === 'done') return doneScreen(s);
@@ -149,7 +151,7 @@ async function begin(): Promise<void> {
 
 function beginGuest(): void {
   guest = true; idx = 1; gScore = 0; gPts = 0; gStreak = 0; gBest = 0;
-  $('#edition').textContent = "Yesterday's challenge · guest";
+  $('#edition').textContent = "Yesterday's challenge · guest"; show($('#edition'), true);
   setScore(0, 0); show($('#scoreboard'), true);
   loadRound().catch((e) => { intro('Daily challenge', 'Hmm.', '', [btn('Back', 'ghost', () => location.reload())]); err(friendly(e)); });
 }
@@ -248,6 +250,7 @@ document.addEventListener('keydown', (e) => {
   } else if (phase === 'reveal' && k === 'enter') { e.preventDefault(); next(); }
 });
 
+initNav();
 let started = false;
 supabase.auth.onAuthStateChange((event, session) => {
   if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;

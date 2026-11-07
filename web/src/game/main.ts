@@ -9,6 +9,7 @@ import { startLaunch, stopLaunch } from './launch';
 import { initStreamerMode } from './streamer-mode';
 import { openReport } from './report';
 import { initPublicSwitch } from './community';
+import { initNav, rememberLogin } from '../lib/nav';
 import {
   confirmBox, endUnfinished, goHome, next, pick, quitGame, resumeGame, revealNow,
   setMode, setPhase, setupError, show3, startGame, summary,
@@ -80,6 +81,7 @@ async function enterSetup(name: string): Promise<void> {
   try {
     const ch = await api.ensureChannel();
     $('#whoName').textContent = ch.display_name;
+    rememberLogin(ch.login);
     const inviteProblem = await useInviteCode();
     const access = await api.access();
     if (!access.can_play) return enterGate(undefined, access.login ?? ch.login, inviteProblem);   // closed test, not invited yet
@@ -164,4 +166,19 @@ document.addEventListener('keydown', (e) => {
 
 initStreamerMode();
 initPublicSwitch();
+initNav();
+// keep More options open if something in it is switched on
+if ($<HTMLInputElement>('#streamer').checked || $<HTMLInputElement>('#demo').checked) $<HTMLDetailsElement>('#moreOpts').open = true;
+
+/* the Mizavo name always goes home: the setup screen when logged in (asks first mid-game), else the top */
+$('#logoLink').onclick = async (e) => {
+  e.preventDefault();
+  if (S.phase === 'gate') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  if (S.phase === 'setup') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  if (S.phase !== 'final' && S.session) {
+    const ok = await confirmBox('Leave this game?', "It's saved: you can resume it from the setup screen.", 'Leave');
+    if (!ok) return;
+  }
+  goHome();
+};
 startLoop();

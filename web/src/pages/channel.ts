@@ -1,6 +1,7 @@
 /* Mizavo — a streamer's public channel page: channel.html?c=<twitch login>
    Record vs chat (real games), today's rank, all-time top 25 viewers. No login needed. */
 import { $, el, show } from '../lib/dom';
+import { initNav } from '../lib/nav';
 import { boards, emptyRow, plural, recordLine, viewerRow } from '../lib/boards';
 
 function stat(value: string, label: string, hi = false): HTMLElement {
@@ -48,4 +49,5 @@ async function main(): Promise<void> {
   for (const v of p.top) ol.append(viewerRow(v));
   show($('#topBox'), true);
 }
+initNav();
 main();
