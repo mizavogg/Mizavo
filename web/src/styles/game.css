@@ -297,3 +297,8 @@ body[data-phase=gate] #edition{display:none}
 .moreOpts .toggles{margin-top:2px}
 .actions a.btn{text-decoration:none}
 .actions .btn.link{width:auto;align-self:center}
+
+/* ---------- final results: keep the header on one line ---------- */
+/* The big score and the "test game" note are already on the page, so the header copies are hidden here. */
+body[data-phase=final] #scoreboard,
+body[data-phase=final] #testTag{display:none}
