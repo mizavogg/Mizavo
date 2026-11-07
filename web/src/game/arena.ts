@@ -1,6 +1,10 @@
 /* Mizavo — the arena: vote dots, bins, physics and all canvas drawing. */
 import { $, clamp, rnd } from '../lib/dom';
 import { S, KEYS, WHITE, hexA, shade, type Orb, type Vote } from './state';
+import { faceFor, preloadFaces } from './faces';
+
+preloadFaces();
+const FACE_MIN_R = 11;   // face balls never shrink below this, so the face stays readable
 
 const INK = '#121516', PAPER = '#F2E8DC', MUTED = '#B3ADA3', SAND = '#E7C39B';
 const SANS = '"DM Sans", system-ui, sans-serif';
@@ -46,6 +50,27 @@ function drawBall(x: number, y: number, r: number, color: string): void {
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
 }
 
+/** A face ball: the emote clipped to a circle, lit like the other balls, with a ring in the answer's color
+ *  (white while hidden in blind mode, so chat sees who voted but not what they picked). */
+function drawFace(x: number, y: number, r: number, color: string, img: HTMLImageElement): void {
+  const s = shade(color);
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(x, y + r * 0.55, r * 0.95, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+  const ring = Math.max(2, r * 0.16), inner = r - ring;
+  ctx.fillStyle = s.base;                                   // the ring
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, inner, 0, Math.PI * 2); ctx.clip();
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, x - inner, y - inner, inner * 2, inner * 2);
+  const g = ctx.createRadialGradient(x - inner * 0.35, y - inner * 0.4, inner * 0.05, x, y, inner);  // round, lit look
+  g.addColorStop(0, 'rgba(255,255,255,.22)'); g.addColorStop(0.5, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.35)');
+  ctx.fillStyle = g; ctx.fillRect(x - inner, y - inner, inner * 2, inner * 2);
+  ctx.restore();
+  ctx.lineWidth = 1; ctx.strokeStyle = s.lo;                // thin dark edge so the ring reads on any background
+  ctx.beginPath(); ctx.arc(x, y, r - 0.5, 0, Math.PI * 2); ctx.stroke();
+}
+
 /** Size the canvas to the page and work out where the bins go. */
 export function layout(): void {
   const w = $('#arena').clientWidth;
@@ -88,7 +113,8 @@ export function flyTo(o: Orb, dest: 'pool' | number, delay = 0): void {
   o.ctrl = { x: (o.x + to.x) / 2 + rnd(-60, 60), y: Math.min(o.y, to.y) - rnd(40, 110) };
 }
 export function spawnOrb(v: Vote): Orb {
-  const o: Orb = { x: W / 2 + rnd(-30, 30), y: -12, vx: 0, vy: 0, r: 9, color: v.color, key: v.key, state: 'fly' };
+  const o: Orb = { x: W / 2 + rnd(-30, 30), y: -12, vx: 0, vy: 0, r: 9, color: v.color, key: v.key, state: 'fly', face: faceFor(v.login, v.id) };
+  if (o.face) o.r = FACE_MIN_R;
   orbs.push(o); v.orb = o;
   return o;
 }
@@ -142,7 +168,7 @@ function step(): void {
     const area = rect.w * (rect.h - (rect.head ?? 0)), tr = clamp(Math.sqrt(area * 0.42 / (Math.PI * Math.max(1, list.length))), 3.5, c === 'pool' ? 12 : 20);
     const g = c === 'pool' ? 0 : 0.35;
     for (const o of list) {
-      o.r += (tr - o.r) * 0.08;
+      o.r += ((o.face ? Math.max(tr, FACE_MIN_R) : tr) - o.r) * 0.08;
       if (c === 'pool') {
         o.vx += rnd(-.12, .12); o.vy += rnd(-.12, .12);
         const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
@@ -280,7 +306,8 @@ function draw(): void {
   // balls
   for (const o of orbs) {
     if (o.state === 'fly' && o.t0 != null && now < o.t0 && o.y < 0) continue;
-    drawBall(o.x, o.y, o.r, ballColor(o));
+    if (o.face && o.face.complete && o.face.naturalWidth) drawFace(o.x, o.y, o.r, ballColor(o), o.face);
+    else drawBall(o.x, o.y, o.r, ballColor(o));
   }
   for (const p of parts) {
     ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = shade(p.color).base;
