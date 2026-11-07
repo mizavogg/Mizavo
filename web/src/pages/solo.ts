@@ -1,0 +1,261 @@
+/* Mizavo — the daily solo challenge (solo.html).
+   Logged in: today's 10 questions, the same for everyone; the database scores every answer and
+   enforces the 15-second limit. One game a day.
+   Guests: yesterday's challenge (nothing saved), so playing as a guest can't spoil today's.
+   During the closed test, only invited players and admins can play, and guest play is off. */
+import { $, el, show } from '../lib/dom';
+import { rpc, supabase, loginWithTwitch } from '../lib/supabase';
+import { plural } from '../lib/boards';
+import { OPT_COLORS, KEYS, SPHERE } from '../game/state';
+
+type RoundType = 'ff' | 'ooo';
+interface Q { idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; shown_at?: string; ends_at?: string }
+interface Answer { idx: number; correct_position: number; explanation: string; correct: boolean; late?: boolean; points_gained?: number; points?: number; score?: number; streak?: number; is_last: boolean; state?: State }
+interface State { date: string; next_reset_at: string; state: 'new' | 'playing' | 'done'; next_idx: number | null; points: number; correct: number; best_streak: number; rank: number | null; players_today: number }
+interface Info { closed_test: boolean; today: string; next_reset_at: string; guest_ready: boolean }
+
+const api = {
+  info: () => rpc<Info>('solo_info'),
+  status: () => rpc<State>('solo_status'),
+  start: () => rpc<State>('solo_start'),
+  round: (i: number) => rpc<Q>('solo_round', { p_idx: i }),
+  answer: (i: number, c: number | null) => rpc<Answer>('solo_answer', { p_idx: i, p_choice: c }),
+  guestRound: (i: number) => rpc<Q>('guest_round', { p_idx: i }),
+  guestAnswer: (i: number, c: number | null) => rpc<Answer>('guest_answer', { p_idx: i, p_choice: c }),
+};
+
+/* ---------- state ---------- */
+let guest = false;
+let idx = 0;
+let q: Q | null = null;
+let busy = false;
+let phase: 'intro' | 'vote' | 'reveal' = 'intro';
+let deadline = 0, total = 15000, timer = 0;
+let gScore = 0, gPts = 0, gStreak = 0, gBest = 0;     // guest totals (local only)
+let lastState: State | null = null;
+
+/* ---------- helpers ---------- */
+function err(msg: string | null): void { const e = $('#err'); e.textContent = msg || ''; show(e, !!msg); }
+function friendly(e: unknown): string {
+  const m = e instanceof Error ? e.message : String(e);
+  const code = m.split(':')[0];
+  if (code === 'not_invited') return "Mizavo is in a closed test, and your account isn't on the invite list yet.";
+  if (code === 'closed_test') return 'Guest play opens when Mizavo leaves the closed test. Log in with Twitch if you were invited.';
+  if (code === 'no_challenge') return "There's no guest challenge yet. Check back tomorrow, or log in to play today's.";
+  if (code === 'already_played') return "You've already played today's challenge.";
+  if (code === 'not_enough_questions') return "Today's challenge isn't ready. Try again in a few minutes.";
+  return 'Something went wrong: ' + m;
+}
+function untilReset(iso: string): string {
+  const ms = Math.max(0, Date.parse(iso) - Date.now());
+  const h = Math.floor(ms / 3.6e6), m = Math.ceil((ms % 3.6e6) / 6e4);
+  return h ? `${h}h ${m}m` : `${m}m`;
+}
+function btn(text: string, cls: string, onclick: () => void): HTMLButtonElement {
+  const b = el('button', 'btn ' + cls, text); b.onclick = onclick; return b;
+}
+function link(text: string, cls: string, href: string): HTMLAnchorElement {
+  const a = el('a', 'btn ' + cls, text); a.href = href; return a;
+}
+function stat(value: string, label: string, hi = false): HTMLElement {
+  const d = el('div', 'stat' + (hi ? ' hi' : '')); d.append(el('b', null, value), el('span', null, label)); return d;
+}
+function setScore(score: number, pts: number): void {
+  $('#sScore').textContent = String(score); $('#sPts').textContent = pts.toLocaleString('en-US');
+}
+
+/* ---------- intro screens ---------- */
+function intro(kicker: string, title: string, text: string, actions: HTMLElement[], fine = ''): void {
+  phase = 'intro'; document.body.dataset.phase = 'intro';
+  show($('#intro'), true); show($('#round'), false); show($('#result'), false);
+  $('#introKicker').textContent = kicker; $('#introTitle').textContent = title; $('#introText').textContent = text;
+  $('#introActions').replaceChildren(...actions);
+  $('#introFine').textContent = fine;
+}
+
+function showResult(s: State): void {
+  const r = $('#result'); r.replaceChildren(
+    stat(`${s.correct}/10`, 'Right'),
+    stat(s.points.toLocaleString('en-US'), 'Points', true),
+    stat(s.rank ? `#${s.rank}` : '—', s.players_today ? `of ${plural(s.players_today, 'player')} today` : 'Today'),
+    stat(String(s.best_streak), 'Best streak'));
+  show(r, true);
+}
+
+function doneScreen(s: State): void {
+  lastState = s;
+  show($('#scoreboard'), false);
+  intro("Today's challenge · done", s.correct >= 8 ? 'Sharp. Very sharp.' : s.correct >= 5 ? 'Nicely played.' : 'Tough one today.',
+    `Your score is saved to the solo board. The next challenge starts in ${untilReset(s.next_reset_at)} (midnight UTC).`,
+    [link('Leaderboards', 'primary', '/today.html'), link('Play against your chat', 'ghost', '/')]);
+  showResult(s);
+}
+
+async function loggedIn(name: string): Promise<void> {
+  $('#whoName').textContent = name; show($('#who'), true);
+  try {
+    await rpc('ensure_my_channel');
+    const s = await api.status();
+    lastState = s;
+    if (s.state === 'done') return doneScreen(s);
+    if (s.state === 'playing') {
+      return intro("Today's challenge", 'Pick up where you left off.',
+        `You're on round ${s.next_idx} of 10. Any round you opened and didn't answer in time counts as a miss.`,
+        [btn(`Continue round ${s.next_idx}`, 'primary', () => begin())]);
+    }
+    intro("Today's challenge", 'Ten questions. Same for everyone.',
+      'Fact or Fake and Odd One Out, easy to hard. 15 seconds a question, one try a day. Your score goes on the solo board.',
+      [btn('Start today\'s challenge', 'primary', () => begin())],
+      `New challenge every day at midnight UTC (in ${untilReset(s.next_reset_at)}).`);
+  } catch (e) {
+    const m = friendly(e);
+    if (/closed test/.test(m)) {
+      intro('Closed test', 'Not on the invite list yet.', m + ' If a streamer friend shared Mizavo with you, send them your Twitch name.',
+        [btn('Check again', 'ghost', () => location.reload())]);
+    } else { intro("Today's challenge", 'Hmm.', '', [btn('Try again', 'ghost', () => location.reload())]); err(m); }
+  }
+}
+
+async function loggedOut(): Promise<void> {
+  show($('#who'), false);
+  const login = btn('Log in with Twitch', 'primary', async () => {
+    try { await loginWithTwitch(); } catch (e) { err('Login failed: ' + (e as Error).message); }
+  });
+  let info: Info;
+  try { info = await api.info(); } catch (e) { intro('Daily challenge', 'Hmm.', '', [login]); err(friendly(e)); return; }
+  if (info.closed_test) {
+    return intro('Closed test', 'Ten questions. Same for everyone.',
+      'The daily challenge is invite-only while Mizavo is in its closed test. If you were invited, log in with Twitch to play today\'s.', [login]);
+  }
+  const actions = [login];
+  if (info.guest_ready) actions.push(btn("Play yesterday's as a guest", 'ghost', () => beginGuest()));
+  intro('Daily challenge', 'Ten questions. Same for everyone.',
+    "Log in with Twitch to play today's challenge and get on the solo board. Or warm up with yesterday's as a guest (nothing is saved).",
+    actions, `New challenge every day at midnight UTC (in ${untilReset(info.next_reset_at)}).`);
+}
+
+/* ---------- playing ---------- */
+async function begin(): Promise<void> {
+  if (busy) return; busy = true; err(null);
+  try {
+    const s = await api.start();
+    if (s.state === 'done') return doneScreen(s);
+    setScore(s.correct, s.points); show($('#scoreboard'), true);
+    idx = s.next_idx || 1;
+    await loadRound();
+  } catch (e) { err(friendly(e)); }
+  finally { busy = false; }
+}
+
+function beginGuest(): void {
+  guest = true; idx = 1; gScore = 0; gPts = 0; gStreak = 0; gBest = 0;
+  $('#edition').textContent = "Yesterday's challenge · guest";
+  setScore(0, 0); show($('#scoreboard'), true);
+  loadRound().catch((e) => { intro('Daily challenge', 'Hmm.', '', [btn('Back', 'ghost', () => location.reload())]); err(friendly(e)); });
+}
+
+async function loadRound(): Promise<void> {
+  q = guest ? await api.guestRound(idx) : await api.round(idx);
+  phase = 'vote'; document.body.dataset.phase = 'vote';
+  show($('#intro'), false); show($('#round'), true); show($('#explain'), false); show($('#hint'), true);
+  $('#rMode').textContent = q.type === 'ff' ? 'Fact or Fake' : 'Odd One Out';
+  $('#rNum').textContent = `Round ${q.idx} of 10`;
+  $('#statement').textContent = q.type === 'ff' ? (q.statement || '') : "Which one doesn't belong?";
+  const opts = q.type === 'ff' ? ['Fact', 'Fake'] : (q.items || []);
+  const box = $('#opts'); box.replaceChildren(); box.className = 'opts ' + q.type;
+  opts.forEach((o, i) => {
+    const c = OPT_COLORS[q!.type][i];
+    const b = el('button', 'opt'); b.style.setProperty('--c', c); b.style.setProperty('--ball', SPHERE[c]);
+    b.append(el('span', 'key', KEYS[q!.type][i]), document.createTextNode(o));
+    b.onclick = () => choose(i); box.append(b);
+  });
+  // timer: a fresh round gets the full 15 s; a round reopened after a reload keeps its original end time
+  total = q.seconds * 1000;
+  const fresh = !q.shown_at || Math.abs(Date.parse(q.shown_at) - Date.now()) < 5000;
+  deadline = fresh ? Date.now() + total : Date.parse(q.ends_at!);
+  clearInterval(timer); timer = window.setInterval(tick, 100); tick();
+}
+
+function tick(): void {
+  const left = Math.max(0, deadline - Date.now());
+  $('#timerBar').style.transform = `scaleX(${left / total})`;
+  $('#tnum').textContent = String(Math.ceil(left / 1000));
+  const low = left < 4000; $('#stamp').classList.toggle('low', low); $('#timer').classList.toggle('low', low);
+  if (left <= 0 && phase === 'vote') choose(null);
+}
+
+async function choose(i: number | null): Promise<void> {
+  if (phase !== 'vote' || busy || !q) return;
+  busy = true; phase = 'reveal'; clearInterval(timer);
+  $('#opts').classList.add('locked');
+  if (i != null) ($('#opts').children[i] as HTMLElement).classList.add('picked');
+  let a: Answer;
+  try { a = guest ? await api.guestAnswer(idx, i) : await api.answer(idx, i); }
+  catch (e) { busy = false; intro("Today's challenge", 'Hmm.', '', [btn('Try again', 'ghost', () => location.reload())]); err(friendly(e)); return; }
+  busy = false;
+
+  let gained = a.points_gained ?? 0, streak = a.streak ?? 0;
+  if (guest) {   // same points rule as the database, kept locally (guest scores aren't saved)
+    if (a.correct) { gStreak++; gScore++; gained = 100 + Math.min(5, gStreak - 1) * 20; gPts += gained; gBest = Math.max(gBest, gStreak); } else gStreak = 0;
+    streak = gStreak;
+    setScore(gScore, gPts);
+  } else setScore(a.score ?? 0, a.points ?? 0);
+
+  [...$('#opts').children].forEach((b, k) => b.classList.add(k === a.correct_position ? 'right' : 'wrong'));
+  const label = q.type === 'ff' ? (a.correct_position === 0 ? 'Fact' : 'Fake') : (q.items || [])[a.correct_position];
+  const tag = el('b', null, label); tag.style.background = OPT_COLORS[q.type][a.correct_position];
+  const verdict = a.late ? 'Too late: the 15 seconds were up.' : i == null ? 'Out of time.'
+    : a.correct ? `Right! +${gained}` + (streak >= 2 ? ` · ${streak} in a row` : '') : 'Not this time.';
+  const meta = el('span', 'meta' + (a.correct ? ' good' : ''), verdict);
+  $('#exText').replaceChildren(tag, ' ' + a.explanation, meta);
+  $('#nextBtn').replaceChildren(a.is_last ? 'See results' : 'Next', el('kbd', null, 'Enter'));
+  if (a.state) lastState = a.state;
+  show($('#hint'), false); show($('#explain'), true);
+}
+
+async function next(): Promise<void> {
+  if (phase !== 'reveal' || busy) return;
+  if (idx >= 10) return finish();
+  idx++;
+  busy = true;
+  try { await loadRound(); } catch (e) { intro("Today's challenge", 'Hmm.', '', [btn('Try again', 'ghost', () => location.reload())]); err(friendly(e)); }
+  finally { busy = false; }
+}
+
+async function finish(): Promise<void> {
+  if (guest) {
+    show($('#scoreboard'), false);
+    intro("Yesterday's challenge · guest", `${gScore} out of 10.`,
+      "Guest scores aren't saved. Log in with Twitch to play today's challenge and get on the solo board.",
+      [btn('Log in with Twitch', 'primary', async () => { try { await loginWithTwitch(); } catch (e) { err((e as Error).message); } }),
+       link('Leaderboards', 'ghost', '/today.html')]);
+    const r = $('#result'); r.replaceChildren(stat(`${gScore}/10`, 'Right'), stat(gPts.toLocaleString('en-US'), 'Points', true), stat(String(gBest), 'Best streak'));
+    show(r, true);
+    return;
+  }
+  const s = lastState && lastState.state === 'done' ? lastState : await api.status();
+  doneScreen(s);
+}
+
+/* ---------- wiring ---------- */
+$('#nextBtn').onclick = next;
+$('#logoutBtn').onclick = async () => { await supabase.auth.signOut(); location.reload(); };
+document.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (phase === 'vote' && q) {
+    if (q.type === 'ff') { if (k === '1' || k === 'arrowleft') choose(0); else if (k === '2' || k === 'arrowright') choose(1); }
+    else { const m = 'abcd'.indexOf(k); if (m >= 0) choose(m); else if ('1234'.includes(k) && k.length === 1) choose(+k - 1); }
+  } else if (phase === 'reveal' && k === 'enter') { e.preventDefault(); next(); }
+});
+
+let started = false;
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
+  if (started && event === 'SIGNED_IN') return;      // token refreshes mid-game
+  started = true;
+  setTimeout(() => {
+    if (!session) return loggedOut();
+    const meta = session.user.user_metadata || {};
+    loggedIn(meta.nickname || meta.name || meta.preferred_username || 'Player');
+  }, 0);
+});

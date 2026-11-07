@@ -13,6 +13,7 @@ export default defineConfig({
         login: 'login-test.html',
         today: 'today.html',
         channel: 'channel.html',
+        solo: 'solo.html',
       },
     },
   },

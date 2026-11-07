@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mizavo — Daily challenge</title>
+<meta name="description" content="Ten questions a day, the same for everyone worldwide. Fact or Fake and Odd One Out.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/theme.css">
+<link rel="stylesheet" href="/src/styles/solo.css">
+</head>
+<body data-phase="loading">
+<div class="wrap">
+  <header class="mast">
+    <a class="logo" href="/">Mizavo</a>
+    <div class="edition" id="edition">Daily challenge</div>
+    <div class="spacer"></div>
+    <div class="score hidden" id="scoreboard"><span>Score <b id="sScore">0</b></span><span class="ch">Points <b id="sPts">0</b></span></div>
+    <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
+  </header>
+
+  <!-- intro / closed / done -->
+  <section class="card" id="intro">
+    <span class="sticker" id="introKicker">Today's challenge</span>
+    <h1 id="introTitle">Ten questions. Same for everyone.</h1>
+    <p id="introText">Fact or Fake and Odd One Out, easy to hard. You get 15 seconds a question and one try a day. A new challenge starts every day at midnight UTC.</p>
+    <div class="result hidden" id="result"></div>
+    <p class="err hidden" id="err" role="alert"></p>
+    <div class="row" id="introActions"></div>
+    <p class="fine" id="introFine"></p>
+  </section>
+
+  <!-- a round -->
+  <section class="hidden" id="round">
+    <div class="gtop"><span class="chip" id="rMode"></span><span class="chip" id="rNum"></span><div class="stamp" id="stamp"><b id="tnum"></b><small>SEC</small></div></div>
+    <div class="statement" id="statement"></div>
+    <div class="timer" id="timer"><i id="timerBar"></i></div>
+    <div class="opts" id="opts"></div>
+    <p class="hint" id="hint">Pick with a tap, or press the number or letter key.</p>
+    <div class="explain hidden" id="explain">
+      <p id="exText"></p>
+      <button class="btn primary" id="nextBtn">Next <kbd>Enter</kbd></button>
+    </div>
+  </section>
+
+  <footer class="foot"><a href="/">mizavo</a> · <a href="/today.html">Leaderboards</a> · <a href="/guide.html">Streamer guide</a></footer>
+</div>
+<script type="module" src="/src/pages/solo.ts"></script>
+</body>
+</html>

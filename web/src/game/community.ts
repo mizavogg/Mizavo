@@ -29,7 +29,8 @@ function fillLinks(c: Community, linksId: string): void {
   const line = todayLine(c);
   if (line) box.append(el('span', 'todayLine', line));
   const today = el('a', 'btn ghost small', "Today's board"); today.href = '/today.html'; today.target = '_blank';
-  box.append(today);
+  const solo = el('a', 'btn ghost small', 'Daily challenge'); solo.href = '/solo.html'; solo.target = '_blank';
+  box.append(today, solo);
   if (!c.hidden) {
     const page = el('a', 'btn ghost small', 'Your public page'); page.href = channelUrl(c.login); page.target = '_blank';
     const copy = el('button', 'btn ghost small', 'Copy page link');

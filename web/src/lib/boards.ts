@@ -17,6 +17,7 @@ export const boards = {
   today: () => rpc<Today>('get_top_channels_today'),
   players: () => rpc<PlayerRow[]>('get_top_players'),
   channel: (login: string) => rpc<ChannelPage>('get_channel_page', { p_login: login }),
+  solo: () => rpc<ViewerRow[]>('get_top_solo'),
 };
 
 export const plural = (n: number, word: string, many = word + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? word : many}`;

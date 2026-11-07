@@ -1,7 +1,7 @@
 /* Mizavo — today's board: top channels today (smartest chat) + top players worldwide.
    Public page: no login. Refreshes every minute while open. */
 import { $, el, show } from '../lib/dom';
-import { boards, channelUrl, emptyRow, plural, row } from '../lib/boards';
+import { boards, channelUrl, emptyRow, plural, row, viewerRow } from '../lib/boards';
 
 function err(msg: string | null): void { const e = $('#err'); e.textContent = msg || ''; show(e, !!msg); }
 
@@ -30,8 +30,15 @@ async function loadPlayers(): Promise<void> {
   }
 }
 
+async function loadSolo(): Promise<void> {
+  const p = await boards.solo();
+  const ol = $('#solo'); ol.replaceChildren();
+  if (!p.length) ol.append(emptyRow('No solo players yet. Be the first: play today\'s challenge.'));
+  for (const v of p) ol.append(viewerRow(v));
+}
+
 async function load(): Promise<void> {
-  try { await Promise.all([loadChannels(), loadPlayers()]); err(null); }
+  try { await Promise.all([loadChannels(), loadPlayers(), loadSolo()]); err(null); }
   catch { err("Couldn't load the boards. Check your connection; this page retries every minute."); }
 }
 load();
