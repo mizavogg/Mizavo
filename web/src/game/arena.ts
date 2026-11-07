@@ -61,6 +61,8 @@ function drawFace(x: number, y: number, r: number, color: string, img: HTMLImage
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   ctx.save();
   ctx.beginPath(); ctx.arc(x, y, inner, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = '#121516'; ctx.fillRect(x - inner, y - inner, inner * 2, inner * 2);   // behind a cut-out emote:
+  ctx.fillStyle = hexA(s.lo, .55); ctx.fillRect(x - inner, y - inner, inner * 2, inner * 2); // dark tint of the ring color
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, x - inner, y - inner, inner * 2, inner * 2);
   const g = ctx.createRadialGradient(x - inner * 0.35, y - inner * 0.4, inner * 0.05, x, y, inner);  // round, lit look
