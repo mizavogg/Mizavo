@@ -25,6 +25,13 @@ export interface ActiveGame {
   next_round: number | null; streamer_score: number; chat_score: number;
 }
 
+export interface CommunityViewer { rank: number; name: string; points: number; accuracy: number | null; best_streak: number; games: number }
+export interface Community {
+  record: { games: number; wins: number; losses: number; ties: number };
+  total_viewers: number;
+  top: CommunityViewer[];
+}
+
 export interface Access { invite_only: boolean; can_play: boolean; login: string | null }
 export interface Redeemed { status: 'joined' | 'already' | 'inactive' | 'full' }
 
@@ -41,6 +48,7 @@ export const api = {
   reveal: (session: string, idx: number, pick: number | null, counts: number[]) =>
     rpc<Revealed>('reveal_round', { p_session: session, p_idx: idx, p_streamer_choice: pick, p_chat_counts: counts }),
   finish: (session: string, viewers: ViewerResult[]) => rpc<Finished>('finish_game', { p_session: session, p_viewers: viewers }),
+  community: (top: number) => rpc<Community>('get_my_community', { p_top: top }),
   abandon: (session: string) => rpc<unknown>('abandon_game', { p_session: session }),
 };
 

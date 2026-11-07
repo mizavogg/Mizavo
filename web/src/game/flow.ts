@@ -7,6 +7,7 @@ import { api, friendly, type ActiveGame, type RoundData, type ViewerResult } fro
 import { layout, popWrong, resetArena, sortPool } from './arena';
 import { clearBots, makeBots, scheduleBots } from './demo';
 import { connectTwitch, disconnectTwitch, setStatus } from './chat';
+import { loadFinalCommunity, loadSetupCommunity } from './community';
 
 const MODE_NAME = { ff: 'Fact or Fake', ooo: 'Odd One Out', mix: 'Mix' } as const;
 
@@ -117,6 +118,7 @@ export function goHome(): void {
   $('#edition').textContent = 'Streamer vs chat';
   setPhase('setup'); show3('setup');
   checkActiveGame();
+  loadSetupCommunity();
 }
 
 /* ---------- a round ---------- */
@@ -303,10 +305,10 @@ async function finish(): Promise<void> {
   const real: ViewerResult[] = [...S.viewers.values()]
     .filter((v) => !v.bot && v.id && /^[a-z0-9_]{1,25}$/.test(v.login.toLowerCase()))
     .map((v) => ({ id: v.id!, login: v.login.toLowerCase(), display_name: v.name.slice(0, 50), points: v.pts, answers: v.answers, correct: v.correct, best_streak: v.best }));
-  let today = '';
+  let today = '', saved = false;
   try {
     const f = await api.finish(S.session!, real);
-    S.me = f.streamer_score; S.chat = f.chat_score;
+    S.me = f.streamer_score; S.chat = f.chat_score; saved = true;
     if (!f.is_test && f.today && f.today.games_finished > 1) {
       today = `Across Mizavo today: chat beat the streamer in ${f.today.chat_won_pct ?? 0}% of ${f.today.games_finished} games.`;
     }
@@ -318,7 +320,7 @@ async function finish(): Promise<void> {
   $('#fTitle').textContent = win === 'me' ? 'The streamer outsmarted chat.' : win === 'ch' ? 'Chat wins. The crowd was right.' : 'Dead even. Rematch?';
   $('#fTitle').style.color = '';   // the title stays ivory whoever wins
   $('#fMe').textContent = S.me + ' / ' + S.rounds; $('#fCh').textContent = S.chat + ' / ' + S.rounds;
-  $('#fToday').textContent = (S.isTest ? 'Test game (simulated chat): it doesn\'t count toward question stats. ' : '') + today;
+  $('#fToday').textContent = (S.isTest ? 'Test game (simulated chat): it doesn\'t count toward question stats, your record or the leaderboard. ' : '') + today;
   show($('#fToday'), !!$('#fToday').textContent);
   const top = [...S.viewers.values()].sort((a, b) => b.pts - a.pts).slice(0, 5);
   $('#fN').textContent = `${S.viewers.size} player${S.viewers.size === 1 ? '' : 's'}`;
@@ -331,6 +333,7 @@ async function finish(): Promise<void> {
   });
   show($('#copyBox'), false);
   show3('final');
+  if (saved) loadFinalCommunity(); else show($('#fCommunity'), false);
 }
 
 export function summary(): string {

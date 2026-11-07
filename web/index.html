@@ -43,6 +43,11 @@
           <button class="mode" data-mode="ooo"><span class="num">02</span><span class="mbody"><b><span class="ball orange"></span>Odd One Out</b><span>Four things. Which doesn't belong?</span></span><span class="ex">Chat types A B C D</span></button>
           <button class="mode" data-mode="mix"><span class="num">03</span><span class="mbody"><b><span class="ball"></span>Mix</b><span>A bit of both, shuffled.</span></span><span class="ex">Best for long streams</span></button>
         </div>
+        <div class="community hidden" id="community">
+          <h3><span>Your community</span><span id="cmCount"></span></h3>
+          <p class="record" id="cmRecord"></p>
+          <ol class="board" id="cmBoard"></ol>
+        </div>
       </div>
       <aside class="setupCard">
         <span class="sticker">Game settings</span>
@@ -108,7 +113,14 @@
       </div>
     </div>
     <div class="finalGrid">
-      <div class="cp"><h3><span>Chat MVPs</span><span id="fN"></span></h3><ul class="mvp" id="mvp"></ul></div>
+      <div>
+        <div class="cp"><h3><span>Chat MVPs</span><span id="fN"></span></h3><ul class="mvp" id="mvp"></ul></div>
+        <div class="community final hidden" id="fCommunity">
+          <h3><span>All-time top 5</span><span id="fcCount"></span></h3>
+          <p class="record" id="fcRecord"></p>
+          <ol class="board" id="fcBoard"></ol>
+        </div>
+      </div>
       <div class="finalSide">
         <span class="sticker">What's next</span>
         <div class="actions">
