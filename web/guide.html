@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mizavo — Streamer guide</title>
+<meta name="description" content="How to set up Mizavo on stream: log in, add it to OBS, and play against your Twitch chat.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/theme.css">
+<link rel="stylesheet" href="/src/styles/guide.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <a class="logo" href="/">Mizavo</a>
+    <div class="edition">Streamer guide</div>
+    <div class="spacer"></div>
+    <a class="btn primary small" href="/">Play →</a>
+  </header>
+
+  <section class="hero">
+    <span class="sticker">Closed test</span>
+    <h1>You vs your chat,<br>in five minutes.</h1>
+    <p>Mizavo is a trivia game where you play against your own Twitch chat. Every vote in chat drops into its answer as a ball, live on screen. You pick a side, chat picks theirs, and the wrong pile pops. Thanks for helping test it.</p>
+  </section>
+
+  <nav class="toc" aria-label="On this page">
+    <a href="#login">1. Log in</a>
+    <a href="#settings">2. Pick your settings</a>
+    <a href="#obs">3. Put it on stream</a>
+    <a href="#play">4. Play</a>
+    <a href="#report">5. Report a bad question</a>
+    <a href="#help">Fixes</a>
+    <a href="#feedback">Feedback</a>
+  </nav>
+
+  <section class="step" id="login">
+    <h2><span class="n">1</span>Log in with Twitch</h2>
+    <p>Open the <a href="/">game page</a> and press <b>Log in with Twitch</b>. Mizavo uses the login only to know which channel is yours, so your games and scores stay with it. It reads your chat anonymously, never posts in it, and can't change anything on your account.</p>
+    <p class="callout">Mizavo is <b>invite-only</b> while we test. If you see "not on the invite list yet", send your Twitch name to whoever invited you, then press <b>Check again</b>.</p>
+  </section>
+
+  <section class="step" id="settings">
+    <h2><span class="n">2</span>Pick your settings</h2>
+    <dl class="defs">
+      <dt>Mode</dt><dd><b>Fact or Fake</b>: one statement, is it true? <b>Odd One Out</b>: four things, which doesn't belong? <b>Mix</b>: both, shuffled.</dd>
+      <dt>Twitch chat to read</dt><dd>Your channel name. It's filled in for you. Change it only if you want to read a different chat.</dd>
+      <dt>Rounds &amp; seconds</dt><dd>10 rounds of 15 seconds is about 5 minutes. Use 20 or 30 seconds if your stream has a delay, so chat sees the question in time.</dd>
+      <dt>Blind mode</dt><dd>Chat's votes stay mixed together until you lock in your answer, so you can't just copy chat. Recommended.</dd>
+      <dt>Simulated chat</dt><dd>Fake demo viewers for practice. It's <b>off</b> by default; leave it off for real games on stream. With it on, the game is marked as a test and doesn't count.</dd>
+      <dt>Streamer mode</dt><dd>Clears space on the right for your webcam and chat overlay. Drag the edge or use the slider to size it. The game keeps at least 720px.</dd>
+    </dl>
+  </section>
+
+  <section class="step" id="obs">
+    <h2><span class="n">3</span>Put it on stream (OBS)</h2>
+    <ol class="list">
+      <li>Open Mizavo in its own browser window (Chrome, Edge or Firefox) and log in there.</li>
+      <li>Make the window at least <b>1280 × 720</b>. Full screen on a second monitor works best.</li>
+      <li>In OBS, add a source: <b>+ → Window Capture</b>, and pick the Mizavo browser window. On macOS, use <b>macOS Screen Capture</b> set to that window.</li>
+      <li>Crop off the browser's tabs and address bar: hold <kbd>Alt</kbd> (<kbd>Option</kbd> on Mac) and drag the top edge of the source in OBS.</li>
+      <li>Using streamer mode? Line up your webcam and chat sources inside the dashed box. During the game that space stays empty and matches the background.</li>
+    </ol>
+    <p class="muted small">Why not a Browser Source? It needs the Twitch login, and OBS's built-in browser makes that awkward. A captured window keeps you logged in and lets you click and use keys normally.</p>
+  </section>
+
+  <section class="step" id="play">
+    <h2><span class="n">4</span>Play</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>What chat types</h3>
+        <p><b>Fact or Fake:</b> <code>1</code> or <code>2</code> (or <code>fact</code> / <code>fake</code>).</p>
+        <p><b>Odd One Out:</b> <code>A</code> <code>B</code> <code>C</code> <code>D</code> (or <code>1</code>–<code>4</code>).</p>
+        <p class="muted">Each viewer's first answer counts. No switching, so tell chat to think before they type.</p>
+      </div>
+      <div class="card">
+        <h3>What you press</h3>
+        <p>Pick with the number keys, the arrow keys, <kbd>A</kbd>–<kbd>D</kbd>, or by clicking.</p>
+        <p><kbd>Enter</kbd> reveals early once you've picked, and moves to the next round.</p>
+        <p class="muted">Your pick stays secret until the reveal, so chat can't copy you. The screen only says you locked in. Use the keys, not the mouse, so your cursor doesn't give it away.</p>
+        <p class="muted">End game is top right. A game you close by accident waits for you to resume.</p>
+      </div>
+    </div>
+    <p>You score a point for each right answer, and chat scores a point when its most popular answer is right. At the end you'll see the final score and your top chatters.</p>
+    <p class="muted small">A question never repeats on your channel, so play as much as you like.</p>
+  </section>
+
+  <section class="step" id="report">
+    <h2><span class="n">5</span>Report a bad question</h2>
+    <p>Every question is fact-checked with a source, but mistakes happen. After a round, press <b>Report this question</b> under the explanation and pick what's wrong: a wrong answer, out of date, unclear, too local (not known worldwide), offensive, or a typo. Reports go straight to us, and bad questions are taken out of the game.</p>
+  </section>
+
+  <section class="step" id="help">
+    <h2>Fixes</h2>
+    <dl class="defs">
+      <dt>No votes show up</dt><dd>Check the pill next to the logo shows your channel (like <b>#yourname</b>) with a green dot, and that the chat name in settings matches your channel. Votes must be a message on their own, like <code>2</code>.</dd>
+      <dt>"Not enough new questions"</dt><dd>Try fewer rounds or another mode. Odd One Out has fewer questions during the test.</dd>
+      <dt>The page reloaded mid-game</dt><dd>Log back in. You'll be offered <b>Resume</b> for the game you were playing.</dd>
+      <dt>Stream delay</dt><dd>Use longer rounds (20–30 seconds) so chat sees each question before time runs out.</dd>
+    </dl>
+  </section>
+
+  <section class="step" id="feedback">
+    <h2>Tell us what you think</h2>
+    <p>Bugs, confusing bits, questions your chat loved or hated: all of it helps. Drop it in the Mizavo Discord.</p>
+    <p><a class="btn primary" id="feedbackLink" href="https://discord.gg/TEdQY7RTtS" target="_blank" rel="noopener noreferrer">Join the Mizavo Discord</a></p>
+  </section>
+
+  <footer class="foot">Mizavo · closed test · <a href="/">Back to the game</a></footer>
+</div>
+</body>
+</html>

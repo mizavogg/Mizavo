@@ -1,0 +1,25 @@
+# Mac
+.DS_Store
+
+# Secrets: never commit these
+.env
+.env.*
+*.key
+
+# Supabase CLI local files
+supabase/.temp/
+supabase/.branches/
+
+# Later: Node / Vite
+node_modules/
+dist/
+
+# Later: Python
+__pycache__/
+.venv/
+*.pyc
+
+# Pipeline: question content never goes in this public repo
+pipeline/data/
+pipeline/input/
+pipeline/out/

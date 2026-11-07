@@ -1,0 +1,97 @@
+/* Mizavo — theme.css
+   Shared "Ink & Cream" look: colors, fonts, header, buttons. Used by every page.
+   Charcoal, ivory text, muted blue and copper. DM Sans, plus Newsreader (serif) for a few big lines.
+   Depth comes from soft light, raised panels and round 3D-looking balls. */
+:root{
+  /* surfaces */
+  --bg:#121516;                 /* page */
+  --ink:#121516;                /* (old name) page / dark text on cream */
+  --ink2:#1A1E1F;               /* raised panel */
+  --ink3:#22272A;               /* raised panel, top edge of gradient */
+  --well:#0D0F10;               /* sunken areas (bins, inputs) */
+  --rule:rgba(242,232,220,.10); /* hairlines */
+  --rule2:rgba(242,232,220,.18);
+  /* text */
+  --paper:#F2E8DC;              /* cream: main text, primary button */
+  --muted:#B3ADA3;              /* secondary text (passes 4.5:1 on --bg) */
+  --dim:#7E7A72;
+  /* accents (muted, never neon) */
+  --blue:#7F95AD; --blue-hi:#A9BCD0;
+  --orange:#B76935; --orange-hi:#E09A62;
+  --copper-btn:#93552C;         /* main buttons */
+  --sage:#8FB39A; --lilac:#A99BC9;
+  --mint:var(--sage);           /* (old names kept so every page still works) */
+  --yellow:#E7C39B;             /* warm sand: highlights, focus, "your pick" */
+  --pink:#D9826E;               /* soft brick: errors, low timer, danger */
+  /* fonts: DM Sans, plus a serif for a few big lines */
+  --sans:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --display:var(--sans);
+  --mono:var(--sans);
+  /* depth */
+  --raise:0 1px 0 rgba(255,255,255,.05) inset,0 24px 44px -26px rgba(0,0,0,.85);
+  --sink:0 10px 24px rgba(0,0,0,.55) inset,0 -1px 0 rgba(255,255,255,.04) inset,0 1px 0 rgba(255,255,255,.05);
+  --panel:linear-gradient(180deg,var(--ink3) 0%,var(--ink2) 100%);
+  --glass:rgba(26,30,31,.72);   /* frosted panels over the background */
+  --r:16px;
+  --zone:25%;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--paper);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;
+  background:radial-gradient(1100px 700px at 50% -180px,rgba(183,105,53,.10),transparent 70%) no-repeat,var(--bg)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+a{color:var(--paper)}
+::selection{background:rgba(183,105,53,.35)}
+
+/* header */
+.mast{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:6px 0 18px;margin-bottom:18px;border-bottom:1px solid var(--rule)}
+.logo{font-weight:700;font-size:22px;letter-spacing:-.02em;line-height:1;text-decoration:none;color:var(--paper)}
+.edition{font-size:14px;color:var(--muted)}
+.pill{font-size:13px;padding:5px 11px;border:1px solid var(--rule2);border-radius:999px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.pill.on .dot{background:var(--sage);box-shadow:0 0 0 3px rgba(143,179,154,.18)}
+.pill.err .dot{background:var(--pink)}
+.spacer{flex:1}
+.score{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:7px 16px;box-shadow:var(--raise)}
+.score span{display:flex;align-items:center;gap:8px}
+.score b{font-weight:600;font-size:22px;color:var(--paper);font-variant-numeric:tabular-nums}
+.score .ch:before{content:"";width:1px;height:20px;background:var(--rule2);margin-right:4px}
+
+/* shared bits */
+.sticker{display:inline-block;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;font-size:13px;font-weight:500;padding:5px 11px;border:1px solid var(--rule2);border-radius:999px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;min-height:44px;border-radius:12px;font-weight:600;font-size:15px;transition:transform .08s,background .15s,border-color .15s,box-shadow .15s;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn.primary,.btn.copper{background:var(--copper-btn);color:var(--paper);box-shadow:0 1px 0 rgba(242,232,220,.22) inset,0 -2px 0 rgba(0,0,0,.18) inset,0 14px 28px -14px rgba(183,105,53,.6)}
+.btn.primary:hover,.btn.copper:hover{background:#864D28}
+.btn.ghost{border:1px solid var(--rule2);background:var(--panel);box-shadow:var(--raise)}
+.btn.ghost:hover{border-color:rgba(236,227,210,.32)}
+.btn:focus-visible,.mode:focus-visible,.opt:focus-visible,a:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+kbd{font-family:var(--sans);font-size:11px;font-weight:600;padding:1px 6px;border:1px solid currentColor;border-radius:5px;margin-left:4px;opacity:.6}
+
+/* shared: logged-in user, small buttons, errors, dialogs */
+.who{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500;color:var(--muted)}
+.btn.small{padding:8px 14px;font-size:14px;min-height:44px}
+.btn.danger{background:var(--pink);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 12px 24px -14px rgba(217,130,110,.5)}
+.btn:disabled{opacity:.45;cursor:default}
+.err{border:1px solid rgba(217,130,110,.5);background:rgba(217,130,110,.08);color:#F0B3A4;border-radius:12px;padding:11px 14px;margin:14px 0;font-size:14px;font-weight:500}
+dialog{background:var(--panel);color:var(--paper);border:1px solid var(--rule2);border-radius:20px;box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.06) inset;padding:26px;max-width:min(620px,calc(100% - 24px));width:100%;margin:auto}
+dialog::backdrop{background:rgba(5,7,11,.72);backdrop-filter:blur(3px)}
+dialog h2{font-weight:600;font-size:24px;letter-spacing:-.02em;margin-bottom:12px}
+dialog p{line-height:1.55;margin-bottom:6px;color:var(--muted)}
+.dlgActions{display:flex;justify-content:flex-end;gap:12px;margin-top:22px;flex-wrap:wrap}
+.btn.twitch{background:var(--copper-btn);color:var(--paper);box-shadow:0 1px 0 rgba(242,232,220,.22) inset,0 -2px 0 rgba(0,0,0,.18) inset}
+.muted{color:var(--muted)}
+
+/* a round 3D ball, for small markers anywhere */
+.ball{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 3px 6px rgba(0,0,0,.5);
+  background:radial-gradient(circle at 35% 30%,#fff 0%,var(--paper) 42%,#7E848F 100%)}
+.ball.blue{background:radial-gradient(circle at 35% 30%,#DCE5EF 0%,#7F95AD 45%,#3B4C5E 100%)}
+.ball.orange{background:radial-gradient(circle at 35% 30%,#F1CDAE 0%,#B76935 45%,#5E3218 100%)}
+.ball.sage{background:radial-gradient(circle at 35% 30%,#D3E3D7 0%,#8FB39A 45%,#465E4D 100%)}
+.ball.lilac{background:radial-gradient(circle at 35% 30%,#DCD4EC 0%,#A99BC9 45%,#544870 100%)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}

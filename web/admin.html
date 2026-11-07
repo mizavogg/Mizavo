@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mizavo — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/theme.css">
+<link rel="stylesheet" href="/src/styles/admin.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="logo">Mizavo</div>
+    <div class="edition">Admin</div>
+    <div class="spacer"></div>
+    <div class="who hidden" id="who"><span id="whoName"></span><button class="btn ghost small" id="logoutBtn">Log out</button></div>
+  </header>
+
+  <!-- shown until we know you're an admin -->
+  <section class="gate" id="gate">
+    <p id="gateMsg">Checking your login…</p>
+    <button class="btn primary hidden" id="loginBtn">Log in with Twitch</button>
+  </section>
+
+  <section class="hidden" id="app">
+    <div class="stats" id="stats"></div>
+
+    <div class="tools">
+      <label class="btn ghost small" for="importFile">Import drafts (.json)</label>
+      <input type="file" id="importFile" accept=".json,application/json" class="visually-hidden">
+      <button class="btn ghost small" id="exportBtn">Download bank (.csv)</button>
+      <span class="toolsNote">Import the pipeline's drafts.json. Download the bank for the pipeline's repeat check.</span>
+    </div>
+
+    <nav class="tabs" aria-label="Question lists">
+      <button class="tab sel" data-tab="draft">Drafts <span id="nDraft"></span></button>
+      <button class="tab" data-tab="approved">Approved <span id="nApproved"></span></button>
+      <button class="tab" data-tab="retired">Retired <span id="nRetired"></span></button>
+      <button class="tab" data-tab="reports">Reports <span id="nReports"></span></button>
+      <button class="tab" data-tab="invites">Invites <span id="nInvites"></span></button>
+    </nav>
+
+    <div id="reviewPane"></div>
+    <div class="hidden" id="listPane"></div>
+    <div class="hidden" id="reportsPane"></div>
+
+    <div class="hidden" id="invitesPane">
+      <div class="inviteMode" id="inviteMode">
+        <p id="inviteModeText">Loading…</p>
+        <button class="btn ghost small" id="inviteModeBtn"></button>
+      </div>
+      <h3 class="invHead">Invite links <small>anyone who opens a link and logs in is added below</small></h3>
+      <form class="inviteAdd" id="linkForm" novalidate>
+        <label class="fld">Who is this link for?<input id="linkLabel" maxlength="60" placeholder="e.g. Jake + his friends" autocomplete="off"></label>
+        <label class="fld">Max people <small>(blank = no limit)</small><input id="linkMax" type="number" min="1" max="1000" inputmode="numeric" placeholder="e.g. 10"></label>
+        <button class="btn primary small" type="submit" id="linkAddBtn">Make link</button>
+      </form>
+      <p class="formErr hidden" id="linkErr" role="alert"></p>
+      <div id="linkList"></div>
+
+      <h3 class="invHead">Invite one channel <small>by Twitch name</small></h3>
+      <form class="inviteAdd" id="inviteForm" novalidate>
+        <label class="fld">Twitch name or link<input id="invLogin" placeholder="e.g. twitch.tv/somestreamer" autocomplete="off" spellcheck="false"></label>
+        <label class="fld">Note <small>(optional, only you see it)</small><input id="invNote" maxlength="100" placeholder="e.g. friend from Discord"></label>
+        <button class="btn primary small" type="submit" id="invAddBtn">Invite</button>
+      </form>
+      <p class="formErr hidden" id="invErr" role="alert"></p>
+      <div id="inviteList"></div>
+    </div>
+  </section>
+</div>
+
+<!-- undo bar after approving -->
+<div class="toast hidden" id="toast" role="status">
+  <span id="toastMsg"></span>
+  <button class="btn ghost small hidden" id="undoBtn">Undo <kbd>U</kbd></button>
+</div>
+
+<!-- import drafts -->
+<dialog id="importDlg">
+  <h2 id="importTitle">Import drafts</h2>
+  <p id="importText"></p>
+  <ul class="importErrs hidden" id="importErrs"></ul>
+  <div class="dlgActions">
+    <button class="btn ghost" id="importCancel">Cancel</button>
+    <button class="btn primary" id="importOk">Import</button>
+  </div>
+</dialog>
+
+<!-- retire confirmation -->
+<dialog id="retireDlg">
+  <h2>Retire this question?</h2>
+  <p>It leaves the game for good and can't come back. To fix a mistake later, add a corrected draft.</p>
+  <div class="dlgActions">
+    <button class="btn ghost" id="retireCancel">Cancel</button>
+    <button class="btn danger" id="retireOk">Retire it</button>
+  </div>
+</dialog>
+
+<!-- general yes/no -->
+<dialog id="confirmDlg">
+  <h2 id="confirmTitle"></h2>
+  <p id="confirmText"></p>
+  <div class="dlgActions">
+    <button class="btn ghost" id="confirmCancel">Cancel</button>
+    <button class="btn danger" id="confirmOk">OK</button>
+  </div>
+</dialog>
+
+<!-- edit a draft -->
+<dialog id="editDlg">
+  <form id="editForm" novalidate>
+    <h2>Edit draft</h2>
+    <div id="ffFields">
+      <label class="fld">Statement<textarea id="fStatement" rows="3"></textarea></label>
+      <fieldset class="fld"><legend>Answer</legend>
+        <label class="radio"><input type="radio" name="fAnswerFF" value="true"> Fact (true)</label>
+        <label class="radio"><input type="radio" name="fAnswerFF" value="false"> Fake (false)</label>
+      </fieldset>
+    </div>
+    <div id="oooFields">
+      <fieldset class="fld"><legend>Items (pick the odd one out)</legend>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="0" aria-label="A is the odd one"><input id="fItem0" aria-label="Item A"></div>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="1" aria-label="B is the odd one"><input id="fItem1" aria-label="Item B"></div>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="2" aria-label="C is the odd one"><input id="fItem2" aria-label="Item C"></div>
+        <div class="itemRow"><input type="radio" name="fAnswerOOO" value="3" aria-label="D is the odd one"><input id="fItem3" aria-label="Item D"></div>
+      </fieldset>
+    </div>
+    <label class="fld">Explanation <small id="explCount"></small><textarea id="fExplanation" rows="3"></textarea></label>
+    <div class="two">
+      <label class="fld">Difficulty<select id="fDifficulty"><option value="1">Easy</option><option value="2">Medium</option><option value="3">Hard</option></select></label>
+      <label class="fld">Category<select id="fCategory"></select></label>
+    </div>
+    <label class="fld">Source link<input id="fSource" type="url"></label>
+    <label class="fld">Fact key <small>(lowercase-words-with-dashes; stops the same fact appearing twice)</small><input id="fFactKey"></label>
+    <p class="formErr hidden" id="editErr"></p>
+    <div class="dlgActions">
+      <button class="btn ghost" type="button" id="editCancel">Cancel</button>
+      <button class="btn primary" type="submit" id="editSave">Save draft</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="/src/admin/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,731 @@
+/* Mizavo — admin page (src/admin/main.ts)
+   The admin page: log in with Twitch, then review drafts, retire approved questions,
+   handle streamers' reports, and manage the closed-test invite list.
+   Every action goes through the database's admin functions, which check that you're an admin.
+   This page never decides who is an admin; the database does. */
+import { supabase, rpc, loginWithTwitch } from '../lib/supabase';
+import { $, el, show } from '../lib/dom';
+import { REPORT_REASONS, type ReportReason } from '../lib/reasons';
+
+/* ---------- constants ---------- */
+const UNDO_MS = 5000;   // approving waits this long before saving, so a mis-tap can be undone
+type Status = 'draft' | 'approved' | 'retired';
+type Tab = Status | 'reports' | 'invites';
+interface Question {
+  id: string; mode: 'ff' | 'ooo'; payload: { statement?: string; items?: string[] }; answer: boolean | number;
+  explanation: string; difficulty: 1 | 2 | 3; category: string; fact_key: string; source_url: string;
+  origin: string; status: Status; open_reports?: number;
+}
+interface Dashboard { drafts: number; approved: number; retired: number; open_reports: number; approved_by_mode_and_difficulty: Record<string, number> | null }
+interface Pending { q: Question; at: number; ends: number; timer: number; tick: number }
+
+const CATEGORIES = ['animals', 'space', 'geography', 'history', 'food', 'science', 'human_body', 'pop_culture', 'language'];
+const DIFF: Record<number, string> = { 1: 'easy', 2: 'medium', 3: 'hard' };
+const MODE: Record<string, string> = { ff: 'Fact or Fake', ooo: 'Odd One Out' };
+const KEYS = ['A', 'B', 'C', 'D'];
+
+/* ---------- page state ---------- */
+const A = {
+  tab: 'draft' as Tab,
+  drafts: [] as Question[],                         // the review queue
+  idx: 0,                                           // which draft is on screen
+  lists: {} as Partial<Record<Status, Question[]>>, // cached approved / retired lists
+  dash: null as Dashboard | null,                   // counts from admin_dashboard
+  pending: null as Pending | null,                  // an approval waiting out its undo window
+  bootRun: 0,
+};
+
+/* ---------- small helpers ---------- */
+function chip(text: string, cls?: string) { return el('span', 'chip' + (cls ? ' ' + cls : ''), text); }
+const prettyCat = (c: string) => c.replace('_', ' ');
+const val = (sel: string) => $<HTMLInputElement>(sel).value;
+
+/* ---------- login gate ---------- */
+function gate(msg: string, { login = false } = {}) {
+  show($('#app'), false); show($('#gate'), true);
+  $('#gateMsg').textContent = msg;
+  show($('#loginBtn'), login);
+}
+
+$('#loginBtn').onclick = async () => {
+  try { await loginWithTwitch(); } catch (e) { gate('Login failed: ' + (e as Error).message, { login: true }); }
+};
+$('#logoutBtn').onclick = async () => { await flushPending(); await supabase.auth.signOut(); };
+
+async function boot(session: { user: { user_metadata?: Record<string, string> } } | null) {
+  const run = ++A.bootRun;
+  if (!session) { show($('#who'), false); return gate('Log in with Twitch to review questions.', { login: true }); }
+
+  const meta = session.user.user_metadata || {};
+  $('#whoName').textContent = meta.nickname || meta.name || meta.preferred_username || meta.full_name || 'Logged in';
+  show($('#who'), true);
+  gate('Checking admin access…');
+
+  try {
+    A.dash = await rpc<Dashboard>('admin_dashboard');
+  } catch (err) {
+    const e = err as Error;
+    if (run !== A.bootRun) return;
+    if (/not_admin/.test(e.message)) return gate("This Twitch account isn't a Mizavo admin, so there's nothing to review here.");
+    return gate('Something went wrong loading the admin data: ' + e.message);
+  }
+  if (run !== A.bootRun) return;
+  show($('#gate'), false); show($('#app'), true);
+  renderStats();
+  await loadDrafts();
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') setTimeout(() => boot(session), 0);
+});
+
+/* ---------- counts + difficulty balance ---------- */
+async function refreshDash() {
+  try { A.dash = await rpc<Dashboard>('admin_dashboard'); renderStats(); } catch { /* counts are a nice-to-have; keep going */ }
+}
+function renderStats() {
+  const d = A.dash; if (!d) return;
+  const box = $('#stats'); box.replaceChildren();
+  const stat = (k: string, v: number, cls?: string) => { const s = el('div', 'stat ' + (cls || '')); s.append(el('div', 'k', k), el('div', 'v', String(v))); return s; };
+  box.append(stat('DRAFTS', d.drafts, 'drafts'), stat('APPROVED', d.approved), stat('RETIRED', d.retired));
+
+  const bal = el('div', 'bal');
+  bal.append(el('div', 'k', 'APPROVED BY DIFFICULTY'));
+  const t = el('table'), head = el('tr');
+  ['', 'Easy', 'Medium', 'Hard'].forEach((h) => head.append(el('th', null, h)));
+  t.append(head);
+  const by = d.approved_by_mode_and_difficulty || {};
+  for (const m of ['ff', 'ooo']) {
+    const tr = el('tr'); tr.append(el('td', null, m === 'ff' ? 'Fact/Fake' : 'Odd One'));
+    for (const lvl of [1, 2, 3]) { const n = by[m + '_' + lvl] || 0; tr.append(el('td', n ? null : 'zero', String(n))); }
+    t.append(tr);
+  }
+  bal.append(t); box.append(bal);
+
+  $('#nDraft').textContent = '(' + d.drafts + ')';
+  $('#nApproved').textContent = '(' + d.approved + ')';
+  $('#nRetired').textContent = '(' + d.retired + ')';
+  $('#nReports').textContent = d.open_reports ? '(' + d.open_reports + ')' : '';
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.onclick = () => setTab(b.dataset.tab as Tab));
+async function setTab(tab: Tab) {
+  A.tab = tab;
+  document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.classList.toggle('sel', b.dataset.tab === tab));
+  show($('#reviewPane'), tab === 'draft');
+  show($('#listPane'), tab === 'approved' || tab === 'retired');
+  show($('#reportsPane'), tab === 'reports');
+  show($('#invitesPane'), tab === 'invites');
+  if (tab === 'draft') return renderCard();
+  if (tab === 'reports') return renderReports();
+  if (tab === 'invites') return renderInvites();
+  await renderList(tab);
+}
+
+/* ---------- the review queue ---------- */
+async function loadDrafts() {
+  $('#reviewPane').replaceChildren(el('p', 'empty', 'Loading drafts…'));
+  try {
+    A.drafts = await rpc<Question[]>('admin_list_questions', { p_status: 'draft', p_limit: 500 });
+  } catch (e) {
+    $('#reviewPane').replaceChildren(el('p', 'err', 'Could not load drafts: ' + (e as Error).message));
+    return;
+  }
+  A.idx = 0;
+  if (A.tab === 'draft') renderCard();
+}
+const current = (): Question | null => A.drafts[A.idx] || null;
+
+function renderCard(errMsg?: string) {
+  const pane = $('#reviewPane'); pane.replaceChildren();
+  if (errMsg) pane.append(el('p', 'err', errMsg));
+  const q = current();
+  if (!q) {
+    const box = el('div', 'empty');
+    box.append(el('b', null, 'All caught up.'), el('span', null, 'No drafts are waiting for review.'));
+    pane.append(box); return;
+  }
+
+  // top row: position + labels
+  const top = el('div', 'cardTop');
+  top.append(el('span', 'pos', `Draft ${A.idx + 1} / ${A.drafts.length}`),
+    chip(MODE[q.mode]), chip(DIFF[q.difficulty], DIFF[q.difficulty]), chip(prettyCat(q.category)), chip(q.origin));
+  if (q.open_reports) top.append(chip(q.open_reports + ' report' + (q.open_reports > 1 ? 's' : ''), 'hard'));
+  pane.append(top);
+
+  // the question, the way players see it, with the answer marked
+  const pv = el('div', 'preview');
+  if (q.mode === 'ff') {
+    pv.append(el('span', 'sticker', 'TRUE OR NOT?'), el('div', 'statement', q.payload.statement ?? ''));
+    pv.append(el('span', 'verdict ' + (q.answer ? 'fact' : 'fake'), 'ANSWER: ' + (q.answer ? 'FACT' : 'FAKE')));
+  } else {
+    pv.append(el('span', 'sticker', 'ODD ONE OUT'));
+    const grid = el('div', 'items');
+    (q.payload.items ?? []).forEach((it, i) => {
+      const box = el('div', 'item' + (i === q.answer ? ' odd' : ''));
+      box.append(el('span', 'key', KEYS[i] + (i === q.answer ? ' · THE ODD ONE' : '')), document.createTextNode(it));
+      grid.append(box);
+    });
+    pv.append(grid);
+  }
+  pane.append(pv);
+
+  const ex = el('div', 'explain');
+  ex.append(el('b', null, 'WHY:'), document.createTextNode(q.explanation));
+  pane.append(ex);
+
+  // source + details
+  const dl = el('dl', 'meta');
+  const src = el('a', null, q.source_url); src.href = q.source_url; src.target = '_blank'; src.rel = 'noopener noreferrer';
+  const dd = el('dd'); dd.append(src);
+  dl.append(el('dt', null, 'SOURCE'), dd, el('dt', null, 'FACT KEY'), el('dd', null, q.fact_key));
+  pane.append(dl);
+
+  // actions
+  const act = el('div', 'actions');
+  const btn = (label: string, key: string, cls: string, fn: () => void) => { const b = el('button', 'btn ' + cls); b.append(document.createTextNode(label)); const k = el('kbd', null, key); b.append(k); b.onclick = fn; return b; };
+  act.append(
+    btn('Approve', 'A', 'primary', approveCurrent),
+    btn('Edit', 'E', 'ghost', openEdit),
+    btn('Retire', 'R', 'ghost retire', openRetire),
+    btn('Skip', '→', 'ghost', skipCurrent),
+  );
+  pane.append(act);
+}
+
+function skipCurrent() {
+  if (A.drafts.length < 2) return;
+  const [q] = A.drafts.splice(A.idx, 1);
+  A.drafts.push(q);
+  if (A.idx >= A.drafts.length) A.idx = 0;
+  renderCard();
+}
+
+/* ---------- approve, with a 5-second undo ---------- */
+function approveCurrent() {
+  const q = current(); if (!q) return;
+  if (A.pending) commitPending();             // a second approve saves the first one right away
+  A.drafts.splice(A.idx, 1);
+  if (A.idx >= A.drafts.length) A.idx = 0;
+  const p: Pending = { q, at: A.idx, ends: Date.now() + UNDO_MS, timer: 0, tick: 0 };
+  p.timer = window.setTimeout(commitPending, UNDO_MS);
+  p.tick = window.setInterval(() => updateToast(p), 250);
+  A.pending = p;
+  updateToast(p);
+  renderCard();
+}
+function updateToast(p: Pending) {
+  const secs = Math.max(0, Math.ceil((p.ends - Date.now()) / 1000));
+  toast(`Approved: saving in ${secs}s`, true);
+}
+function undoPending() {
+  const p = A.pending; if (!p) return;
+  clearTimeout(p.timer); clearInterval(p.tick); A.pending = null;
+  A.drafts.splice(Math.min(p.at, A.drafts.length), 0, p.q);
+  A.idx = Math.min(p.at, A.drafts.length - 1);
+  toast('Undone. Still a draft.', false, 1800);
+  if (A.tab === 'draft') renderCard();
+}
+async function commitPending() {
+  const p = A.pending; if (!p) return;
+  clearTimeout(p.timer); clearInterval(p.tick); A.pending = null;
+  try {
+    const r = await rpc<{ approved: number }>('admin_approve_questions', { p_ids: [p.q.id] });
+    if (r.approved !== 1) throw new Error('the database did not approve it (it may no longer be a draft)');
+    toast('Approved and saved.', false, 1800);
+    delete A.lists.approved;
+    refreshDash();
+  } catch (e) {
+    A.drafts.splice(Math.min(p.at, A.drafts.length), 0, p.q);   // put it back so nothing is lost
+    if (A.tab === 'draft') renderCard('Approve failed, so the question is back in the queue: ' + (e as Error).message);
+    hideToast();
+  }
+}
+const flushPending = () => (A.pending ? commitPending() : Promise.resolve());
+window.addEventListener('beforeunload', (e) => { if (A.pending) { e.preventDefault(); e.returnValue = ''; } });
+
+let toastTimer = 0;
+function toast(msg: string, withUndo: boolean, hideAfter?: number) {
+  clearTimeout(toastTimer);
+  $('#toastMsg').textContent = msg; show($('#undoBtn'), withUndo); show($('#toast'), true);
+  if (hideAfter) toastTimer = window.setTimeout(hideToast, hideAfter);
+}
+function hideToast() { show($('#toast'), false); }
+$('#undoBtn').onclick = undoPending;
+
+/* ---------- retire (asks first) ---------- */
+const retireDlg = $<HTMLDialogElement>('#retireDlg');
+function openRetire() { if (current()) retireDlg.showModal(); }
+$('#retireCancel').onclick = () => retireDlg.close();
+$('#retireOk').onclick = async () => {
+  const q = current(); retireDlg.close(); if (!q) return;
+  try {
+    const r = await rpc<{ retired: number }>('admin_retire_questions', { p_ids: [q.id] });
+    if (r.retired !== 1) throw new Error('the database did not retire it');
+    A.drafts.splice(A.drafts.indexOf(q), 1);
+    if (A.idx >= A.drafts.length) A.idx = 0;
+    delete A.lists.retired;
+    toast('Retired.', false, 1800);
+    renderCard(); refreshDash();
+  } catch (e) { renderCard('Retire failed: ' + (e as Error).message); }
+};
+
+/* ---------- edit a draft ---------- */
+const editDlg = $<HTMLDialogElement>('#editDlg');
+$('#fCategory').append(...CATEGORIES.map((c) => { const o = el('option', null, prettyCat(c)); o.value = c; return o; }));
+const countExpl = () => { $('#explCount').textContent = `(${val('#fExplanation').trim().length}/300, at least 10)`; };
+$('#fExplanation').oninput = countExpl;
+
+function openEdit() {
+  const q = current(); if (!q) return;
+  show($('#ffFields'), q.mode === 'ff'); show($('#oooFields'), q.mode === 'ooo');
+  const radio = (name: string, v: unknown) => { $<HTMLInputElement>(`input[name=${name}][value="${String(v)}"]`).checked = true; };
+  const setVal = (sel: string, v: string) => { $<HTMLInputElement>(sel).value = v; };
+  if (q.mode === 'ff') { setVal('#fStatement', q.payload.statement ?? ''); radio('fAnswerFF', q.answer); }
+  else { (q.payload.items ?? []).forEach((it, i) => setVal('#fItem' + i, it)); radio('fAnswerOOO', q.answer); }
+  setVal('#fExplanation', q.explanation); countExpl();
+  setVal('#fDifficulty', String(q.difficulty));
+  setVal('#fCategory', q.category);
+  setVal('#fSource', q.source_url);
+  setVal('#fFactKey', q.fact_key);
+  show($('#editErr'), false);
+  editDlg.showModal();
+}
+$('#editCancel').onclick = () => editDlg.close();
+
+$('#editForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const q = current(); if (!q) return editDlg.close();
+  const changes: Partial<Question> & { explanation: string; source_url: string; fact_key: string } = {
+    explanation: val('#fExplanation').trim(),
+    difficulty: +val('#fDifficulty') as 1 | 2 | 3,
+    category: val('#fCategory'),
+    source_url: val('#fSource').trim(),
+    fact_key: val('#fFactKey').trim(),
+  };
+  const checked = (name: string) => $<HTMLInputElement>(`input[name=${name}]:checked`).value;
+  const problems: string[] = [];
+  if (q.mode === 'ff') {
+    const statement = val('#fStatement').trim();
+    changes.payload = { statement };
+    changes.answer = checked('fAnswerFF') === 'true';
+    if (!statement) problems.push('The statement is empty.');
+  } else {
+    const items = [0, 1, 2, 3].map((i) => val('#fItem' + i).trim());
+    changes.payload = { items };
+    changes.answer = +checked('fAnswerOOO');
+    if (items.some((x) => !x)) problems.push('All four items need text.');
+    if (new Set(items.map((x) => x.toLowerCase())).size < 4) problems.push('The four items must all be different.');
+  }
+  if (changes.explanation.length < 10 || changes.explanation.length > 300) problems.push('The explanation must be 10 to 300 characters.');
+  if (!/^https?:\/\/\S+$/.test(changes.source_url)) problems.push('The source must be a full link starting with http:// or https://');
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(changes.fact_key)) problems.push('The fact key must be lowercase words joined by dashes, like octopus-hearts.');
+  if (problems.length) { $('#editErr').textContent = problems.join(' '); show($('#editErr'), true); return; }
+
+  $<HTMLButtonElement>('#editSave').disabled = true;
+  try {
+    await rpc('admin_edit_draft', { p_id: q.id, p_changes: changes });
+    Object.assign(q, changes);
+    editDlg.close();
+    toast('Saved. Still a draft: approve it when it looks right.', false, 2500);
+    renderCard();
+  } catch (err) {
+    $('#editErr').textContent = 'The database rejected the change: ' + (err as Error).message;
+    show($('#editErr'), true);
+  } finally { $<HTMLButtonElement>('#editSave').disabled = false; }
+};
+
+/* ---------- approved / retired lists (read-only) ---------- */
+async function renderList(status: Status) {
+  const pane = $('#listPane');
+  if (!A.lists[status]) {
+    pane.replaceChildren(el('p', 'empty', 'Loading…'));
+    try { A.lists[status] = await rpc<Question[]>('admin_list_questions', { p_status: status, p_limit: 500 }); }
+    catch (e) { pane.replaceChildren(el('p', 'err', 'Could not load: ' + (e as Error).message)); return; }
+  }
+  if (A.tab !== status) return;
+  const rows = A.lists[status] ?? [];
+  pane.replaceChildren();
+  if (!rows.length) { pane.append(el('p', 'empty', status === 'approved' ? 'Nothing approved yet.' : 'Nothing retired.')); return; }
+  const ul = el('ul', 'list');
+  for (const q of rows) {
+    const li = el('li'), text = el('div', 'q');
+    if (q.mode === 'ff') {
+      text.append(document.createTextNode((q.payload.statement ?? '') + ' '), el('span', 'ans', '→ ' + (q.answer ? 'FACT' : 'FAKE')));
+    } else {
+      const items = q.payload.items ?? [];
+      text.append(document.createTextNode(items.join(' · ') + ' '), el('span', 'ans', '→ ' + items[q.answer as number]));
+    }
+    const tags = el('div', 'tags');
+    tags.append(chip(q.mode === 'ff' ? 'FF' : 'OOO'), chip(DIFF[q.difficulty], DIFF[q.difficulty]), chip(prettyCat(q.category)));
+    if (status === 'approved') {
+      const b = el('button', 'btn ghost small retire', 'Retire');
+      b.onclick = () => retireApproved(q, li);
+      tags.append(b);
+    }
+    li.append(text, tags); ul.append(li);
+  }
+  pane.append(ul);
+}
+
+/** Retire a live question (e.g. a mistake found after approving). Asks first. */
+async function retireApproved(q: Question, li: HTMLElement) {
+  const what = q.mode === 'ff' ? `"${q.payload.statement}"` : (q.payload.items ?? []).join(' · ');
+  if (!await confirmBox('Retire this live question?', what + ' leaves the game for good. To fix it, add a corrected draft.', 'Retire it')) return;
+  try {
+    const r = await rpc<{ retired: number }>('admin_retire_questions', { p_ids: [q.id] });
+    if (r.retired !== 1) throw new Error('the database did not retire it');
+    A.lists.approved = (A.lists.approved ?? []).filter((x) => x !== q);
+    delete A.lists.retired;
+    li.remove();
+    toast('Retired. It will not be played again.', false, 2200);
+    refreshDash();
+  } catch (e) { toast('Retire failed: ' + (e as Error).message, false, 4000); }
+}
+
+/** Simple yes/no dialog. Resolves true if you confirm. */
+function confirmBox(title: string, text: string, ok: string): Promise<boolean> {
+  const d = $<HTMLDialogElement>('#confirmDlg');
+  $('#confirmTitle').textContent = title; $('#confirmText').textContent = text; $('#confirmOk').textContent = ok;
+  d.showModal();
+  return new Promise((res) => {
+    $('#confirmOk').onclick = () => { d.close(); res(true); };
+    $('#confirmCancel').onclick = () => { d.close(); res(false); };
+    d.oncancel = () => res(false);
+  });
+}
+
+/* ---------- reports from streamers ---------- */
+interface Report {
+  id: string; reason: ReportReason; note: string | null; status: 'open' | 'accepted' | 'rejected'; created_at: string;
+  channel_login: string | null; channel_name: string | null; resolution_note: string | null; resolved_at: string | null;
+  question_id: string; mode: 'ff' | 'ooo'; payload: { statement?: string; items?: string[] }; answer: boolean | number;
+  explanation: string; source_url: string; question_status: Status; reports_on_question: number;
+}
+let reportView: 'open' | 'resolved' = 'open';
+const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+async function renderReports() {
+  const pane = $('#reportsPane');
+  const bar = el('div', 'subtabs');
+  for (const v of ['open', 'resolved'] as const) {
+    const b = el('button', 'btn small ' + (reportView === v ? 'primary' : 'ghost'), v === 'open' ? 'Open' : 'Resolved');
+    b.onclick = () => { reportView = v; renderReports(); };
+    bar.append(b);
+  }
+  pane.replaceChildren(bar, el('p', 'empty', 'Loading reports…'));
+  let rows: Report[];
+  try {
+    rows = reportView === 'open'
+      ? await rpc<Report[]>('admin_list_reports', { p_status: 'open', p_limit: 200 })
+      : [...await rpc<Report[]>('admin_list_reports', { p_status: 'accepted', p_limit: 100 }),
+         ...await rpc<Report[]>('admin_list_reports', { p_status: 'rejected', p_limit: 100 })]
+          .sort((a, b) => (b.resolved_at ?? '').localeCompare(a.resolved_at ?? ''));
+  } catch (e) { pane.replaceChildren(bar, el('p', 'err', 'Could not load reports: ' + (e as Error).message)); return; }
+  if (A.tab !== 'reports') return;
+  pane.replaceChildren(bar);
+  if (!rows.length) {
+    const box = el('div', 'empty');
+    box.append(el('b', null, reportView === 'open' ? 'No open reports.' : 'Nothing resolved yet.'),
+      el('span', null, 'Streamers report questions from the reveal screen in the game.'));
+    pane.append(box); return;
+  }
+  for (const r of rows) pane.append(reportCard(r, rows));
+}
+
+function reportCard(r: Report, all: Report[]): HTMLElement {
+  const card = el('article', 'report');
+  const top = el('div', 'cardTop');
+  top.append(chip(REPORT_REASONS[r.reason] ?? r.reason, r.reason === 'wrong_answer' || r.reason === 'offensive' ? 'hard' : 'medium'));
+  if (r.reports_on_question > 1 && r.status === 'open') top.append(chip(r.reports_on_question + ' open reports on this question', 'hard'));
+  top.append(el('span', 'from', `from ${r.channel_name || r.channel_login || 'a deleted channel'} · ${day(r.created_at)}`));
+  if (r.question_status !== 'approved') top.append(chip('question ' + r.question_status));
+  card.append(top);
+
+  // the question as it was played, answer marked
+  const q = el('div', 'q');
+  if (r.mode === 'ff') q.append(document.createTextNode((r.payload.statement ?? '') + ' '), el('span', 'ans', '→ ' + (r.answer ? 'FACT' : 'FAKE')));
+  else {
+    const items = r.payload.items ?? [];
+    q.append(document.createTextNode(items.join(' · ') + ' '), el('span', 'ans', '→ ' + items[r.answer as number]));
+  }
+  card.append(q, el('p', 'why', r.explanation));
+  const src = el('a', 'src', r.source_url); src.href = r.source_url; src.target = '_blank'; src.rel = 'noopener noreferrer';
+  card.append(src);
+  if (r.note) { const n = el('blockquote', 'note'); n.append(el('b', null, 'Their note: '), document.createTextNode(r.note)); card.append(n); }
+
+  if (r.status !== 'open') {
+    card.append(el('p', 'resolved', `${r.status === 'accepted' ? 'Accepted' : 'Rejected'}${r.resolved_at ? ' on ' + day(r.resolved_at) : ''}` +
+      (r.resolution_note ? ': ' + r.resolution_note : '')));
+    return card;
+  }
+
+  const noteIn = el('input'); noteIn.maxLength = 500; noteIn.placeholder = 'Your note (optional): what you decided and why';
+  const fld = el('label', 'fld'); fld.append('Resolution note', noteIn);
+  const act = el('div', 'actions');
+  const err = el('p', 'formErr hidden');
+  const resolve = async (decision: 'accepted' | 'rejected', retire: boolean) => {
+    if (retire && !await confirmBox('Accept and retire?', 'The question leaves the game for good. If it can be fixed, add a corrected draft through the pipeline.', 'Retire it')) return;
+    act.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    try {
+      await rpc('admin_resolve_report', { p_report: r.id, p_decision: decision, p_note: noteIn.value.trim() || null, p_retire_question: retire });
+      all.splice(all.indexOf(r), 1);
+      if (retire) {
+        for (const o of all) if (o.question_id === r.question_id) o.question_status = 'retired';
+        delete A.lists.approved; delete A.lists.retired;
+      }
+      for (const o of all) if (o.question_id === r.question_id) o.reports_on_question--;
+      toast(decision === 'rejected' ? 'Rejected: the question stays.' : retire ? 'Accepted and retired.' : 'Accepted: the question stays.', false, 2200);
+      refreshDash();
+      renderReportsFrom(all);
+    } catch (e) {
+      err.textContent = 'Could not save: ' + (e as Error).message; show(err, true);
+      act.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+    }
+  };
+  if (r.question_status !== 'retired') {
+    const b = el('button', 'btn small danger', 'Accept + retire question'); b.onclick = () => resolve('accepted', true); act.append(b);
+  }
+  const keep = el('button', 'btn small ghost', 'Accept, keep it'); keep.title = 'The report was fair but the question is fine as is (e.g. a small wording nit).';
+  keep.onclick = () => resolve('accepted', false);
+  const rej = el('button', 'btn small ghost', 'Reject'); rej.title = 'The question is correct.';
+  rej.onclick = () => resolve('rejected', false);
+  act.append(keep, rej);
+  card.append(fld, act, err);
+  return card;
+}
+/** Re-draw the open list after resolving one, without reloading. */
+function renderReportsFrom(rows: Report[]) {
+  const pane = $('#reportsPane');
+  const bar = pane.querySelector('.subtabs');
+  pane.replaceChildren(...(bar ? [bar] : []));
+  if (!rows.length) { const box = el('div', 'empty'); box.append(el('b', null, 'No open reports.'), el('span', null, 'All handled.')); pane.append(box); return; }
+  for (const r of rows) pane.append(reportCard(r, rows));
+}
+
+/* ---------- closed-test invites ---------- */
+interface Invite { login: string; note: string | null; invited_at: string; display_name: string | null; games_finished: number; last_played: string | null }
+interface InviteList { invite_only: boolean; invites: Invite[] }
+let inviteOnly = true;
+
+async function renderInvites() {
+  renderLinks();
+  const list = $('#inviteList');
+  list.replaceChildren(el('p', 'empty', 'Loading invites…'));
+  let data: InviteList;
+  try { data = await rpc<InviteList>('admin_list_invites'); }
+  catch (e) { list.replaceChildren(el('p', 'err', 'Could not load invites: ' + (e as Error).message)); return; }
+  inviteOnly = data.invite_only;
+  $('#nInvites').textContent = '(' + data.invites.length + ')';
+  $('#inviteMode').classList.toggle('open', !inviteOnly);
+  $('#inviteModeText').replaceChildren(
+    el('b', null, inviteOnly ? 'Closed test: ON.' : 'Closed test: OFF.'),
+    ' ' + (inviteOnly ? 'Only the channels below (and admins) can play. Anyone else who logs in sees a "not on the invite list yet" screen.'
+                      : 'Anyone with a Twitch account can play. The list below is kept in case you turn the closed test back on.'));
+  $('#inviteModeBtn').textContent = inviteOnly ? 'Open to everyone' : 'Turn closed test back on';
+
+  if (!data.invites.length) { list.replaceChildren(el('p', 'empty', 'No one invited yet. Add a streamer above.')); return; }
+  const ul = el('ul', 'list invites');
+  for (const i of data.invites) {
+    const li = el('li'), who = el('div', 'q');
+    const a = el('a', null, i.display_name || i.login); a.href = 'https://www.twitch.tv/' + i.login; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    who.append(a);
+    if (i.note) who.append(el('span', 'muted', ' · ' + i.note));
+    const status = !i.display_name ? 'hasn\'t logged in yet'
+      : i.last_played ? `${i.games_finished} game${i.games_finished === 1 ? '' : 's'} finished · last played ${day(i.last_played)}`
+      : 'logged in, no games yet';
+    who.append(el('div', 'sub', `invited ${day(i.invited_at)} · ${status}`));
+    const tags = el('div', 'tags');
+    const rm = el('button', 'btn ghost small retire', 'Remove');
+    rm.onclick = async () => {
+      if (!await confirmBox(`Remove ${i.login}?`, 'They can no longer start games while the closed test is on. Their past games stay.', 'Remove')) return;
+      try { await rpc('admin_remove_invite', { p_login: i.login }); renderInvites(); }
+      catch (e) { toast('Remove failed: ' + (e as Error).message, false, 4000); }
+    };
+    tags.append(rm);
+    li.append(who, tags); ul.append(li);
+  }
+  list.replaceChildren(ul);
+}
+
+$('#inviteForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const login = val('#invLogin').trim(), note = val('#invNote').trim();
+  const err = $('#invErr'); show(err, false);
+  if (!login) { err.textContent = 'Type their Twitch name, or paste their twitch.tv link.'; show(err, true); return; }
+  const btn = $<HTMLButtonElement>('#invAddBtn'); btn.disabled = true;
+  try {
+    const r = await rpc<{ login: string }>('admin_add_invite', { p_login: login, p_note: note || null });
+    $<HTMLInputElement>('#invLogin').value = ''; $<HTMLInputElement>('#invNote').value = '';
+    toast(`Invited ${r.login}. Send them the game link and the guide.`, false, 3000);
+    renderInvites();
+  } catch (ex) {
+    const m = (ex as Error).message;
+    err.textContent = /bad_login/.test(m) ? "That doesn't look like a Twitch name. Use the name from twitch.tv/name: letters, numbers and underscores only." : 'Could not invite: ' + m;
+    show(err, true);
+  } finally { btn.disabled = false; }
+};
+$('#inviteModeBtn').onclick = async () => {
+  const turnOn = !inviteOnly;
+  const ok = turnOn
+    ? await confirmBox('Turn the closed test back on?', 'Only invited channels and admins will be able to start games.', 'Turn on')
+    : await confirmBox('Open Mizavo to everyone?', 'Any Twitch streamer who finds the site can play. Only do this when you are ready to launch.', 'Open it');
+  if (!ok) return;
+  try { await rpc('admin_set_invite_only', { p_on: turnOn }); renderInvites(); }
+  catch (e) { toast('Could not change it: ' + (e as Error).message, false, 4000); }
+};
+
+/* ---------- invite links ---------- */
+interface InviteLink { id: string; code: string; label: string; max_uses: number | null; active: boolean; created_at: string; joined: number }
+const GAME_URL = window.location.origin + '/';
+const linkUrl = (code: string) => GAME_URL + '?invite=' + code;
+
+async function renderLinks() {
+  const box = $('#linkList');
+  let links: InviteLink[];
+  try { links = await rpc<InviteLink[]>('admin_list_invite_links'); }
+  catch (e) { box.replaceChildren(el('p', 'err', 'Could not load invite links: ' + (e as Error).message)); return; }
+  if (!links.length) { box.replaceChildren(el('p', 'empty', 'No invite links yet. Make one per friend, so you can switch off just theirs if it spreads too far.')); return; }
+  const ul = el('ul', 'list links');
+  for (const l of links) {
+    const li = el('li', l.active ? null : 'off'), q = el('div', 'q');
+    q.append(el('span', null, l.label));
+    const full = l.max_uses != null && l.joined >= l.max_uses;
+    const state = !l.active ? 'off' : full ? 'full' : 'on';
+    q.append(el('div', 'sub', `${l.joined}${l.max_uses != null ? ' / ' + l.max_uses : ''} joined · ${state} · made ${day(l.created_at)}`));
+    q.append(el('div', 'url', linkUrl(l.code)));
+    const tags = el('div', 'tags');
+    const copy = el('button', 'btn ghost small', 'Copy link');
+    copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(linkUrl(l.code)); toast('Link copied. Send it with the guide: ' + GAME_URL + 'guide.html', false, 3000); }
+      catch { window.prompt('Copy this link:', linkUrl(l.code)); }
+    };
+    const tog = el('button', 'btn ghost small' + (l.active ? ' retire' : ''), l.active ? 'Turn off' : 'Turn on');
+    tog.onclick = async () => {
+      if (l.active && !await confirmBox(`Turn off "${l.label}"?`, 'New people can no longer join with this link. Anyone who already joined stays invited.', 'Turn off')) return;
+      try { await rpc('admin_set_invite_link_active', { p_id: l.id, p_active: !l.active }); renderLinks(); }
+      catch (e) { toast('Could not change it: ' + (e as Error).message, false, 4000); }
+    };
+    tags.append(copy, tog);
+    li.append(q, tags); ul.append(li);
+  }
+  box.replaceChildren(ul);
+}
+
+$('#linkForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const label = val('#linkLabel').trim(), maxRaw = val('#linkMax').trim();
+  const err = $('#linkErr'); show(err, false);
+  const fail = (m: string) => { err.textContent = m; show(err, true); };
+  if (!label) return fail('Give the link a name, like who you are sending it to.');
+  const max = maxRaw === '' ? null : Number(maxRaw);
+  if (max != null && !(Number.isInteger(max) && max >= 1 && max <= 1000)) return fail('Max people must be a whole number from 1 to 1000, or blank for no limit.');
+  const btn = $<HTMLButtonElement>('#linkAddBtn'); btn.disabled = true;
+  try {
+    const r = await rpc<{ code: string }>('admin_create_invite_link', { p_label: label, p_max_uses: max });
+    $<HTMLInputElement>('#linkLabel').value = ''; $<HTMLInputElement>('#linkMax').value = '';
+    try { await navigator.clipboard.writeText(linkUrl(r.code)); toast('Link made and copied.', false, 2500); }
+    catch { toast('Link made. Use "Copy link" below.', false, 2500); }
+    renderLinks();
+  } catch (ex) { fail('Could not make the link: ' + (ex as Error).message); }
+  finally { btn.disabled = false; }
+};
+
+/* ---------- keyboard shortcuts (laptop) ---------- */
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (document.querySelector('dialog[open]')) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement).tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'u' && A.pending) { e.preventDefault(); return undoPending(); }
+  if (A.tab !== 'draft' || $('#app').classList.contains('hidden')) return;
+  if (k === 'a') { e.preventDefault(); approveCurrent(); }
+  else if (k === 'e') { e.preventDefault(); openEdit(); }
+  else if (k === 'r') { e.preventDefault(); openRetire(); }
+  else if (k === 'arrowright') { e.preventDefault(); skipCurrent(); }
+});
+
+/* ---------- import drafts from the pipeline (drafts.json) ---------- */
+interface AddResult { added: number; skipped: number; failed: number; skipped_rows: { row: number; reason: string }[]; failed_rows: { row: number; reason: string }[] }
+const importDlg = $<HTMLDialogElement>('#importDlg');
+let toImport: Record<string, unknown>[] = [];
+const CHUNK = 200;
+
+$<HTMLInputElement>('#importFile').onchange = async (e) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0]; input.value = '';
+  if (!file) return;
+  show($('#importErrs'), false);
+  $<HTMLButtonElement>('#importOk').disabled = false; show($('#importOk'), true);
+  $('#importCancel').textContent = 'Cancel';
+  try {
+    const data = JSON.parse(await file.text());
+    if (!Array.isArray(data) || !data.every((q) => q && typeof q === 'object' && (q.mode === 'ff' || q.mode === 'ooo'))) {
+      throw new Error("this doesn't look like the pipeline's drafts.json");
+    }
+    toImport = data;
+    const ff = data.filter((q) => q.mode === 'ff').length;
+    $('#importTitle').textContent = `Import ${data.length} drafts?`;
+    $('#importText').textContent = `${ff} Fact or Fake and ${data.length - ff} Odd One Out, from ${file.name}. ` +
+      'They arrive as drafts: nothing can be played until you approve it. Exact repeats are skipped automatically.';
+  } catch (err) {
+    toImport = [];
+    $('#importTitle').textContent = "Can't import that file";
+    $('#importText').textContent = (err as Error).message;
+    show($('#importOk'), false);
+  }
+  importDlg.showModal();
+};
+$('#importCancel').onclick = () => importDlg.close();
+$('#importOk').onclick = async () => {
+  if (!toImport.length) return;
+  const ok = $<HTMLButtonElement>('#importOk'); ok.disabled = true;
+  let added = 0, skipped = 0, failed = 0;
+  const problems: string[] = [];
+  try {
+    for (let i = 0; i < toImport.length; i += CHUNK) {
+      $('#importText').textContent = `Importing… ${Math.min(i + CHUNK, toImport.length)} of ${toImport.length}`;
+      const r = await rpc<AddResult>('admin_add_questions', { p_questions: toImport.slice(i, i + CHUNK) });
+      added += r.added; skipped += r.skipped; failed += r.failed;
+      for (const f of [...r.skipped_rows, ...r.failed_rows]) problems.push(`Row ${i + f.row}: ${f.reason}`);
+    }
+    $('#importTitle').textContent = 'Import finished';
+    $('#importText').textContent = `${added} added as drafts, ${skipped} skipped as exact repeats, ${failed} failed.`;
+  } catch (err) {
+    $('#importTitle').textContent = 'Import stopped';
+    $('#importText').textContent = `${added} added before an error: ${(err as Error).message}`;
+  }
+  const ul = $('#importErrs'); ul.replaceChildren(...problems.map((p) => el('li', null, p)));
+  show(ul, problems.length > 0);
+  show(ok, false); $('#importCancel').textContent = 'Close';
+  toImport = [];
+  A.lists = {};
+  await Promise.all([refreshDash(), loadDrafts()]);
+};
+
+/* ---------- download the whole bank as CSV (for the pipeline's repeat check) ---------- */
+async function listAll(status: Status): Promise<Question[]> {
+  const out: Question[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const page = await rpc<Question[]>('admin_list_questions', { p_status: status, p_limit: 500, p_offset: offset });
+    out.push(...page);
+    if (page.length < 500) return out;
+  }
+}
+const csvCell = (v: unknown) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+$('#exportBtn').onclick = async () => {
+  const btn = $<HTMLButtonElement>('#exportBtn'); btn.disabled = true; btn.textContent = 'Preparing…';
+  try {
+    const all = [...await listAll('draft'), ...await listAll('approved'), ...await listAll('retired')];
+    const head = ['fact_key', 'mode', 'statement', 'items', 'answer', 'status', 'difficulty', 'category'];
+    const rows = all.map((q) => [q.fact_key, q.mode, q.payload.statement ?? '', (q.payload.items ?? []).join(' | '),
+      q.mode === 'ff' ? (q.answer ? 'fact' : 'fake') : 'ABCD'[q.answer as number], q.status, q.difficulty, q.category].map(csvCell).join(','));
+    const blob = new Blob(['﻿' + [head.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = el('a'); a.href = URL.createObjectURL(blob); a.download = `mizavo-bank-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    toast(`Downloaded ${all.length} questions.`, false, 2500);
+  } catch (err) {
+    toast('Download failed: ' + (err as Error).message, false, 4000);
+  } finally { btn.disabled = false; btn.textContent = 'Download bank (.csv)'; }
+};
