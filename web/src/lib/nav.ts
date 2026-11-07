@@ -5,6 +5,9 @@ import { el, store } from './dom';
 import { supabase } from './supabase';
 import { channelUrl } from './boards';
 
+/** Mizavo's Ko-fi page. Empty = every support link stays hidden. Paste the full link here to turn them on. */
+export const SUPPORT_URL = '';
+
 const LINKS: [key: string, text: string, href: string][] = [
   ['play', 'Play', '/'],
   ['solo', 'Daily challenge', '/solo.html'],
@@ -32,11 +35,22 @@ function render(): void {
   for (const [k, t, h] of LINKS) add(k, t, h);
   const login = store.get('mz_login');
   if (login && loggedIn) add(page === 'channel' && here === login ? 'channel' : 'mine', 'My page', channelUrl(login));
+  if (SUPPORT_URL) {
+    const a = el('a', 'support', '♥ Support'); a.href = SUPPORT_URL; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.title = 'Help cover the servers (optional tip on Ko-fi)';
+    nav.append(a);
+  }
+}
+
+/** Footer links and the guide section: shown only once SUPPORT_URL is set. */
+function wireSupport(): void {
+  document.querySelectorAll<HTMLAnchorElement>('a.supportLink').forEach((a) => { if (SUPPORT_URL) a.href = SUPPORT_URL; });
+  document.querySelectorAll<HTMLElement>('.supportWrap, #support').forEach((n) => n.classList.toggle('hidden', !SUPPORT_URL));
 }
 
 let loggedIn = false;
 export function initNav(): void {
-  render();
+  render(); wireSupport();
   supabase.auth.getSession().then(({ data }) => { loggedIn = !!data.session; if (!loggedIn) store.remove('mz_login'); render(); });
   supabase.auth.onAuthStateChange((_e, s) => { const was = loggedIn; loggedIn = !!s; if (was !== loggedIn) render(); });
 }
