@@ -7,6 +7,8 @@ interface FaceBall { login: string; id?: string; src: string }
 const FACE_BALLS: FaceBall[] = [
   // Added Nov 6, 2026 at his request. Add his Twitch user ID (id: '...') once he has voted in a game.
   { login: 'thebigslimehimself', src: '/balls/thebigslimehimself.png' },
+  // Added Nov 6, 2026: thebigslimehimself's brother. He said yes.
+  { login: 'patrickjawn', src: '/balls/patrickjawn.png' },
 ];
 
 const cache = new Map<string, HTMLImageElement>();
