@@ -10,7 +10,6 @@ export default defineConfig({
         game: 'index.html',
         admin: 'admin.html',
         guide: 'guide.html',
-        login: 'login-test.html',
         today: 'today.html',
         channel: 'channel.html',
         solo: 'solo.html',

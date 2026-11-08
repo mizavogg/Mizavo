@@ -14,7 +14,6 @@ web/                    the website (Vite + TypeScript)
   index.html            game page: logged-out preview, setup, game, results
   admin.html            admin page: review drafts, retire live questions, handle reports, manage closed-test invites; import batches; download the bank
   guide.html            streamer setup guide (login, OBS, chat commands, reporting)
-  login-test.html       Twitch login test page
   src/styles/           theme.css (shared Night Edition look), game.css, admin.css
   src/lib/              supabase.ts (database connection + login), dom.ts (small helpers)
   src/game/
