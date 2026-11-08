@@ -8,11 +8,13 @@ import { rpc, supabase, loginWithTwitch } from '../lib/supabase';
 import { plural } from '../lib/boards';
 import { initNav, rememberLogin } from '../lib/nav';
 import { OPT_COLORS, KEYS, SPHERE } from '../game/state';
+import { SITE_HOST } from '../lib/site';
+import { shareText } from '../lib/share';
 
 type RoundType = 'ff' | 'ooo';
-interface Q { idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; shown_at?: string; ends_at?: string }
+interface Q { date?: string; idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; shown_at?: string; ends_at?: string }
 interface Answer { idx: number; correct_position: number; explanation: string; correct: boolean; late?: boolean; points_gained?: number; points?: number; score?: number; streak?: number; is_last: boolean; state?: State }
-interface State { date: string; next_reset_at: string; state: 'new' | 'playing' | 'done'; next_idx: number | null; points: number; correct: number; best_streak: number; rank: number | null; players_today: number }
+interface State { date: string; next_reset_at: string; state: 'new' | 'playing' | 'done'; next_idx: number | null; points: number; correct: number; best_streak: number; rank: number | null; players_today: number; results?: boolean[] }
 interface Info { closed_test: boolean; today: string; next_reset_at: string; guest_ready: boolean }
 
 const api = {
@@ -33,6 +35,7 @@ let busy = false;
 let phase: 'intro' | 'vote' | 'reveal' = 'intro';
 let deadline = 0, total = 15000, timer = 0;
 let gScore = 0, gPts = 0, gStreak = 0, gBest = 0;     // guest totals (local only)
+let gResults: boolean[] = [], gDate = '';              // guest right/wrong per round, and which day it was
 let lastState: State | null = null;
 
 /* ---------- helpers ---------- */
@@ -65,6 +68,30 @@ function setScore(score: number, pts: number): void {
   $('#sScore').textContent = String(score); $('#sPts').textContent = pts.toLocaleString('en-US');
 }
 
+/* ---------- share ---------- */
+// e.g. "Mizavo Daily · Nov 7 / 🟦🟦🟧… 8/10 / 1,240 pts · best streak 6 / mizavo.gg/solo.html"
+// Only right/wrong per round: no questions, so sharing never spoils the day for anyone.
+function dayLabel(date: string): string {
+  const d = new Date(date + 'T00:00:00Z');
+  return isNaN(+d) ? date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+function shareMessage(date: string, results: boolean[], correct: number, points: number, best: number): string {
+  const grid = results.map((r) => (r ? '🟦' : '🟧')).join('');
+  return [`Mizavo Daily · ${dayLabel(date)}`, `${grid}  ${correct}/10`,
+    `${points.toLocaleString('en-US')} pts · best streak ${best}`, `${SITE_HOST}/solo.html`].join('\n');
+}
+function shareBtn(text: string, cls = 'primary'): HTMLButtonElement {
+  const label = 'Share result';
+  const b = btn(label, cls, async () => {
+    const r = await shareText(text);
+    if (r === 'copied') b.textContent = 'Copied! Paste it anywhere';
+    else if (r === 'failed') { window.prompt('Copy your result:', text); return; }
+    else return;
+    setTimeout(() => (b.textContent = label), 2200);
+  });
+  return b;
+}
+
 /* ---------- intro screens ---------- */
 function intro(kicker: string, title: string, text: string, actions: HTMLElement[], fine = ''): void {
   phase = 'intro'; document.body.dataset.phase = 'intro';
@@ -88,7 +115,8 @@ function doneScreen(s: State): void {
   show($('#scoreboard'), false);
   intro("Today's challenge · done", s.correct >= 8 ? 'Sharp. Very sharp.' : s.correct >= 5 ? 'Nicely played.' : 'Tough one today.',
     `Your score is saved to the solo board. The next challenge starts in ${untilReset(s.next_reset_at)} (midnight UTC).`,
-    [link('Leaderboards', 'primary', '/today.html'), link('Play against your chat', 'ghost', '/')]);
+    [shareBtn(shareMessage(s.date, s.results || [], s.correct, s.points, s.best_streak)),
+     link('Leaderboards', 'ghost', '/today.html'), link('Play against your chat', 'ghost', '/')]);
   showResult(s);
 }
 
@@ -150,7 +178,7 @@ async function begin(): Promise<void> {
 }
 
 function beginGuest(): void {
-  guest = true; idx = 1; gScore = 0; gPts = 0; gStreak = 0; gBest = 0;
+  guest = true; idx = 1; gScore = 0; gPts = 0; gStreak = 0; gBest = 0; gResults = []; gDate = '';
   $('#edition').textContent = "Yesterday's challenge · guest"; show($('#edition'), true);
   setScore(0, 0); show($('#scoreboard'), true);
   loadRound().catch((e) => { intro('Daily challenge', 'Hmm.', '', [btn('Back', 'ghost', () => location.reload())]); err(friendly(e)); });
@@ -158,6 +186,7 @@ function beginGuest(): void {
 
 async function loadRound(): Promise<void> {
   q = guest ? await api.guestRound(idx) : await api.round(idx);
+  if (guest && q.date) gDate = q.date;
   phase = 'vote'; document.body.dataset.phase = 'vote';
   show($('#intro'), false); show($('#round'), true); show($('#explain'), false); show($('#hint'), true);
   $('#rMode').textContent = q.type === 'ff' ? 'Fact or Fake' : 'Odd One Out';
@@ -200,6 +229,7 @@ async function choose(i: number | null): Promise<void> {
   if (guest) {   // same points rule as the database, kept locally (guest scores aren't saved)
     if (a.correct) { gStreak++; gScore++; gained = 100 + Math.min(5, gStreak - 1) * 20; gPts += gained; gBest = Math.max(gBest, gStreak); } else gStreak = 0;
     streak = gStreak;
+    gResults[idx - 1] = !!a.correct;
     setScore(gScore, gPts);
   } else setScore(a.score ?? 0, a.points ?? 0);
 
@@ -230,6 +260,7 @@ async function finish(): Promise<void> {
     intro("Yesterday's challenge · guest", `${gScore} out of 10.`,
       "Guest scores aren't saved. Log in with Twitch to play today's challenge and get on the solo board.",
       [btn('Log in with Twitch', 'primary', async () => { try { await loginWithTwitch(); } catch (e) { err((e as Error).message); } }),
+       ...(gDate ? [shareBtn(shareMessage(gDate, gResults, gScore, gPts, gBest), 'ghost')] : []),
        link('Leaderboards', 'ghost', '/today.html')]);
     const r = $('#result'); r.replaceChildren(stat(`${gScore}/10`, 'Right'), stat(gPts.toLocaleString('en-US'), 'Points', true), stat(String(gBest), 'Best streak'));
     show(r, true);

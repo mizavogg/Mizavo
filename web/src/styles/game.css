@@ -302,3 +302,10 @@ body[data-phase=gate] #edition{display:none}
 /* The big score and the "test game" note are already on the page, so the header copies are hidden here. */
 body[data-phase=final] #scoreboard,
 body[data-phase=final] #testTag{display:none}
+
+/* "Play at mizavo.gg": a quiet line under every round so each stream shows where to play (always on) */
+.playAt{margin-top:14px;text-align:right;font-size:13px;color:var(--muted);letter-spacing:.02em}
+.playAt b{color:var(--paper);font-weight:600}
+.playAt.final{text-align:left;margin-top:18px;font-size:15px}
+#game .playAt{pointer-events:none;user-select:none}
+@media(max-width:600px){ #game .playAt{margin-top:8px;font-size:12px} }
