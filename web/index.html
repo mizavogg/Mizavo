@@ -73,16 +73,16 @@
           <label class="f">Seconds per round<select id="secs"><option>10</option><option selected>15</option><option>20</option><option>30</option></select></label>
         </div>
         <div class="toggles">
-          <label class="tog"><input type="checkbox" id="blind" checked><span class="sw"></span><span><b>Blind mode</b><small>Chat's votes stay mixed until you lock in</small></span></label>
-          <label class="tog"><input type="checkbox" id="double" checked><span class="sw"></span><span><b>Double-points final</b><small>The last round counts 2, and viewers earn double points on it</small></span></label>
-          <label class="tog"><input type="checkbox" id="lightning" checked><span class="sw"></span><span><b>Lightning round</b><small>3 quick Fact or Fake questions mid-game, 10 seconds each (10+ rounds, not Odd One Out only)</small></span></label>
+          <label class="tog"><input type="checkbox" id="blind" checked><span class="sw"></span><span><b>Blind mode</b><small>Chat's picks stay hidden until you lock in</small></span></label>
+          <label class="tog"><input type="checkbox" id="double" checked><span class="sw"></span><span><b>Double-points final</b><small>The last round counts double</small></span></label>
+          <label class="tog"><input type="checkbox" id="lightning" checked><span class="sw"></span><span><b>Lightning round</b><small>3 quick questions mid-game (10+ round games)</small></span></label>
         </div>
         <details class="moreOpts" id="moreOpts">
           <summary>More options</summary>
           <div class="toggles">
-            <label class="tog"><input type="checkbox" id="streamer"><span class="sw"></span><span><b>Streamer mode</b><small>Clear space on the right for your webcam and chat overlay</small></span></label>
-            <label class="tog"><input type="checkbox" id="publicSw" checked disabled><span class="sw"></span><span><b>Public channel</b><small>Show your channel on today's board and your public page. Off hides both.</small></span></label>
-            <label class="tog"><input type="checkbox" id="demo"><span class="sw"></span><span><b>Simulated chat</b><small>Demo viewers for practice; makes it a test game</small></span></label>
+            <label class="tog"><input type="checkbox" id="streamer"><span class="sw"></span><span><b>Streamer mode</b><small>Space on the right for your webcam and chat</small></span></label>
+            <label class="tog"><input type="checkbox" id="publicSw" checked disabled><span class="sw"></span><span><b>Public channel</b><small>Show up on today's board and your page</small></span></label>
+            <label class="tog"><input type="checkbox" id="demo"><span class="sw"></span><span><b>Simulated chat</b><small>Practice with fake viewers (a test game)</small></span></label>
           </div>
           <div class="zonectl hidden" id="zoneCtl">
             <label for="zoneRange">Overlay space</label>
@@ -94,7 +94,10 @@
         </details>
         <p class="err hidden" id="setupErr" role="alert"></p>
         <div class="startrow"><button class="btn primary" id="startBtn">Start game <kbd>Enter</kbd></button></div>
-        <p class="note">Reads Twitch chat anonymously — no bot account, and Mizavo never posts in your chat. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's first answer counts. Pick with the number keys, arrow keys or by tapping. <a href="/guide.html">Streamer guide (OBS setup, tips) →</a></p>
+        <details class="howTo">
+          <summary>How chat answers</summary>
+          <p class="note">Reads Twitch chat anonymously — no bot account, and Mizavo never posts in your chat. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's first answer counts. Pick with the number keys, arrow keys or by tapping. <a href="/guide.html">Streamer guide (OBS setup, tips) →</a></p>
+        </details>
       </aside>
     </div>
   </section>

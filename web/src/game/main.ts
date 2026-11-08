@@ -6,6 +6,7 @@ import { api, friendly, type Channel } from './api';
 import { startLoop, binAt } from './arena';
 import { disconnectTwitch } from './chat';
 import { startLaunch, stopLaunch } from './launch';
+import { initPageMotion } from './page-motion';
 import { initStreamerMode } from './streamer-mode';
 import { openReport } from './report';
 import { initPublicSwitch } from './community';
@@ -182,3 +183,4 @@ $('#logoLink').onclick = async (e) => {
   goHome();
 };
 startLoop();
+initPageMotion();
