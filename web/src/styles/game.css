@@ -39,6 +39,9 @@ body[data-phase=gate] .logo{color:var(--ivory)}
 .glassHead{display:flex;flex-direction:column;gap:10px}
 .glassHead .eyebrow{color:#f2e8dcb3;font-size:12px}
 .glassHead h1{font-family:Newsreader,Georgia,serif;font-weight:500;font-size:clamp(28px,3.4vw,40px);line-height:1.05;letter-spacing:-.02em;color:var(--ivory)}
+.glassSub{font-size:15px;line-height:1.45;color:#f2e8dccc;max-width:46ch}
+.glassSub a{color:var(--ivory);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(242,232,220,.5)}
+.glassSub a:hover{text-decoration-color:var(--ivory)}
 .btn.copper{background:#93552c;color:var(--ivory);font-size:16px;padding:15px 24px;box-shadow:0 1px #f2e8dc38 inset,0 -2px #0000002e inset,0 14px 28px -14px #b7693599}
 .btn.copper:hover{background:#864d28}
 .paper{background:#e8e2d6;color:#1e2326}
