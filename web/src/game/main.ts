@@ -15,6 +15,7 @@ import {
   confirmBox, endUnfinished, goHome, next, pick, quitGame, resumeGame, revealNow,
   setMode, setPhase, setupError, show3, startGame, summary,
 } from './flow';
+import { setTopicPick } from './topics';
 
 /* ---------- invite links: ?invite=CODE ----------
    The code is kept in the browser while the visitor goes through Twitch login
@@ -73,6 +74,7 @@ function applySettings(ch: Channel): void {
   if (typeof st.blind === 'boolean') $<HTMLInputElement>('#blind').checked = st.blind;
   if (typeof st.double === 'boolean') $<HTMLInputElement>('#double').checked = st.double;
   if (typeof st.lightning === 'boolean') $<HTMLInputElement>('#lightning').checked = st.lightning;
+  setTopicPick(st.categories);
   const saved = store.get('hm_channel');
   $<HTMLInputElement>('#channel').value = saved != null && saved !== '' ? saved : ch.login;
 }

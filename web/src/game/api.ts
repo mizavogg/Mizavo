@@ -7,9 +7,9 @@ import type { GameRecord, ViewerRow } from '../lib/boards';
 
 export interface Channel {
   channel_id: string; login: string; display_name: string; is_admin: boolean;
-  settings: { mode?: Mode; rounds?: number; seconds?: number; blind?: boolean; double?: boolean; lightning?: boolean } | null;
+  settings: { mode?: Mode; rounds?: number; seconds?: number; blind?: boolean; double?: boolean; lightning?: boolean; categories?: string[] } | null;
 }
-export interface Started { session_id: string; game_number: number; rounds: number; seconds: number; blind: boolean; is_test: boolean; double_final: boolean; lightning_at: number | null }
+export interface Started { session_id: string; game_number: number; rounds: number; seconds: number; blind: boolean; is_test: boolean; double_final: boolean; lightning_at: number | null; categories?: string[]; filled_from_other?: number }
 export interface RoundData { idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; weight?: number; lightning?: number }
 export interface Revealed {
   idx: number; correct_position: number; correct_label: string; explanation: string;
@@ -45,9 +45,10 @@ export const api = {
   report: (question: string, reason: ReportReason, note: string | null) =>
     rpc<{ report_id: string }>('report_question', { p_question: question, p_reason: reason, p_note: note }),
   activeGame: () => rpc<ActiveGame | null>('get_active_game'),
-  start: (mode: Mode, rounds: number, seconds: number, blind: boolean, test: boolean, double: boolean, lightning: boolean) =>
+  start: (mode: Mode, rounds: number, seconds: number, blind: boolean, test: boolean, double: boolean, lightning: boolean,
+          categories: string[] | null) =>
     rpc<Started>('start_game', { p_mode: mode, p_rounds: rounds, p_seconds: seconds, p_blind: blind, p_test: test,
-                                 p_double: double, p_lightning: lightning }),
+                                 p_double: double, p_lightning: lightning, p_categories: categories }),
   round: (session: string, idx: number) => rpc<RoundData>('get_round', { p_session: session, p_idx: idx }),
   reveal: (session: string, idx: number, pick: number | null, counts: number[]) =>
     rpc<Revealed>('reveal_round', { p_session: session, p_idx: idx, p_streamer_choice: pick, p_chat_counts: counts }),

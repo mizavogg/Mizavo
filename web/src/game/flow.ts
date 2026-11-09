@@ -9,6 +9,7 @@ import { layout, popWrong, resetArena, sortPool } from './arena';
 import { clearBots, makeBots, scheduleBots } from './demo';
 import { connectTwitch, disconnectTwitch, setStatus } from './chat';
 import { loadFinalCommunity, loadSetupCommunity } from './community';
+import { pickedCategories, refreshTopics } from './topics';
 
 const MODE_NAME = { ff: 'Fact or Fake', ooo: 'Odd One Out', mix: 'Mix' } as const;
 
@@ -59,7 +60,7 @@ export async function startGame(): Promise<void> {
   readSettings(); setupError(null);
   S.busy = true; $<HTMLButtonElement>('#startBtn').disabled = true;
   try {
-    const g = await api.start(S.mode, S.rounds, S.secs, S.blind, S.demo, S.double, S.lightning);
+    const g = await api.start(S.mode, S.rounds, S.secs, S.blind, S.demo, S.double, S.lightning, pickedCategories());
     connectChat();
     resetGame(g.session_id, g.is_test, !!g.double_final, g.lightning_at ?? null);
     S.idx = 1;
@@ -124,6 +125,7 @@ export function goHome(): void {
   setPhase('setup'); show3('setup');
   checkActiveGame();
   loadSetupCommunity();
+  refreshTopics();
 }
 
 /* ---------- a round ---------- */
