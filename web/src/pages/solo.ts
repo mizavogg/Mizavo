@@ -10,6 +10,7 @@ import { initNav, rememberLogin } from '../lib/nav';
 import { OPT_COLORS, KEYS, SPHERE } from '../game/state';
 import { SITE_HOST } from '../lib/site';
 import { shareText } from '../lib/share';
+import { showStanding } from '../lib/standing';
 
 type RoundType = 'ff' | 'ooo';
 interface Q { date?: string; idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; shown_at?: string; ends_at?: string }
@@ -95,7 +96,7 @@ function shareBtn(text: string, cls = 'primary'): HTMLButtonElement {
 /* ---------- intro screens ---------- */
 function intro(kicker: string, title: string, text: string, actions: HTMLElement[], fine = ''): void {
   phase = 'intro'; document.body.dataset.phase = 'intro';
-  show($('#intro'), true); show($('#round'), false); show($('#result'), false);
+  show($('#intro'), true); show($('#round'), false); show($('#result'), false); show($('#standing'), false);
   $('#introKicker').textContent = kicker; $('#introTitle').textContent = title; $('#introText').textContent = text;
   $('#introActions').replaceChildren(...actions);
   $('#introFine').textContent = fine;
@@ -118,6 +119,7 @@ function doneScreen(s: State): void {
     [shareBtn(shareMessage(s.date, s.results || [], s.correct, s.points, s.best_streak)),
      link('Leaderboards', 'ghost', '/today'), link('Play against your chat', 'ghost', '/')]);
   showResult(s);
+  showStanding($('#standing'), { date: s.date });
 }
 
 async function loggedIn(name: string): Promise<void> {
@@ -264,6 +266,7 @@ async function finish(): Promise<void> {
        link('Leaderboards', 'ghost', '/today')]);
     const r = $('#result'); r.replaceChildren(stat(`${gScore}/10`, 'Right'), stat(gPts.toLocaleString('en-US'), 'Points', true), stat(String(gBest), 'Best streak'));
     show(r, true);
+    if (gDate) showStanding($('#standing'), { date: gDate, points: gPts, guest: true });
     return;
   }
   const s = lastState && lastState.state === 'done' ? lastState : await api.status();
