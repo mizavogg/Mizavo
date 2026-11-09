@@ -69,7 +69,7 @@ function setScore(score: number, pts: number): void {
 }
 
 /* ---------- share ---------- */
-// e.g. "Mizavo Daily · Nov 7 / 🟦🟦🟧… 8/10 / 1,240 pts · best streak 6 / mizavo.gg/solo.html"
+// e.g. "Mizavo Daily · Nov 7 / 🟦🟦🟧… 8/10 / 1,240 pts · best streak 6 / mizavo.gg/solo"
 // Only right/wrong per round: no questions, so sharing never spoils the day for anyone.
 function dayLabel(date: string): string {
   const d = new Date(date + 'T00:00:00Z');
@@ -78,7 +78,7 @@ function dayLabel(date: string): string {
 function shareMessage(date: string, results: boolean[], correct: number, points: number, best: number): string {
   const grid = results.map((r) => (r ? '🟦' : '🟧')).join('');
   return [`Mizavo Daily · ${dayLabel(date)}`, `${grid}  ${correct}/10`,
-    `${points.toLocaleString('en-US')} pts · best streak ${best}`, `${SITE_HOST}/solo.html`].join('\n');
+    `${points.toLocaleString('en-US')} pts · best streak ${best}`, `${SITE_HOST}/solo`].join('\n');
 }
 function shareBtn(text: string, cls = 'primary'): HTMLButtonElement {
   const label = 'Share result';
@@ -116,7 +116,7 @@ function doneScreen(s: State): void {
   intro("Today's challenge · done", s.correct >= 8 ? 'Sharp. Very sharp.' : s.correct >= 5 ? 'Nicely played.' : 'Tough one today.',
     `Your score is saved to the solo board. The next challenge starts in ${untilReset(s.next_reset_at)} (midnight UTC).`,
     [shareBtn(shareMessage(s.date, s.results || [], s.correct, s.points, s.best_streak)),
-     link('Leaderboards', 'ghost', '/today.html'), link('Play against your chat', 'ghost', '/')]);
+     link('Leaderboards', 'ghost', '/today'), link('Play against your chat', 'ghost', '/')]);
   showResult(s);
 }
 
@@ -261,7 +261,7 @@ async function finish(): Promise<void> {
       "Guest scores aren't saved. Log in with Twitch to play today's challenge and get on the solo board.",
       [btn('Log in with Twitch', 'primary', async () => { try { await loginWithTwitch(); } catch (e) { err((e as Error).message); } }),
        ...(gDate ? [shareBtn(shareMessage(gDate, gResults, gScore, gPts, gBest), 'ghost')] : []),
-       link('Leaderboards', 'ghost', '/today.html')]);
+       link('Leaderboards', 'ghost', '/today')]);
     const r = $('#result'); r.replaceChildren(stat(`${gScore}/10`, 'Right'), stat(gPts.toLocaleString('en-US'), 'Points', true), stat(String(gBest), 'Best streak'));
     show(r, true);
     return;

@@ -10,6 +10,8 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#151820">
 <title>Mizavo — Outsmart your chat, or the world</title>
+<!-- search engines: this page's one real address -->
+<link rel="canonical" href="https://mizavo.gg/">
 <!-- link previews (LinkedIn, Discord, X, iMessage) -->
 <meta name="description" content="A live trivia game for Twitch: you play against your own chat. Chat votes by typing, and every vote drops onto the screen as a ball.">
 <meta property="og:type" content="website">
@@ -22,6 +24,43 @@
 <meta property="og:image:height" content="627">
 <meta property="og:image:alt" content="Mizavo: a Fact or Fake round where chat's votes pile up as balls">
 <meta name="twitter:card" content="summary_large_image">
+<!-- search engines: what this site is (a free browser trivia game) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://mizavo.gg/#website",
+      "name": "Mizavo",
+      "url": "https://mizavo.gg/",
+      "publisher": { "@id": "https://mizavo.gg/#org" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://mizavo.gg/#org",
+      "name": "Mizavo",
+      "url": "https://mizavo.gg/",
+      "logo": "https://mizavo.gg/icon-512.png"
+    },
+    {
+      "@type": ["VideoGame", "WebApplication"],
+      "name": "Mizavo",
+      "url": "https://mizavo.gg/",
+      "description": "A free live trivia game for Twitch streamers: play Fact or Fake and Odd One Out against your own chat, or take the daily challenge.",
+      "image": "https://mizavo.gg/og.png",
+      "applicationCategory": "GameApplication",
+      "genre": ["Trivia", "Quiz"],
+      "gamePlatform": "Web browser",
+      "operatingSystem": "Any",
+      "playMode": ["SinglePlayer", "MultiPlayer"],
+      "inLanguage": "en",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@id": "https://mizavo.gg/#org" }
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
@@ -110,7 +149,7 @@
         <div class="startrow"><button class="btn primary" id="startBtn">Start game <kbd>Enter</kbd></button></div>
         <details class="howTo">
           <summary>How chat answers</summary>
-          <p class="note">Reads Twitch chat anonymously — no bot account, and Mizavo never posts in your chat. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's first answer counts. Pick with the number keys, arrow keys or by tapping. <a href="/guide.html">Streamer guide (OBS setup, tips) →</a></p>
+          <p class="note">Reads Twitch chat anonymously — no bot account, and Mizavo never posts in your chat. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's first answer counts. Pick with the number keys, arrow keys or by tapping. <a href="/guide">Streamer guide (OBS setup, tips) →</a></p>
         </details>
       </aside>
     </div>
@@ -171,8 +210,8 @@
         <div class="actions">
           <button class="btn primary" id="againBtn">Play again <kbd>Enter</kbd></button>
           <button class="btn ghost" id="homeBtn">Settings</button>
-          <a class="btn ghost" href="/today.html">Leaderboards</a>
-          <a class="btn ghost" href="/solo.html">Daily challenge</a>
+          <a class="btn ghost" href="/today">Leaderboards</a>
+          <a class="btn ghost" href="/solo">Daily challenge</a>
           <button class="btn link" id="copyBtn">Copy results</button>
         </div>
         <textarea class="copy hidden" id="copyBox" readonly></textarea>
@@ -194,7 +233,7 @@
         <div class="glassHead">
           <span class="eyebrow">The community is the game.</span>
           <h1>You vs. your chat.</h1>
-          <p class="glassSub">No stream? Take the <a href="/solo.html">daily challenge</a>: 10 questions, the same for everyone.</p>
+          <p class="glassSub">No stream? Take the <a href="/solo">daily challenge</a>: 10 questions, the same for everyone.</p>
         </div>
         <button class="btn copper" id="loginBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3v15h5v3l3-3h4l5-5V3z"/><line x1="11" y1="8" x2="11" y2="12"/><line x1="16" y1="8" x2="16" y2="12"/></svg>Log in with Twitch</button>
       </div>
@@ -216,7 +255,7 @@
           <li><span class="num">02 / Odd One Out</span><h3>Which one doesn't belong?</h3><p>Four things, one misfit. Chat types A to D.</p></li>
           <li><span class="num">03 / Mix</span><h3>A bit of both.</h3><p>Shuffled together. Good for longer streams.</p></li>
         </ol>
-        <p class="launchHow">Viewers don't need an account: their first answer in chat counts. <a class="guideLink" href="/guide.html">Streamer guide</a> · <a class="guideLink" href="/today.html">Today's top channels</a> · <a class="guideLink" href="/solo.html">Play the daily challenge</a></p>
+        <p class="launchHow">Viewers don't need an account: their first answer in chat counts. <a class="guideLink" href="/guide">Streamer guide</a> · <a class="guideLink" href="/today">Today's top channels</a> · <a class="guideLink" href="/solo">Play the daily challenge</a></p>
         <div class="soon" aria-labelledby="soonTitle">
           <p class="eyebrow">In testing · more on the way</p>
           <h2 class="soonTitle" id="soonTitle">Coming soon.</h2>

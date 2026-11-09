@@ -1,0 +1,7 @@
+# Mizavo: which pages search engines may read.
+# Everything is open except the admin page.
+User-agent: *
+Disallow: /admin
+Allow: /
+
+Sitemap: https://mizavo.gg/sitemap.xml

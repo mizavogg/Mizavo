@@ -21,7 +21,7 @@ export const boards = {
 };
 
 export const plural = (n: number, word: string, many = word + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? word : many}`;
-export const channelUrl = (login: string) => `/channel.html?c=${encodeURIComponent(login)}`;
+export const channelUrl = (login: string) => `/channel?c=${encodeURIComponent(login)}`;
 
 export function recordLine(r: GameRecord, who = 'You'): string {
   if (!r.games) return who === 'You' ? 'No real games yet. Your record against chat starts with your first one.' : 'No games yet. Check back after their first stream.';

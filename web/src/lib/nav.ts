@@ -10,9 +10,9 @@ export const SUPPORT_URL = 'https://ko-fi.com/mizavo';
 
 const LINKS: [key: string, text: string, href: string][] = [
   ['play', 'Play', '/'],
-  ['solo', 'Daily challenge', '/solo.html'],
-  ['boards', 'Leaderboards', '/today.html'],
-  ['guide', 'Guide', '/guide.html'],
+  ['solo', 'Daily challenge', '/solo'],
+  ['boards', 'Leaderboards', '/today'],
+  ['guide', 'Guide', '/guide'],
 ];
 
 /** Remember the logged-in channel's Twitch login so every page can link to "My page". */

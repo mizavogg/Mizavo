@@ -598,7 +598,7 @@ async function renderLinks() {
     const tags = el('div', 'tags');
     const copy = el('button', 'btn ghost small', 'Copy link');
     copy.onclick = async () => {
-      try { await navigator.clipboard.writeText(linkUrl(l.code)); toast('Link copied. Send it with the guide: ' + GAME_URL + 'guide.html', false, 3000); }
+      try { await navigator.clipboard.writeText(linkUrl(l.code)); toast('Link copied. Send it with the guide: ' + GAME_URL + 'guide', false, 3000); }
       catch { window.prompt('Copy this link:', linkUrl(l.code)); }
     };
     const tog = el('button', 'btn ghost small' + (l.active ? ' retire' : ''), l.active ? 'Turn off' : 'Turn on');
