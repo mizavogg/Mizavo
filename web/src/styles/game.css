@@ -335,7 +335,9 @@ body[data-phase=final] #testTag{display:none}
 .pageGlass canvas{position:absolute;display:block}
 .pageGlass .pgGlow{top:-20px;left:-20px;width:calc(100% + 40px);height:calc(100% + 40px);filter:blur(10px) saturate(1.05);opacity:.9}
 .pageGlass .pgEdges{top:0;left:0;width:100%;height:100%}
-body[data-phase=setup] .pageGlass{-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.55) 35%,#000 70%);mask-image:linear-gradient(90deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.55) 35%,#000 70%)}
+/* settings screen (Nov 9): the glass light sits at the top of the page and fades into the dark background
+   (ombré), so the settings and text below it stay easy to read. It scrolls away with the page. */
+body[data-phase=setup] .pageGlass{position:absolute;bottom:auto;height:100vh;height:100svh;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.55) 18%,rgba(0,0,0,.18) 38%,transparent 60%);mask-image:linear-gradient(180deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.55) 18%,rgba(0,0,0,.18) 38%,transparent 60%)}
 .setupCard{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;padding:6px 0 0}
 .setupCard .tog{border-top-color:rgba(242,232,220,.08)}
 .setupCard .moreOpts{border-top-color:rgba(242,232,220,.08)}
