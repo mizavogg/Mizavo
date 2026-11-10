@@ -2,7 +2,7 @@
    Logged in: today's 10 questions, the same for everyone; the database scores every answer and
    enforces the 15-second limit. One game a day.
    Guests: yesterday's challenge (nothing saved), so playing as a guest can't spoil today's.
-   During the closed test, only invited players and admins can play, and guest play is off. */
+   During the closed test, only invited players and admins can play today's; guests can still play yesterday's. */
 import { $, el, show } from '../lib/dom';
 import { rpc, supabase, loginWithTwitch } from '../lib/supabase';
 import { plural } from '../lib/boards';
@@ -166,12 +166,14 @@ async function loggedOut(): Promise<void> {
   });
   let info: Info;
   try { info = await api.info(); } catch (e) { intro('Daily challenge', 'Hmm.', '', [login]); err(friendly(e)); return; }
-  if (info.closed_test) {
-    return intro('Closed test', 'Ten questions. Same for everyone.',
-      'The daily challenge is invite-only while Mizavo is in its closed test. If you were invited, log in with Twitch to play today\'s.', [login]);
-  }
   const actions = [login];
   if (info.guest_ready) actions.push(btn("Play yesterday's as a guest", 'ghost', () => beginGuest()));
+  if (info.closed_test) {
+    return intro('Closed test', 'Ten questions. Same for everyone.',
+      "Today's challenge is invite-only while Mizavo is in its closed test. If you were invited, log in with Twitch to play it."
+        + (info.guest_ready ? " Anyone can warm up with yesterday's as a guest (nothing is saved)." : ''),
+      actions, `New challenge every day at midnight Eastern time (in ${untilReset(info.next_reset_at)}).`);
+  }
   intro('Daily challenge', 'Ten questions. Same for everyone.',
     "Log in with Twitch to play today's challenge and get on the solo board. Or warm up with yesterday's as a guest (nothing is saved).",
     actions, `New challenge every day at midnight Eastern time (in ${untilReset(info.next_reset_at)}).`);
