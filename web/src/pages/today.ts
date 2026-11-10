@@ -9,7 +9,7 @@ function err(msg: string | null): void { const e = $('#err'); e.textContent = ms
 async function loadChannels(): Promise<void> {
   const t = await boards.today();
   const day = new Date(t.day + 'T00:00:00Z');
-  $('#dayLabel').textContent = 'Today · ' + day.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) + ' (UTC)';
+  $('#dayLabel').textContent = 'Today · ' + day.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) + ' (Eastern time)';
   $('#chCount').textContent = t.board.length ? plural(t.board.length, 'channel') : '';
   const ol = $('#channels'); ol.replaceChildren();
   if (!t.board.length) ol.append(emptyRow(`No channels yet today. A channel shows up after ${t.min_rounds} real rounds. Check back later.`));

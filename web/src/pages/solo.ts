@@ -126,7 +126,7 @@ function doneScreen(s: State): void {
   lastState = s;
   show($('#scoreboard'), false);
   intro("Today's challenge · done", s.correct >= 8 ? 'Sharp. Very sharp.' : s.correct >= 5 ? 'Nicely played.' : 'Tough one today.',
-    `Your score is saved to the solo board. The next challenge starts in ${untilReset(s.next_reset_at)} (midnight UTC).`,
+    `Your score is saved to the solo board. The next challenge starts in ${untilReset(s.next_reset_at)} (midnight Eastern time).`,
     [shareBtn(shareMessage(s.date, s.results || [], s.correct, s.points, s.best_streak)),
      link('Leaderboards', 'ghost', '/today'), link('Play against your chat', 'ghost', '/')]);
   showResult(s);
@@ -149,7 +149,7 @@ async function loggedIn(name: string): Promise<void> {
     intro("Today's challenge", 'Ten questions. Same for everyone.',
       'Fact or Fake and Odd One Out, easy to hard. 15 seconds a question, one try a day. Your score goes on the solo board.',
       [btn('Start today\'s challenge', 'primary', () => begin())],
-      `New challenge every day at midnight UTC (in ${untilReset(s.next_reset_at)}).`);
+      `New challenge every day at midnight Eastern time (in ${untilReset(s.next_reset_at)}).`);
   } catch (e) {
     const m = friendly(e);
     if (/closed test/.test(m)) {
@@ -174,7 +174,7 @@ async function loggedOut(): Promise<void> {
   if (info.guest_ready) actions.push(btn("Play yesterday's as a guest", 'ghost', () => beginGuest()));
   intro('Daily challenge', 'Ten questions. Same for everyone.',
     "Log in with Twitch to play today's challenge and get on the solo board. Or warm up with yesterday's as a guest (nothing is saved).",
-    actions, `New challenge every day at midnight UTC (in ${untilReset(info.next_reset_at)}).`);
+    actions, `New challenge every day at midnight Eastern time (in ${untilReset(info.next_reset_at)}).`);
 }
 
 /* ---------- playing ---------- */
