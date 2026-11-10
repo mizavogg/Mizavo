@@ -14,6 +14,7 @@ export interface Orb {
   t0?: number; dur?: number; popAt?: number; dead?: boolean;
   face?: HTMLImageElement | null;   // special face ball (see faces.ts)
   streamer?: boolean;              // the streamer's own ball, dropped in on the reveal
+  login?: string;                  // Twitch login, for their profile picture (see avatars.ts)
 }
 
 /** One viewer's vote in the current round (their first answer counts; no switching). */

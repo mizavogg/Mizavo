@@ -17,6 +17,7 @@ import {
 } from './flow';
 import { setTopicPick } from './topics';
 import { initSound } from '../lib/sound';
+import { picturesOn, setPictures } from './avatars';
 
 /* ---------- invite links: ?invite=CODE ----------
    The code is kept in the browser while the visitor goes through Twitch login
@@ -169,6 +170,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 initSound();
+$<HTMLInputElement>('#pics').checked = picturesOn();
+$<HTMLInputElement>('#pics').onchange = (e) => setPictures((e.target as HTMLInputElement).checked);
 initStreamerMode();
 initPublicSwitch();
 initNav();

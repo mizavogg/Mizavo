@@ -2,6 +2,7 @@
 import { $, clamp, rnd } from '../lib/dom';
 import { S, KEYS, WHITE, hexA, shade, type Orb, type Vote } from './state';
 import { faceFor, preloadFaces } from './faces';
+import { pictureFor } from './avatars';
 import { sfx } from '../lib/sound';
 
 preloadFaces();
@@ -130,7 +131,7 @@ export function flyTo(o: Orb, dest: 'pool' | number, delay = 0): void {
   o.ctrl = { x: (o.x + to.x) / 2 + rnd(-60, 60), y: Math.min(o.y, to.y) - rnd(40, 110) };
 }
 export function spawnOrb(v: Vote): Orb {
-  const o: Orb = { x: W / 2 + rnd(-30, 30), y: -12, vx: 0, vy: 0, r: 9, color: v.color, key: v.key, state: 'fly', face: faceFor(v.login, v.id) };
+  const o: Orb = { x: W / 2 + rnd(-30, 30), y: -12, vx: 0, vy: 0, r: 9, color: v.color, key: v.key, state: 'fly', face: faceFor(v.login, v.id), login: v.bot ? undefined : v.login };
   if (o.face) o.r = FACE_MIN_R;
   orbs.push(o); v.orb = o;
   return o;
@@ -143,7 +144,7 @@ export function addLabel(text: string, color: string, x: number, y: number): voi
  *  It isn't a vote, so it never changes chat's counts. It pops with the wrong pile, or bounces with the right one. */
 export function dropStreamerBall(login: string, name: string, pick: number, answer: number): void {
   const face = faceFor(login, null);
-  const o: Orb = { x: W / 2, y: -16, vx: 0, vy: 0, r: STREAMER_R, color: SAND, key: '__streamer', state: 'fly', face, streamer: true };
+  const o: Orb = { x: W / 2, y: -16, vx: 0, vy: 0, r: STREAMER_R, color: SAND, key: '__streamer', state: 'fly', face, streamer: true, login };
   orbs.push(o);
   flyTo(o, pick, 150);
   o.dur = 650;
@@ -356,7 +357,9 @@ function draw(): void {
     if (o.state === 'fly' && o.t0 != null && now < o.t0 && o.y < 0) continue;
     const up = lift && o.state === 'bin' && o.bin === R.answer ? lift : 0;
     if (up) { ctx.save(); ctx.translate(0, -up); }
-    if (o.face && o.face.complete && o.face.naturalWidth) drawFace(o.x, o.y, o.r, ballColor(o), o.face);
+    // custom face ball first, then their Twitch picture (only once the ball is big enough to see it)
+    const pic = o.face && o.face.complete && o.face.naturalWidth ? o.face : o.login && (o.r >= 6 || o.streamer) ? pictureFor(o.login) : null;
+    if (pic) drawFace(o.x, o.y, o.r, ballColor(o), pic);
     else drawBall(o.x, o.y, o.r, ballColor(o));
     if (o.streamer) {   // a thin sand ring marks the streamer's ball
       ctx.lineWidth = 2; ctx.strokeStyle = hexA(SAND, .9);
