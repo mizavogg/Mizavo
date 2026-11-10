@@ -13,6 +13,7 @@ export interface Orb {
   from?: { x: number; y: number }; to?: { x: number; y: number }; ctrl?: { x: number; y: number };
   t0?: number; dur?: number; popAt?: number; dead?: boolean;
   face?: HTMLImageElement | null;   // special face ball (see faces.ts)
+  streamer?: boolean;              // the streamer's own ball, dropped in on the reveal
 }
 
 /** One viewer's vote in the current round (their first answer counts; no switching). */

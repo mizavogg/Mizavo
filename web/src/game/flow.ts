@@ -1,11 +1,11 @@
 /* Mizavo — game flow: start, rounds, timer, picking, reveal, final results.
    Questions come from the database one round at a time, never with the answer.
    The answer only arrives from reveal_round, after the timer ends or the streamer locks in. */
-import { $, el, show } from '../lib/dom';
+import { $, el, show, store } from '../lib/dom';
 import { SITE_URL } from '../lib/site';
 import { S, OPT_COLORS, KEYS, SPHERE, type Mode, type Round, type Viewer } from './state';
 import { api, friendly, type ActiveGame, type RoundData, type ViewerResult } from './api';
-import { layout, popWrong, resetArena, sortPool } from './arena';
+import { dropStreamerBall, layout, popWrong, resetArena, sortPool } from './arena';
 import { clearBots, makeBots, scheduleBots } from './demo';
 import { connectTwitch, disconnectTwitch, setStatus } from './chat';
 import { loadFinalCommunity, loadSetupCommunity } from './community';
@@ -303,6 +303,10 @@ async function reveal(): Promise<void> {
   updateScore(true);
 
   popWrong(R.answer);
+  if (R.pick != null) {
+    const login = (store.get('mz_login') || $<HTMLInputElement>('#channel').value || '').trim().replace(/^#/, '').toLowerCase();
+    dropStreamerBall(login, $('#whoName').textContent || 'Streamer', R.pick, R.answer);
+  }
   [...$('#opts').children].forEach((b, i) => b.classList.add(i === R.answer ? 'right' : 'wrong', ...(i === R.pick ? ['picked'] : [])));
 
   let head: string, color: string, sub: string;

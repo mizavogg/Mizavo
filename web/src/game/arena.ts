@@ -6,6 +6,7 @@ import { sfx } from '../lib/sound';
 
 preloadFaces();
 const FACE_MIN_R = 11;   // face balls never shrink below this, so the face stays readable
+const STREAMER_R = 15;   // the streamer's ball is a bit bigger than everyone else's
 
 const INK = '#121516', PAPER = '#F2E8DC', MUTED = '#B3ADA3', SAND = '#E7C39B';
 const SANS = '"DM Sans", system-ui, sans-serif';
@@ -138,6 +139,19 @@ export function addLabel(text: string, color: string, x: number, y: number): voi
   labels.push({ text, color, x, y, t0: performance.now() });
   if (labels.length > 7) labels.shift();
 }
+/** Reveal: the streamer's own ball (their face ball if they have one) drops into the bin they picked.
+ *  It isn't a vote, so it never changes chat's counts. It pops with the wrong pile, or bounces with the right one. */
+export function dropStreamerBall(login: string, name: string, pick: number, answer: number): void {
+  const face = faceFor(login, null);
+  const o: Orb = { x: W / 2, y: -16, vx: 0, vy: 0, r: STREAMER_R, color: SAND, key: '__streamer', state: 'fly', face, streamer: true };
+  orbs.push(o);
+  flyTo(o, pick, 150);
+  o.dur = 650;
+  if (pick !== answer) o.popAt = performance.now() + 150 + 650 + 900;
+  const b = bins[pick];
+  setTimeout(() => addLabel(name, SAND, b.x + b.w / 2, b.y - 6), 450);
+}
+
 /** Blind mode: send every hidden vote from the mixed pool to its real bin. */
 export function sortPool(): void {
   const R = S.R; if (!R) return;
@@ -186,7 +200,7 @@ function step(): void {
     const area = rect.w * (rect.h - (rect.head ?? 0)), tr = clamp(Math.sqrt(area * 0.42 / (Math.PI * Math.max(1, list.length))), 3.5, c === 'pool' ? 12 : 20);
     const g = c === 'pool' ? 0 : 0.35;
     for (const o of list) {
-      o.r += ((o.face ? Math.max(tr, FACE_MIN_R) : tr) - o.r) * 0.08;
+      o.r += ((o.streamer ? Math.max(tr, STREAMER_R) : o.face ? Math.max(tr, FACE_MIN_R) : tr) - o.r) * 0.08;
       if (c === 'pool') {
         o.vx += rnd(-.12, .12); o.vy += rnd(-.12, .12);
         const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
@@ -344,6 +358,10 @@ function draw(): void {
     if (up) { ctx.save(); ctx.translate(0, -up); }
     if (o.face && o.face.complete && o.face.naturalWidth) drawFace(o.x, o.y, o.r, ballColor(o), o.face);
     else drawBall(o.x, o.y, o.r, ballColor(o));
+    if (o.streamer) {   // a thin sand ring marks the streamer's ball
+      ctx.lineWidth = 2; ctx.strokeStyle = hexA(SAND, .9);
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 2.5, 0, Math.PI * 2); ctx.stroke();
+    }
     if (up) ctx.restore();
   }
   for (const p of parts) {
