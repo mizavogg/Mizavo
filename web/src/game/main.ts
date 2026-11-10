@@ -79,7 +79,32 @@ function applySettings(ch: Channel): void {
   setTopicPick(st.categories);
   const saved = store.get('hm_channel');
   $<HTMLInputElement>('#channel').value = saved != null && saved !== '' ? saved : ch.login;
+  showChat();
+  // simulated chat is a testing tool: only admins see it
+  show($('#adminOpts'), !!ch.is_admin);
+  if (!ch.is_admin) $<HTMLInputElement>('#demo').checked = false;
+  updateOptSum();
 }
+
+/* ---------- the chat line: "Playing with yourname's chat · Change" ---------- */
+function showChat(editing = false): void {
+  const v = $<HTMLInputElement>('#channel').value.trim().replace(/^#/, '');
+  $('#chatName').textContent = v ? v + "'s chat" : 'no chat yet';
+  const edit = editing || !v;
+  show($('#chatField'), edit); show($('#chatRow'), !edit);
+}
+$('#chatEdit').onclick = () => { showChat(true); $<HTMLInputElement>('#channel').focus(); };
+$<HTMLInputElement>('#channel').addEventListener('blur', () => showChat(false));
+
+/* ---------- "More options" summary: which game rules are on, so nothing is hidden by surprise ---------- */
+function updateOptSum(): void {
+  const on = [['#blind', 'Blind'], ['#double', 'Double final'], ['#lightning', 'Lightning']]
+    .filter(([id]) => $<HTMLInputElement>(id).checked).map(([, t]) => t);
+  if ($<HTMLInputElement>('#streamer').checked) on.push('Streamer mode');
+  if ($<HTMLInputElement>('#demo').checked) on.push('Simulated chat');
+  $('#optSum').textContent = on.length ? on.join(' · ') : '';
+}
+['#blind', '#double', '#lightning', '#streamer', '#demo'].forEach((id) => $(id).addEventListener('change', updateOptSum));
 async function enterSetup(name: string): Promise<void> {
   stopLaunch();
   $('#whoName').textContent = name; show($('#who'), true);
@@ -125,7 +150,7 @@ $('#logoutBtn').onclick = async () => {
   if (S.session && !(await confirmBox('Log out?', 'Your game in progress will be waiting when you log back in.', 'Log out'))) return;
   await supabase.auth.signOut();
 };
-$('#channel').onchange = () => store.set('hm_channel', $<HTMLInputElement>('#channel').value.trim().replace(/^#/, '').toLowerCase());
+$('#channel').onchange = () => { store.set('hm_channel', $<HTMLInputElement>('#channel').value.trim().replace(/^#/, '').toLowerCase()); showChat(false); };
 $('#startBtn').onclick = startGame;
 $('#resumeBtn').onclick = resumeGame;
 $('#endOldBtn').onclick = endUnfinished;
@@ -176,7 +201,8 @@ initStreamerMode();
 initPublicSwitch();
 initNav();
 // keep More options open if something in it is switched on
-if ($<HTMLInputElement>('#streamer').checked || $<HTMLInputElement>('#demo').checked) $<HTMLDetailsElement>('#moreOpts').open = true;
+if ($<HTMLInputElement>('#streamer').checked) $<HTMLDetailsElement>('#moreOpts').open = true;
+updateOptSum();
 
 /* the Mizavo name always goes home: the setup screen when logged in (asks first mid-game), else the top */
 $('#logoLink').onclick = async (e) => {

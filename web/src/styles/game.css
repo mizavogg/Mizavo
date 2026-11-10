@@ -115,7 +115,7 @@ body[data-phase=final] .pageGlass{-webkit-mask-image:linear-gradient(180deg,#000
 .setupCard{background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1);border:1px solid rgba(242,232,220,.14);border-radius:22px;padding:28px;box-shadow:0 40px 80px -40px #000000e6}
 .setupCard>.sticker{display:block;margin-bottom:20px}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:18px 20px;align-items:end}
-.form .f:first-child{grid-column:1/-1}
+.form{margin-bottom:4px}
 label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--muted)}
 .f input,.f select{background:transparent;border:0;border-bottom:1.5px solid rgba(242,232,220,.4);border-radius:0;padding:10px 0;font-size:18px;outline:none;color:var(--paper);min-height:48px;width:100%}
 .f select option{background:var(--ink2);color:var(--paper)}
@@ -362,3 +362,17 @@ body[data-phase=setup] .pageGlass{position:absolute;bottom:auto;height:100vh;hei
 .chip2.on small{color:#f2e8dccc}
 .chip2:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 .topicWarn{margin-top:10px;font-size:13px;line-height:1.5;color:var(--yellow)}
+
+/* ---------- setup screen, simplified (build 34) ---------- */
+body[data-phase=setup] #status{display:none}                 /* the chat pill only matters during a game */
+.chatRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:1px solid var(--rule2);border-radius:14px;background:#f2e8dc0a;font-size:15px;color:var(--muted);margin-bottom:18px}
+.chatRow b{color:var(--paper);font-weight:600}
+.linkBtn{background:none;border:0;padding:4px 2px;color:var(--orange-hi);font:600 14px var(--sans);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.linkBtn:hover{color:var(--paper)}
+.chatField{margin-bottom:18px}
+.moreOpts summary{flex-wrap:wrap;row-gap:0}
+.moreOpts summary .optSum{flex-basis:100%;padding-left:28px;font-size:13px;font-weight:500;color:var(--dim)}
+.moreOpts[open] summary .optSum{display:none}
+.optGroup{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:22px 0 0}
+.optGroup+.toggles{margin-top:8px}
+.adminOnly .toggles{margin-top:8px}

@@ -109,19 +109,15 @@
           <div class="cmLinks" id="cmLinks"></div>
           <ol class="board" id="cmBoard"></ol>
         </div>
-        <div class="soonMini">
-          <h3>Coming soon</h3>
-          <ul>
-            <li><b>Ball skins</b><span>Viewers spend their points on their own ball style</span></li>
-            <li><b>Themed packs</b><span>Question packs like 2000s music or anime</span></li>
-            <li><b>A new game mode</b><span>A third way to play</span></li>
-          </ul>
-        </div>
       </div>
       <aside class="setupCard">
         <span class="sticker">Game settings</span>
+        <div class="chatRow" id="chatRow">
+          <span class="chatWho">Playing with <b id="chatName">your chat</b></span>
+          <button type="button" class="linkBtn" id="chatEdit">Change</button>
+        </div>
+        <label class="f chatField hidden" id="chatField">Twitch chat to read<input id="channel" placeholder="e.g. yourchannel" autocomplete="off" spellcheck="false"></label>
         <div class="form">
-          <label class="f">Twitch chat to read<input id="channel" placeholder="e.g. yourchannel" autocomplete="off" spellcheck="false"></label>
           <label class="f">Rounds<select id="rounds"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
           <label class="f">Seconds per round<select id="secs"><option>10</option><option selected>15</option><option>20</option><option>30</option></select></label>
         </div>
@@ -130,18 +126,18 @@
           <div class="chips2" id="topicChips"></div>
           <p class="topicWarn hidden" id="topicWarn" role="status"></p>
         </div>
-        <div class="toggles">
-          <label class="tog"><input type="checkbox" id="blind" checked><span class="sw"></span><span><b>Blind mode</b><small>Chat's picks stay hidden until you lock in</small></span></label>
-          <label class="tog"><input type="checkbox" id="double" checked><span class="sw"></span><span><b>Double-points final</b><small>The last round counts double</small></span></label>
-          <label class="tog"><input type="checkbox" id="lightning" checked><span class="sw"></span><span><b>Lightning round</b><small>3 quick questions mid-game (10+ round games)</small></span></label>
-        </div>
         <details class="moreOpts" id="moreOpts">
-          <summary>More options</summary>
+          <summary>More options <span class="optSum" id="optSum"></span></summary>
+          <h4 class="optGroup">Game rules</h4>
+          <div class="toggles">
+            <label class="tog"><input type="checkbox" id="blind" checked><span class="sw"></span><span><b>Blind mode</b><small>Chat's answers stay hidden until you lock in yours</small></span></label>
+            <label class="tog"><input type="checkbox" id="double" checked><span class="sw"></span><span><b>Double-points final</b><small>The last round counts double</small></span></label>
+            <label class="tog"><input type="checkbox" id="lightning" checked><span class="sw"></span><span><b>Lightning round</b><small>3 quick questions mid-game (10+ rounds)</small></span></label>
+          </div>
+          <h4 class="optGroup">On screen</h4>
           <div class="toggles">
             <label class="tog"><input type="checkbox" id="pics" checked><span class="sw"></span><span><b>Chat's Twitch pictures</b><small>Each viewer's profile picture on their ball</small></span></label>
-            <label class="tog"><input type="checkbox" id="streamer"><span class="sw"></span><span><b>Streamer mode</b><small>Space on the right for your webcam and chat</small></span></label>
-            <label class="tog"><input type="checkbox" id="publicSw" checked disabled><span class="sw"></span><span><b>Public channel</b><small>Show up on today's board and your page</small></span></label>
-            <label class="tog"><input type="checkbox" id="demo"><span class="sw"></span><span><b>Simulated chat</b><small>Practice with fake viewers (a test game)</small></span></label>
+            <label class="tog"><input type="checkbox" id="streamer"><span class="sw"></span><span><b>Streamer mode</b><small>Room on the right for your webcam and chat</small></span></label>
           </div>
           <div class="zonectl hidden" id="zoneCtl">
             <label for="zoneRange">Overlay space</label>
@@ -150,12 +146,22 @@
             <small>Or drag the edge of the dashed box. The game always keeps at least 720px.</small>
           </div>
           <p class="note hidden" id="zoneNote">This window is too narrow for streamer mode. Widen it (or use a 1280px+ browser source) and the space will appear.</p>
+          <h4 class="optGroup">Your channel</h4>
+          <div class="toggles">
+            <label class="tog"><input type="checkbox" id="publicSw" checked disabled><span class="sw"></span><span><b>Public channel</b><small>Show up on today's board and your channel page</small></span></label>
+          </div>
+          <div class="adminOnly hidden" id="adminOpts">
+            <h4 class="optGroup">Admin</h4>
+            <div class="toggles">
+              <label class="tog"><input type="checkbox" id="demo"><span class="sw"></span><span><b>Simulated chat</b><small>Fake viewers for testing (doesn't count)</small></span></label>
+            </div>
+          </div>
         </details>
         <p class="err hidden" id="setupErr" role="alert"></p>
         <div class="startrow"><button class="btn primary" id="startBtn">Start game <kbd>Enter</kbd></button></div>
         <details class="howTo">
           <summary>How chat answers</summary>
-          <p class="note">Reads Twitch chat anonymously — no bot account, and Mizavo never posts in your chat. Fact or Fake: chat types <code>1</code> / <code>2</code> (or <code>fact</code> / <code>fake</code>). Odd One Out: <code>A</code>–<code>D</code> or <code>1</code>–<code>4</code>. Each viewer's first answer counts. Pick with the number keys, arrow keys or by tapping. <a href="/guide">Streamer guide (OBS setup, tips) →</a></p>
+          <p class="note">Mizavo reads your Twitch chat without a bot and never posts in it. Fact or Fake: chat types <code>1</code> or <code>2</code>. Odd One Out: <code>A</code> to <code>D</code>. Each viewer's first answer counts. You pick with the number keys or by tapping. <a href="/guide">Streamer guide (OBS setup, tips) →</a></p>
         </details>
       </aside>
     </div>
