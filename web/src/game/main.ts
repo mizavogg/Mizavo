@@ -16,6 +16,7 @@ import {
   setMode, setPhase, setupError, show3, startGame, summary,
 } from './flow';
 import { setTopicPick } from './topics';
+import { initSound } from '../lib/sound';
 
 /* ---------- invite links: ?invite=CODE ----------
    The code is kept in the browser while the visitor goes through Twitch login
@@ -167,6 +168,7 @@ document.addEventListener('keydown', (e) => {
   if (S.phase === 'final' && k === 'enter') { e.preventDefault(); goHome(); startGame(); }
 });
 
+initSound();
 initStreamerMode();
 initPublicSwitch();
 initNav();

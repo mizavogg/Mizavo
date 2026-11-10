@@ -2,6 +2,7 @@
 import { $, clamp, rnd } from '../lib/dom';
 import { S, KEYS, WHITE, hexA, shade, type Orb, type Vote } from './state';
 import { faceFor, preloadFaces } from './faces';
+import { sfx } from '../lib/sound';
 
 preloadFaces();
 const FACE_MIN_R = 11;   // face balls never shrink below this, so the face stays readable
@@ -20,6 +21,19 @@ let W = 0, H = 0, DPR = 1;
 export let bins: Rect[] = [];
 let pool: Rect = { x: 0, y: 0, w: 0, h: 0 };
 let orbs: Orb[] = [], parts: Particle[] = [], labels: Label[] = [];
+/** Effects: each bin glows a little brighter for a moment when a ball lands in it (0–1, fades out),
+ *  and on the reveal the right bin lifts up with a soft ring of light. */
+let glow: number[] = [];
+let revealAt = 0;
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** How far the right bin is lifted (px): up quickly with a little overshoot, then settles. */
+function liftNow(now: number): number {
+  if (!revealAt || reducedMotion()) return 0;
+  const t = (now - revealAt) / 1000;
+  if (t < 0) return 0;
+  if (t < 0.28) { const k = t / 0.28; return 9 * (1 - Math.pow(1 - k, 3)); }
+  return 5 + 4 * Math.exp(-(t - 0.28) * 6);
+}
 /** Phone layout: the bins become cards (name and % on top, balls below) that replace the answer
  *  buttons, so a whole round fits on one screen. Odd One Out is a 2×2 grid; Fact or Fake is 2 side by side. */
 export let cards = false;
@@ -103,7 +117,7 @@ export function binAt(x: number, y: number): number {
   return bins.findIndex((b) => x >= b.x && x <= b.x + b.w && (!cards || (y >= b.y && y <= b.y + b.h)));
 }
 
-export function resetArena(): void { orbs = []; parts = []; labels = []; }
+export function resetArena(): void { orbs = []; parts = []; labels = []; glow = []; revealAt = 0; }
 
 function binTarget(i: number) { const b = bins[i]; return { x: rnd(b.x + 14, b.x + b.w - 14), y: b.y + (b.head ?? 0) + 6 }; }
 function poolTarget() { return { x: rnd(pool.x + 20, pool.x + pool.w - 20), y: rnd(pool.y + 20, pool.y + pool.h - 20) }; }
@@ -136,6 +150,7 @@ export function sortPool(): void {
 export function popWrong(answer: number): void {
   const R = S.R; if (!R) return;
   const now = performance.now();
+  revealAt = now;
   for (const v of R.votes.values()) {
     const o = v.orb; if (!o) continue;
     if (v.choice !== answer) o.popAt = now + 350 + Math.random() * 900;
@@ -155,7 +170,8 @@ function step(): void {
     if (t >= 1) {
       o.x = o.to.x; o.y = o.to.y;
       if (o.dest === 'pool') { o.state = 'pool'; o.vx = rnd(-1, 1); o.vy = rnd(-1, 1); }
-      else { o.state = 'bin'; o.bin = o.dest; o.vx = rnd(-1, 1); o.vy = 2; }
+      else { o.state = 'bin'; o.bin = o.dest; o.vx = rnd(-1, 1); o.vy = 2; if (o.bin != null) glow[o.bin] = Math.min(1, (glow[o.bin] || 0) + 0.35); }
+      if (S.phase !== 'gate') sfx.land();
       continue;
     }
     const e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2, u = 1 - e;
@@ -200,6 +216,7 @@ function step(): void {
   for (const o of orbs) {
     if (o.popAt && now >= o.popAt && !o.dead) {
       o.dead = true;
+      sfx.pop();
       const pc = ballColor(o);
       for (let k = 0; k < 7; k++) { const a = rnd(0, Math.PI * 2), s = rnd(1.5, 4.5); parts.push({ x: o.x, y: o.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, color: pc, r: rnd(1.5, 3) }); }
     }
@@ -207,6 +224,7 @@ function step(): void {
   orbs = orbs.filter((o) => !o.dead);
   for (const p of parts) { p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= 0.025; }
   parts = parts.filter((p) => p.life > 0);
+  for (let i = 0; i < glow.length; i++) if (glow[i]) glow[i] = glow[i] < 0.01 ? 0 : glow[i] * 0.94;
 }
 
 function draw(): void {
@@ -232,10 +250,13 @@ function draw(): void {
   }
 
   // bins: frosted glass panes with a soft glow of their color at the bottom
+  const lift = reveal ? liftNow(now) : 0;
   bins.forEach((b, i) => {
     const col = R.colors[i], sh = shade(col);
     const right = reveal && i === R.answer, wrong = reveal && i !== R.answer;
+    const pulse = glow[i] || 0;
     ctx.save();
+    if (right && lift) ctx.translate(0, -lift);
     ctx.globalAlpha = wrong ? .35 : 1;
     rr(b.x, b.y, b.w, b.h, RADIUS);
     const well = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
@@ -243,9 +264,9 @@ function draw(): void {
     ctx.fillStyle = 'rgba(18,21,22,.55)'; ctx.fill();   // dark tint first, then the frosted sheen
     ctx.fillStyle = well; ctx.fill();
     ctx.save(); ctx.clip();
-    const glow = ctx.createRadialGradient(b.x + b.w / 2, b.y + b.h, 0, b.x + b.w / 2, b.y + b.h, Math.max(b.w, b.h) * 0.8);
-    glow.addColorStop(0, hexA(col, right ? .38 : .20)); glow.addColorStop(1, hexA(col, 0));
-    ctx.fillStyle = glow; ctx.fillRect(b.x, b.y, b.w, b.h);
+    const gl = ctx.createRadialGradient(b.x + b.w / 2, b.y + b.h, 0, b.x + b.w / 2, b.y + b.h, Math.max(b.w, b.h) * 0.8);
+    gl.addColorStop(0, hexA(col, right ? .38 : .20 + pulse * .22)); gl.addColorStop(1, hexA(col, 0));
+    ctx.fillStyle = gl; ctx.fillRect(b.x, b.y, b.w, b.h);
     const lip = ctx.createLinearGradient(0, b.y, 0, b.y + 18);       // light catching the top edge of the glass
     lip.addColorStop(0, 'rgba(242,232,220,.14)'); lip.addColorStop(1, 'rgba(242,232,220,0)');
     ctx.fillStyle = lip; ctx.fillRect(b.x, b.y, b.w, 18);
@@ -254,8 +275,17 @@ function draw(): void {
     ctx.lineWidth = right ? 2 : 1;
     // the streamer's pick stays secret until the reveal, so chat can't copy it
     const showPick = R.pick === i && S.phase === 'reveal';
-    ctx.strokeStyle = right ? col : showPick ? hexA(SAND, .65) : hexA(PAPER, .20);
+    ctx.strokeStyle = right ? col : showPick ? hexA(SAND, .65) : pulse > .05 ? hexA(col, .2 + pulse * .45) : hexA(PAPER, .20);
     ctx.stroke();
+    if (right && revealAt && !reducedMotion()) {
+      // a soft ring of light that grows out from the right bin once
+      const k = (now - revealAt) / 900;
+      if (k >= 0 && k < 1) {
+        const pad = 2 + k * 14;
+        rr(b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2, RADIUS + pad);
+        ctx.lineWidth = 2; ctx.strokeStyle = hexA(col, .5 * (1 - k)); ctx.stroke();
+      }
+    }
     // label: small ball with the key, then the answer
     const narrow = b.w < 170 && !cards;
     drawBall(b.x + 26, b.y + 26, 11, col);
@@ -278,6 +308,7 @@ function draw(): void {
       ctx.fillStyle = INK; ctx.textAlign = 'left'; ctx.fillText(label, x + 10, y + 16);
     }
     ctx.restore();
+    ctx.save(); if (right && lift) ctx.translate(0, -lift);
     if (showSplit && total && cards) {
       // phone cards: "42%  12 votes" on the line under the name
       const pct = Math.round(counts[i] / total * 100);
@@ -303,13 +334,17 @@ function draw(): void {
       }
       ctx.restore();
     }
+    ctx.restore();
   });
 
   // balls
   for (const o of orbs) {
     if (o.state === 'fly' && o.t0 != null && now < o.t0 && o.y < 0) continue;
+    const up = lift && o.state === 'bin' && o.bin === R.answer ? lift : 0;
+    if (up) { ctx.save(); ctx.translate(0, -up); }
     if (o.face && o.face.complete && o.face.naturalWidth) drawFace(o.x, o.y, o.r, ballColor(o), o.face);
     else drawBall(o.x, o.y, o.r, ballColor(o));
+    if (up) ctx.restore();
   }
   for (const p of parts) {
     ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = shade(p.color).base;

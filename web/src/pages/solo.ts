@@ -11,6 +11,8 @@ import { OPT_COLORS, KEYS, SPHERE } from '../game/state';
 import { SITE_HOST } from '../lib/site';
 import { shareText } from '../lib/share';
 import { showStanding } from '../lib/standing';
+import { initSound, sfx, buzz } from '../lib/sound';
+import { countTo } from '../lib/countup';
 
 type RoundType = 'ff' | 'ooo';
 interface Q { date?: string; idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; shown_at?: string; ends_at?: string }
@@ -65,8 +67,17 @@ function link(text: string, cls: string, href: string): HTMLAnchorElement {
 function stat(value: string, label: string, hi = false): HTMLElement {
   const d = el('div', 'stat' + (hi ? ' hi' : '')); d.append(el('b', null, value), el('span', null, label)); return d;
 }
-function setScore(score: number, pts: number): void {
-  $('#sScore').textContent = String(score); $('#sPts').textContent = pts.toLocaleString('en-US');
+/** Header score. animate: roll up with a pop (after an answer); otherwise set straight away. */
+function setScore(score: number, pts: number, animate = false): void {
+  if (animate) { countTo($('#sScore'), score, { quiet: true }); countTo($('#sPts'), pts); return; }
+  const a = $('#sScore'), b = $('#sPts');
+  a.textContent = String(score); a.dataset.n = String(score); b.textContent = pts.toLocaleString('en-US'); b.dataset.n = String(pts);
+}
+/** End of a game just played: a closing chime, and the Points total rolls up from 0. */
+function celebrate(correct: number): void {
+  sfx.finale(correct >= 8 ? 'good' : correct >= 5 ? 'even' : 'low');
+  const pts = document.querySelector<HTMLElement>('#result .stat.hi b');
+  if (pts) { const to = +(pts.textContent || '0').replace(/\D/g, '') || 0; pts.textContent = '0'; setTimeout(() => countTo(pts, to, { from: 0, ms: 1000 }), 450); }
 }
 
 /* ---------- share ---------- */
@@ -200,26 +211,37 @@ async function loadRound(): Promise<void> {
     const c = OPT_COLORS[q!.type][i];
     const b = el('button', 'opt'); b.style.setProperty('--c', c); b.style.setProperty('--ball', SPHERE[c]);
     b.append(el('span', 'key', KEYS[q!.type][i]), document.createTextNode(o));
+    b.dataset.sfx = 'off';   // plays the pick sound instead of the button tap
     b.onclick = () => choose(i); box.append(b);
   });
   // timer: a fresh round gets the full 15 s; a round reopened after a reload keeps its original end time
   total = q.seconds * 1000;
   const fresh = !q.shown_at || Math.abs(Date.parse(q.shown_at) - Date.now()) < 5000;
   deadline = fresh ? Date.now() + total : Date.parse(q.ends_at!);
+  lastSec = -1; sfx.roundStart();
   clearInterval(timer); timer = window.setInterval(tick, 100); tick();
 }
 
+let lastSec = -1;
 function tick(): void {
   const left = Math.max(0, deadline - Date.now());
+  const sec = Math.ceil(left / 1000);
   $('#timerBar').style.transform = `scaleX(${left / total})`;
-  $('#tnum').textContent = String(Math.ceil(left / 1000));
-  const low = left < 4000; $('#stamp').classList.toggle('low', low); $('#timer').classList.toggle('low', low);
+  $('#tnum').textContent = String(sec);
+  // last 5 seconds: the timer turns orange and pulses once per second, with a soft tick
+  const low = phase === 'vote' && left > 0 && sec <= 5; $('#stamp').classList.toggle('low', low); $('#timer').classList.toggle('low', low);
+  if (sec !== lastSec) {
+    if (lastSec !== -1 && low) { sfx.tick(sec); const st = $('#stamp'); st.classList.remove('beat'); void st.offsetWidth; st.classList.add('beat'); }
+    lastSec = sec;
+  }
   if (left <= 0 && phase === 'vote') choose(null);
 }
 
 async function choose(i: number | null): Promise<void> {
   if (phase !== 'vote' || busy || !q) return;
   busy = true; phase = 'reveal'; clearInterval(timer);
+  $('#stamp').classList.remove('low'); $('#timer').classList.remove('low');
+  if (i != null) { sfx.pick(); buzz(); } else sfx.timeUp();
   $('#opts').classList.add('locked');
   if (i != null) ($('#opts').children[i] as HTMLElement).classList.add('picked');
   let a: Answer;
@@ -232,10 +254,11 @@ async function choose(i: number | null): Promise<void> {
     if (a.correct) { gStreak++; gScore++; gained = 100 + Math.min(5, gStreak - 1) * 20; gPts += gained; gBest = Math.max(gBest, gStreak); } else gStreak = 0;
     streak = gStreak;
     gResults[idx - 1] = !!a.correct;
-    setScore(gScore, gPts);
-  } else setScore(a.score ?? 0, a.points ?? 0);
+    setScore(gScore, gPts, true);
+  } else setScore(a.score ?? 0, a.points ?? 0, true);
 
   [...$('#opts').children].forEach((b, k) => b.classList.add(k === a.correct_position ? 'right' : 'wrong'));
+  setTimeout(() => (a.correct ? sfx.right() : sfx.wrong()), 120);
   const label = q.type === 'ff' ? (a.correct_position === 0 ? 'Fact' : 'Fake') : (q.items || [])[a.correct_position];
   const tag = el('b', null, label); tag.style.background = OPT_COLORS[q.type][a.correct_position];
   const verdict = a.late ? 'Too late: the 15 seconds were up.' : i == null ? 'Out of time.'
@@ -266,11 +289,13 @@ async function finish(): Promise<void> {
        link('Leaderboards', 'ghost', '/today')]);
     const r = $('#result'); r.replaceChildren(stat(`${gScore}/10`, 'Right'), stat(gPts.toLocaleString('en-US'), 'Points', true), stat(String(gBest), 'Best streak'));
     show(r, true);
+    celebrate(gScore);
     if (gDate) showStanding($('#standing'), { date: gDate, points: gPts, guest: true });
     return;
   }
   const s = lastState && lastState.state === 'done' ? lastState : await api.status();
   doneScreen(s);
+  celebrate(s.correct);
 }
 
 /* ---------- wiring ---------- */
@@ -285,6 +310,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 initNav();
+initSound();
 let started = false;
 supabase.auth.onAuthStateChange((event, session) => {
   if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;

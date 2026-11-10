@@ -10,6 +10,8 @@ import { clearBots, makeBots, scheduleBots } from './demo';
 import { connectTwitch, disconnectTwitch, setStatus } from './chat';
 import { loadFinalCommunity, loadSetupCommunity } from './community';
 import { pickedCategories, refreshTopics } from './topics';
+import { sfx, buzz } from '../lib/sound';
+import { countTo } from '../lib/countup';
 
 const MODE_NAME = { ff: 'Fact or Fake', ooo: 'Odd One Out', mix: 'Mix' } as const;
 
@@ -18,7 +20,11 @@ export function show3(id: 'setup' | 'game' | 'final'): void {
   for (const s of ['setup', 'game', 'final']) show($('#' + s), s === id);
 }
 export function setPhase(p: typeof S.phase): void { S.phase = p; document.body.dataset.phase = p; }
-function updateScore(): void { $('#sMe').textContent = String(S.me); $('#sCh').textContent = String(S.chat); }
+/** Header score. animate: roll up with a pop (after a reveal); otherwise set straight away (new game, resume). */
+function updateScore(animate = false): void {
+  if (animate) { countTo($('#sMe'), S.me); countTo($('#sCh'), S.chat, { quiet: true }); return; }
+  for (const [id, v] of [['#sMe', S.me], ['#sCh', S.chat]] as const) { const n = $(id); n.textContent = String(v); n.dataset.n = String(v); }
+}
 export function setupError(msg: string | null): void { const e = $('#setupErr'); e.textContent = msg || ''; show(e, !!msg); }
 
 /** Simple yes/no dialog. Resolves true if the streamer confirms. */
@@ -146,6 +152,7 @@ function introCard(title: string, sub: string, ms: number): Promise<void> {
   $('#prompt').textContent = 'Get ready';
   const bn = $('#banner'); bn.replaceChildren(title, el('small', null, sub)); bn.style.setProperty('--c', 'var(--yellow)');
   bn.classList.add('show', 'intro');
+  sfx.special();
   return new Promise((res) => setTimeout(() => { bn.classList.remove('show', 'intro'); res(); }, ms));
 }
 
@@ -182,6 +189,7 @@ function startRound(): void {
   box.style.gridTemplateColumns = `repeat(${R.opts.length},1fr)`;
   R.opts.forEach((o, i) => {
     const b = el('button', 'opt'); b.style.setProperty('--c', R.colors[i]); b.style.setProperty('--ball', SPHERE[R.colors[i]]);
+    b.dataset.sfx = 'off';   // plays the pick sound instead of the button tap
     b.append(el('span', 'key', keys[i]), document.createTextNode(o));
     b.onclick = () => pick(i); box.append(b);
   });
@@ -191,16 +199,25 @@ function startRound(): void {
   show($('#below'), true); show($('#explain'), false);
   $('#banner').className = 'banner'; $('#callout').className = 'callout';
   S.deadline = Date.now() + S.secs * 1000;
+  lastSec = -1;
+  if (R.lightning && R.lightning > 1) sfx.next(); else sfx.roundStart();
   clearInterval(S.timer); S.timer = window.setInterval(tick, 100); tick();
   if (S.demo) scheduleBots(S.secs * 1000);
 }
 
+let lastSec = -1;
 export function tick(): void {
   const R = S.R; if (!R) return;
   const left = Math.max(0, S.deadline - Date.now());
+  const sec = Math.ceil(left / 1000);
   $('#timerBar').style.transform = `scaleX(${left / (S.secs * 1000)})`;
-  $('#tnum').textContent = String(Math.ceil(left / 1000));
-  const low = left < 4000; $('#stamp').classList.toggle('low', low); $('#timer').classList.toggle('low', low);
+  $('#tnum').textContent = String(sec);
+  // last 5 seconds: the timer turns orange and pulses once per second, with a soft tick
+  const low = left > 0 && sec <= 5; $('#stamp').classList.toggle('low', low); $('#timer').classList.toggle('low', low);
+  if (sec !== lastSec) {
+    if (lastSec !== -1 && low) { sfx.tick(sec); beat($('#stamp')); }
+    lastSec = sec;
+  }
   const n = R.votes.size;
   if ((!S.blind || R.pick != null) && n >= 10) {
     const counts = new Array(R.opts.length).fill(0); for (const v of R.votes.values()) counts[v.choice]++;
@@ -213,9 +230,13 @@ export function tick(): void {
   if (left <= 0) endVoting();
 }
 
+/** Restart the one-second pulse animation on the timer. */
+function beat(n: HTMLElement): void { n.classList.remove('beat'); void n.offsetWidth; n.classList.add('beat'); }
+
 export function pick(i: number): void {
   const R = S.R; if (S.phase !== 'vote' || !R || R.pick != null) return;
   R.pick = i;
+  sfx.pick(); buzz();   // same sound for every answer, so the stream can't hear which one
   // Secret pick: viewers watch this screen, so nothing shows WHICH answer was picked until the reveal.
   $('#opts').classList.add('locked');
   if (S.blind) sortPool();
@@ -232,6 +253,8 @@ export function revealNow(): void {
 function endVoting(): void {
   if (S.phase !== 'vote') return;
   clearInterval(S.timer); clearBots();
+  $('#stamp').classList.remove('low'); $('#timer').classList.remove('low');
+  if (!S.R?.lightning || S.R.lightning === 3) sfx.timeUp();
   setPhase('sorting');
   const needSort = S.blind && S.R!.pick == null;
   if (needSort) sortPool();
@@ -277,7 +300,7 @@ async function reveal(): Promise<void> {
     setTimeout(() => { next(); }, 900);
     return;
   }
-  updateScore();
+  updateScore(true);
 
   popWrong(R.answer);
   [...$('#opts').children].forEach((b, i) => b.classList.add(i === R.answer ? 'right' : 'wrong', ...(i === R.pick ? ['picked'] : [])));
@@ -298,6 +321,11 @@ async function reveal(): Promise<void> {
   }
   const bn = $('#banner'); bn.replaceChildren(head, el('small', null, sub)); bn.style.setProperty('--c', color);
   setTimeout(() => bn.classList.add('show'), 200);
+  // the reveal sound: from the streamer's side, since they're the one playing on screen
+  if (R.lightning) {
+    const me3 = S.lightBuf.filter((x) => x.meRight).length, ch3 = S.lightBuf.filter((x) => x.chatRight).length;
+    if (me3 >= ch3 && me3 > 0) sfx.right(); else if (ch3 > 0) sfx.chat(); else sfx.wrong();
+  } else if (meRight) sfx.right(); else if (chatRight) sfx.chat(); else sfx.wrong();
 
   const ex = $('#exText'); ex.replaceChildren();
   let top: Viewer | null = null; for (const r of S.viewers.values()) if (!top || r.streak > top.streak) top = r;
@@ -376,7 +404,10 @@ async function finish(): Promise<void> {
   const win = S.me > S.chat ? 'me' : S.chat > S.me ? 'ch' : 'tie';
   $('#fTitle').textContent = win === 'me' ? 'The streamer outsmarted chat.' : win === 'ch' ? 'Chat wins. The crowd was right.' : 'Dead even. Rematch?';
   $('#fTitle').style.color = '';   // the title stays ivory whoever wins
-  $('#fMe').textContent = S.me + ' / ' + S.maxScore; $('#fCh').textContent = S.chat + ' / ' + S.maxScore;
+  const of = (n: number) => n + ' / ' + S.maxScore;
+  $('#fMe').textContent = of(0); $('#fCh').textContent = of(0);
+  sfx.finale(win === 'me' ? 'good' : win === 'ch' ? 'chat' : 'even');
+  setTimeout(() => { countTo($('#fMe'), S.me, { from: 0, fmt: of, ms: 900 }); countTo($('#fCh'), S.chat, { from: 0, fmt: of, ms: 900, quiet: true }); }, 500);
   $('#fToday').textContent = (S.isTest ? 'Test game (simulated chat): it doesn\'t count toward question stats, your record or the leaderboard. ' : '') + today;
   show($('#fToday'), !!$('#fToday').textContent);
   const top = [...S.viewers.values()].sort((a, b) => b.pts - a.pts).slice(0, 5);
