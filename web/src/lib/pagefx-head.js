@@ -51,10 +51,11 @@
     })(i);
   }
   jobs.push(logo.animate([
-    { opacity: 0, transform: 'scale(.5)', easing: 'cubic-bezier(.22,1,.36,1)' },
-    { opacity: 1, transform: 'scale(1.08)', offset: 0.4 },
-    { opacity: 1, transform: 'scale(1)', offset: 0.62 },
-    { opacity: 0, transform: 'scale(1.1)' }
+    // one smooth motion, no bounce: grows in, keeps drifting slightly larger, then fades
+    { opacity: 0, transform: 'scale(.6)', easing: 'cubic-bezier(.22,1,.36,1)' },
+    { opacity: 1, transform: 'scale(1)', offset: 0.4 },
+    { opacity: 1, transform: 'scale(1.03)', offset: 0.62, easing: 'ease-in' },
+    { opacity: 0, transform: 'scale(1.06)' }
   ], opts()));
 
   var gone = false;
