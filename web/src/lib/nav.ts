@@ -1,7 +1,6 @@
 /* Mizavo — the navigation bar shared by every public page.
    Fills <nav class="siteNav" data-page="..."> with: Play · Daily challenge · Leaderboards · Guide (· My page).
    "My page" appears when logged in and we know the channel's login (saved by the game/solo pages). */
-import './pagefx';
 import { el, store } from './dom';
 import { supabase, loginWithTwitch } from './supabase';
 import { channelUrl } from './boards';
