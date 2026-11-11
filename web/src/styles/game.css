@@ -426,7 +426,8 @@ body[data-phase=setup] #status{display:none}                 /* the chat pill on
 .soonList li{border:0;background:linear-gradient(160deg,#f6f2ea,#ece6db);box-shadow:inset 1px 1px 0 rgba(255,255,255,.9),inset -1px -1px 0 rgba(160,150,135,.35),0 18px 30px -22px rgba(60,50,40,.45)}
 
 /* ---- settings + game + results: the 3D ribbed glass fills the background, dimmed toward the edges ---- */
-.pageGlass::after{content:"";position:absolute;inset:0;pointer-events:none;
+.pageGlass::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  /* its own layer: ::after is the film grain at 20% strength, which would have washed this out */
   /* darker toward the left (where the text is) and toward the bottom, so the glass fades into the page (Nov 11) */
   background:linear-gradient(180deg,rgba(18,21,22,.25) 0%,rgba(18,21,22,.55) 35%,rgba(18,21,22,.9) 75%,#121516 100%),
     linear-gradient(90deg,rgba(18,21,22,.82) 0%,rgba(18,21,22,.6) 45%,rgba(18,21,22,.35) 100%)}
