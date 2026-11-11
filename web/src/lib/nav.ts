@@ -35,6 +35,8 @@ function render(): void {
   for (const [k, t, h] of LINKS) add(k, t, h);
   const login = store.get('mz_login');
   if (login && loggedIn) add(page === 'channel' && here === login ? 'channel' : 'mine', 'My page', channelUrl(login));
+  // admins only: a shortcut to the admin page (the admin page still checks admin rights on the server)
+  if (loggedIn && store.get('mz_admin') === '1') add('admin', 'Admin', '/admin');
   // logged out: a login button right in the bar, so it's never hidden under a webcam overlay
   if (known && !loggedIn) {
     const b = el('button', 'navLogin'); b.type = 'button';
@@ -61,6 +63,25 @@ const TWITCH_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
 let loggedIn = false, known = false;   // known: the login check has finished (avoids the button flashing)
 export function initNav(): void {
   render(); wireSupport();
-  supabase.auth.getSession().then(({ data }) => { loggedIn = !!data.session; known = true; if (!loggedIn) store.remove('mz_login'); render(); });
-  supabase.auth.onAuthStateChange((_e, s) => { const was = loggedIn; loggedIn = !!s; if (was !== loggedIn) render(); });
+  supabase.auth.getSession().then(({ data }) => {
+    loggedIn = !!data.session; known = true;
+    if (!loggedIn) { store.remove('mz_login'); store.remove('mz_admin'); }
+    render(); if (loggedIn) checkAdmin();
+  });
+  supabase.auth.onAuthStateChange((_e, s) => {
+    const was = loggedIn; loggedIn = !!s;
+    if (!loggedIn) store.remove('mz_admin');
+    if (was !== loggedIn) { render(); if (loggedIn) checkAdmin(); }
+  });
+}
+
+/** Ask the server whether this account is an admin; remember it so the Admin link shows right away next time. */
+async function checkAdmin(): Promise<void> {
+  const { data, error } = await supabase.rpc('my_access');
+  if (error) return;
+  const admin = !!(data as { is_admin?: boolean } | null)?.is_admin;
+  if (admin !== (store.get('mz_admin') === '1')) {
+    if (admin) store.set('mz_admin', '1'); else store.remove('mz_admin');
+    render();
+  }
 }
