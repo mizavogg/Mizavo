@@ -44,7 +44,9 @@
 <div class="wrap">
 
   <!-- intro / closed / done -->
-  <section class="card" id="intro">
+  <section class="card ribbed" id="intro">
+    <canvas class="rGlow" aria-hidden="true"></canvas><canvas class="rEdges" aria-hidden="true"></canvas><div class="rDim" aria-hidden="true"></div>
+    <div class="cardIn slab">
     <span class="sticker" id="introKicker">Today's challenge</span>
     <h1 id="introTitle">Ten questions. Same for everyone.</h1>
     <p id="introText">Fact or Fake and Odd One Out, easy to hard. You get 15 seconds a question and one try a day. A new challenge starts every day at midnight Eastern time (ET).</p>
@@ -53,6 +55,7 @@
     <p class="err hidden" id="err" role="alert"></p>
     <div class="row" id="introActions"></div>
     <p class="fine" id="introFine"></p>
+    </div>
   </section>
 
   <!-- a round -->

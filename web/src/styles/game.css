@@ -381,11 +381,6 @@ body[data-phase=setup] #status{display:none}                 /* the chat pill on
 
 /* ===================== glass refinements (Nov 11, 2026) ===================== */
 /* ---- homepage: the example round and the daily panel sit in windows of moving ribbed glass ---- */
-.ribbed{position:relative;border-radius:30px;overflow:hidden;isolation:isolate;background:#151819;color:var(--paper);box-shadow:0 50px 90px -40px rgba(30,35,38,.75)}
-.ribbed>canvas{position:absolute;display:block}
-.ribbed .rGlow{top:-20px;left:-20px;width:calc(100% + 40px);height:calc(100% + 40px);filter:blur(2.5px) saturate(1.1)}
-.ribbed .rEdges{top:0;left:0;width:100%;height:100%}
-.ribbed .rDim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,17,18,.78),rgba(14,17,18,.35))}
 .homeRound{margin-top:clamp(44px,6vw,64px)}
 .homeRound .rIn{position:relative;z-index:1;margin:clamp(12px,2.5vw,24px);padding:26px clamp(16px,3.5vw,36px);border-radius:22px}
 .rTop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;font-size:13px;color:var(--muted)}
@@ -431,7 +426,11 @@ body[data-phase=setup] #status{display:none}                 /* the chat pill on
 .soonList li{border:0;background:linear-gradient(160deg,#f6f2ea,#ece6db);box-shadow:inset 1px 1px 0 rgba(255,255,255,.9),inset -1px -1px 0 rgba(160,150,135,.35),0 18px 30px -22px rgba(60,50,40,.45)}
 
 /* ---- settings + game + results: the 3D ribbed glass fills the background, dimmed toward the edges ---- */
-.pageGlass::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(14,17,18,.5),rgba(14,17,18,.84) 78%)}
+.pageGlass::after{content:"";position:absolute;inset:0;pointer-events:none;
+  /* darker toward the left (where the text is) and toward the bottom, so the glass fades into the page (Nov 11) */
+  background:linear-gradient(180deg,rgba(18,21,22,.25) 0%,rgba(18,21,22,.55) 35%,rgba(18,21,22,.9) 75%,#121516 100%),
+    linear-gradient(90deg,rgba(18,21,22,.82) 0%,rgba(18,21,22,.6) 45%,rgba(18,21,22,.35) 100%)}
+.pageGlass .pgGlow{opacity:.75}
 body[data-phase=setup] .pageGlass{position:fixed;height:auto;bottom:0;-webkit-mask-image:none;mask-image:none}
 /* settings card: a slab of thick frosted glass */
 .setupCard{background:linear-gradient(160deg,rgba(242,232,220,.085),rgba(242,232,220,.025) 45%,rgba(242,232,220,.04));-webkit-backdrop-filter:blur(26px) saturate(150%);backdrop-filter:blur(26px) saturate(150%);
