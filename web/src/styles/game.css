@@ -24,6 +24,8 @@ body[data-phase=gate] .launch{display:block}
 html:has(body[data-phase=gate]),body[data-phase=gate]{background:#121516}
 body[data-phase=gate] #game,body[data-phase=gate] #setup,body[data-phase=gate] #final{display:none!important}
 body[data-phase=gate] .topbar{position:absolute;top:0;left:0;right:0;z-index:5}
+/* homepage (Nov 11): the menu stretches to the same edges as "You vs. your chat.", the button and the footer */
+body[data-phase=gate] .topbar{max-width:none;padding-left:var(--edge);padding-right:var(--edge)}
 body[data-phase=gate] .wrap{display:none}   /* the game area is empty on the launch screen; don't let it take space above the hero */
 body[data-phase=gate] .mast{border-bottom-color:transparent;margin-bottom:0}
 body[data-phase=gate] .logo{color:var(--ivory)}

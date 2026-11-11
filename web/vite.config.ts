@@ -10,10 +10,10 @@ import { readFileSync } from 'node:fs';
 function pageTransition(): Plugin {
   const css =
     '.fxLayer{position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden}' +
-    // the glass screen: copper light behind vertical glass ribs, blurring the page underneath
-    '.fxVeil{position:absolute;inset:0;-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);'+
-      'background:repeating-linear-gradient(90deg,rgba(0,0,0,.30) 0,rgba(242,232,220,.05) 2px,rgba(242,232,220,.14) 4px,rgba(242,232,220,.02) 6px,rgba(0,0,0,0) 10px,rgba(0,0,0,.12) 15px,rgba(0,0,0,.30) 18px),'+
-      'radial-gradient(ellipse 60% 55% at 50% 50%,rgba(183,105,53,.38),rgba(183,105,53,0) 70%),rgba(18,21,22,.55)}' +
+    // the glass screen (Nov 11): one flat sheet of frosted glass over the page, with a soft diagonal reflection
+    '.fxVeil{position:absolute;inset:0;-webkit-backdrop-filter:blur(20px) saturate(1.15);backdrop-filter:blur(20px) saturate(1.15);'+
+      'background:linear-gradient(125deg,rgba(245,239,230,0) 30%,rgba(245,239,230,.07) 45%,rgba(245,239,230,0) 60%),rgba(18,21,22,.5);'+
+      'box-shadow:inset 0 1px 0 rgba(245,239,230,.12)}' +
     '.fxBall{position:absolute;left:0;top:0;border-radius:50%;will-change:transform,opacity;box-shadow:inset -6px -8px 14px rgba(0,0,0,.35),0 8px 16px -6px rgba(0,0,0,.6)}' +
     '.fxLogo{position:absolute;left:50%;top:50%;width:min(120px,26vw);height:min(120px,26vw);margin:calc(min(120px,26vw)/-2) 0 0 calc(min(120px,26vw)/-2);opacity:0;will-change:transform,opacity;filter:drop-shadow(0 14px 30px rgba(0,0,0,.6))}';
   return {

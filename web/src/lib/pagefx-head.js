@@ -1,6 +1,6 @@
 /* Mizavo — page transition "Pop & scatter" (chosen Nov 10, 2026).
-   Colored balls burst outward from the Mizavo logo over a ribbed frosted-glass screen; the new page shows blurred
-   behind the glass and comes into focus as it fades (about 0.6 s). Updated Nov 11: glass screen instead of a dark one,
+   Colored balls burst outward from the Mizavo logo over a flat sheet of frosted glass; the new page shows blurred
+   behind the glass and comes into focus as it fades (about 0.6 s). Updated Nov 11: a flat frosted-glass screen instead of a dark one (ribs tried, too busy),
    and every motion goes one way only so nothing pulses.
 
    vite.config.ts copies this file into the <head> of every page at build time, so it starts on the very
