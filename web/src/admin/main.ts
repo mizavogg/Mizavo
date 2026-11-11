@@ -3,6 +3,7 @@
    handle streamers' reports, and manage the closed-test invite list.
    Every action goes through the database's admin functions, which check that you're an admin.
    This page never decides who is an admin; the database does. */
+import '../lib/pagefx';
 import { supabase, rpc, loginWithTwitch } from '../lib/supabase';
 import { $, el, show } from '../lib/dom';
 import { REPORT_REASONS, type ReportReason } from '../lib/reasons';
