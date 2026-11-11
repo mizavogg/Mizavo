@@ -1,5 +1,7 @@
 /* Mizavo — page transition "Pop & scatter" (chosen Nov 10, 2026).
-   Colored balls pop up in a ring around the Mizavo logo, then fly outward and reveal the page (about 0.6 s).
+   Colored balls burst outward from the Mizavo logo over a ribbed frosted-glass screen; the new page shows blurred
+   behind the glass and comes into focus as it fades (about 0.6 s). Updated Nov 11: glass screen instead of a dark one,
+   and every motion goes one way only so nothing pulses.
 
    vite.config.ts copies this file into the <head> of every page at build time, so it starts on the very
    first frame, before the page's own code loads (starting late made it look choppy). The logo is built in
@@ -32,31 +34,32 @@
   function opts(delay) { return { duration: LENGTH, delay: delay || 0, fill: 'both' }; }
   function rnd(a, b) { return a + Math.random() * (b - a); }
 
-  jobs.push(veil.animate([{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0 }], opts()));
+  // the glass screen: the new page shows blurred behind ribbed glass, then comes into focus as the glass fades
+  jobs.push(veil.animate([{ opacity: 1 }, { opacity: 1, offset: 0.35 }, { opacity: 0, easing: 'ease-out' }], opts()));
   for (var i = 0; i < N; i++) {
     (function (i) {
-      var a = (i / N) * Math.PI * 2 + rnd(-0.12, 0.12), r = rnd(95, 140), s = Math.round(rnd(16, 28));
+      var a = (i / N) * Math.PI * 2 + rnd(-0.12, 0.12), s = Math.round(rnd(16, 28));
       var c = COLORS[i % COLORS.length], b = document.createElement('div');
       b.className = 'fxBall';
       b.style.width = b.style.height = s + 'px';
       b.style.background = 'radial-gradient(circle at 34% 30%, rgba(255,255,255,.55) 0 8%, ' + c + ' 38%, color-mix(in srgb, ' + c + ' 55%, #000) 100%)';
       layer.appendChild(b);
       function at(d) { return 'translate(' + (cx + Math.cos(a) * d - s / 2) + 'px,' + (cy + Math.sin(a) * d - s / 2) + 'px)'; }
+      // one continuous motion outward: no pause in the ring and no grow-then-shrink, so nothing pulses
       jobs.push(b.animate([
-        { transform: at(20) + ' scale(0)', opacity: 0, easing: 'cubic-bezier(.3,.7,.4,1)' },
-        { transform: at(r) + ' scale(1.15)', opacity: 1, offset: 0.38 },
-        { transform: at(r) + ' scale(1)', opacity: 1, offset: 0.55, easing: 'cubic-bezier(.5,0,.8,.4)' },
-        { transform: at(far) + ' scale(.9)', opacity: 0 }
-      ], opts(i * 6)));
+        { transform: at(40) + ' scale(.4)', opacity: 0 },
+        { transform: at(150) + ' scale(1)', opacity: 1, offset: 0.3 },
+        { transform: at(far) + ' scale(1)', opacity: 0 }
+      ], { duration: LENGTH, delay: i * 6, fill: 'both', easing: 'cubic-bezier(.25,.6,.35,1)' }));
     })(i);
   }
   jobs.push(logo.animate([
-    // one smooth motion, no bounce: grows in, keeps drifting slightly larger, then fades
-    { opacity: 0, transform: 'scale(.6)', easing: 'cubic-bezier(.22,1,.36,1)' },
-    { opacity: 1, transform: 'scale(1)', offset: 0.4 },
-    { opacity: 1, transform: 'scale(1.03)', offset: 0.62, easing: 'ease-in' },
-    { opacity: 0, transform: 'scale(1.06)' }
-  ], opts()));
+    // one steady motion: grows the whole time while it fades in and out (no hold, no bounce)
+    { opacity: 0, transform: 'scale(.86)' },
+    { opacity: 1, transform: 'scale(.95)', offset: 0.3 },
+    { opacity: 1, transform: 'scale(1)', offset: 0.55 },
+    { opacity: 0, transform: 'scale(1.08)' }
+  ], { duration: LENGTH, fill: 'both', easing: 'linear' }));
 
   var gone = false;
   function done() { if (!gone) { gone = true; layer.remove(); } }

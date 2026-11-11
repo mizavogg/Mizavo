@@ -164,3 +164,36 @@ a.logo:hover{opacity:.85}
 @view-transition{navigation:auto}
 ::view-transition-group(root){animation-duration:.2s}
 @media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+
+/* ===================== glass refinements (Nov 11, 2026) =====================
+   One small set of materials, taken from the 3D hero glass, used across the site:
+   SLAB  thick frosted pane (panels): blurs what's behind, bright top-left edge, darker bottom-right edge
+   WELL  cut into the glass (inputs, bins, switch tracks): shaded along the top inside, lit along the bottom
+   ROD   a raised rounded piece (pills, chips, buttons): a highlight line along the top
+   Every button shrinks a little the instant it's pressed. Reduce transparency turns the glass solid. */
+.slab{background:linear-gradient(160deg,rgba(242,232,220,.085),rgba(242,232,220,.025) 45%,rgba(242,232,220,.04));-webkit-backdrop-filter:blur(26px) saturate(150%);backdrop-filter:blur(26px) saturate(150%);border:0;
+  box-shadow:inset 1px 1px 0 rgba(245,239,230,.28),inset -1px -1px 0 rgba(0,0,0,.35),inset 0 18px 40px -30px rgba(245,239,230,.18),0 40px 80px -40px rgba(0,0,0,.9)}
+.well{background:rgba(6,8,9,.58);border:0;box-shadow:inset 0 2px 6px rgba(0,0,0,.7),inset 0 -1px 0 rgba(245,239,230,.16),inset 0 0 0 1px rgba(0,0,0,.25)}
+.rod{background:linear-gradient(180deg,rgba(242,232,220,.14),rgba(242,232,220,.04));border:0;box-shadow:inset 0 1px 0 rgba(245,239,230,.32),inset 0 -1px 0 rgba(0,0,0,.35),0 6px 14px -8px rgba(0,0,0,.8)}
+
+/* buttons: copper glass, glass pills, and the press */
+.btn{transition:transform .1s ease-out,filter .15s,background .15s,box-shadow .15s}
+.btn:active{transform:scale(.97)}
+.btn.primary,.btn.copper,.btn.twitch{color:#FFF8F0;background:linear-gradient(180deg,#c47a45,#93552c 55%,#7d4722);
+  box-shadow:inset 0 1px 0 rgba(255,230,200,.55),inset 0 -2px 0 rgba(0,0,0,.25),0 12px 24px -10px rgba(183,105,53,.7)}
+.btn.primary:hover,.btn.copper:hover,.btn.twitch:hover{background:linear-gradient(180deg,#c47a45,#93552c 55%,#7d4722);filter:brightness(1.07)}
+.btn.primary,.btn.copper{border-radius:999px}
+.btn.ghost{background:linear-gradient(180deg,rgba(242,232,220,.13),rgba(242,232,220,.04));border:0;border-radius:999px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:inset 0 1px 0 rgba(245,239,230,.3),inset 0 -1px 0 rgba(0,0,0,.35),0 8px 16px -10px rgba(0,0,0,.8)}
+.btn.ghost:hover{filter:brightness(1.12)}
+
+/* top menu: the current page and the sound button are glass pills, Log in is copper glass */
+.siteNav a.on{background:linear-gradient(180deg,rgba(242,232,220,.14),rgba(242,232,220,.04));box-shadow:inset 0 1px 0 rgba(245,239,230,.32),inset 0 -1px 0 rgba(0,0,0,.35),0 6px 14px -8px rgba(0,0,0,.8)}
+.siteNav .navLogin{border:0;color:#FFF8F0;background:linear-gradient(180deg,#c47a45,#93552c 55%,#7d4722);box-shadow:inset 0 1px 0 rgba(255,230,200,.55),inset 0 -2px 0 rgba(0,0,0,.25),0 10px 20px -10px rgba(183,105,53,.7);transition:transform .1s ease-out,filter .15s}
+.siteNav .navLogin:active{transform:scale(.97)}
+.sfxBtn{background:linear-gradient(180deg,rgba(242,232,220,.13),rgba(242,232,220,.04));box-shadow:inset 0 1px 0 rgba(245,239,230,.3),inset 0 -1px 0 rgba(0,0,0,.35),0 6px 14px -8px rgba(0,0,0,.8)}
+.score{background:linear-gradient(180deg,rgba(242,232,220,.13),rgba(242,232,220,.04));border:0;border-radius:999px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:inset 0 1px 0 rgba(245,239,230,.3),inset 0 -1px 0 rgba(0,0,0,.35),0 8px 16px -10px rgba(0,0,0,.8)}
+
+@media (prefers-reduced-motion:reduce){.btn,.siteNav .navLogin{transition:none}.btn:active,.siteNav .navLogin:active{transform:none;opacity:.85}}
+@media (prefers-reduced-transparency:reduce){.slab,.btn.ghost,.score{background:#1b1f21;-webkit-backdrop-filter:none;backdrop-filter:none}}

@@ -255,6 +255,22 @@
         <p class="eyebrow">A shared screen. A shared moment.</p>
         <h2 class="display">Your chat has opinions.<br>Give them a game.</h2>
         <p class="lede" id="gateIntro">A quick trivia game for your stream. You answer on screen, your viewers answer in chat, and whoever gets more right wins.</p>
+        <div class="ribbed homeRound" id="homeRound" aria-label="Example round: chat votes drop into the bins, then the wrong pile pops">
+          <canvas class="rGlow" aria-hidden="true"></canvas><canvas class="rEdges" aria-hidden="true"></canvas><div class="rDim" aria-hidden="true"></div>
+          <div class="rIn slab">
+            <div class="rTop">
+              <span>Round 3 of 5 · Fact or Fake</span>
+              <span class="rScore"><span>You <b>2</b></span><span>Chat <b id="hrChat">1</b></span><span class="rTimer" id="hrTimer">30</span></span>
+            </div>
+            <p class="rQ">The Eiffel Tower is taller in summer than in winter.</p>
+            <div class="rBins">
+              <div class="rBin well" id="hrBin0"><div class="rBinHead"><span><span class="kb">1</span> · Fact</span><span class="v"><span id="hrN0">0</span> votes</span></div><div class="rPile" id="hrPile0"></div></div>
+              <div class="rBin well" id="hrBin1"><div class="rBinHead"><span><span class="ko">2</span> · Fake</span><span class="v"><span id="hrN1">0</span> votes</span></div><div class="rPile" id="hrPile1"></div></div>
+            </div>
+            <p class="rNote">Every vote in chat drops in as a ball. Chat types 1 or 2.</p>
+            <canvas class="balls" aria-hidden="true"></canvas>
+          </div>
+        </div>
         <div class="closed hidden" id="closedBox">
           <span class="sticker">Closed test</span>
           <p><b>Mizavo is invite-only for now.</b> <span id="closedWho">This channel</span> isn't on the invite list yet. If a streamer friend shared Mizavo with you, send them your Twitch name and they can add you. This page will let you in as soon as you're on the list.</p>
@@ -263,11 +279,23 @@
         </div>
         <p class="err hidden" id="gateMsg" role="alert"></p>
         <ol class="steps">
-          <li><span class="num">01 / Fact or Fake</span><h3>Is it true?</h3><p>One statement on screen. You pick a side, and chat types 1 or 2.</p></li>
-          <li><span class="num">02 / Odd One Out</span><h3>Which one doesn't belong?</h3><p>Four things, one misfit. Chat types A to D.</p></li>
-          <li><span class="num">03 / Mix</span><h3>A bit of both.</h3><p>Shuffled together. Good for longer streams.</p></li>
+          <li><span class="num">01 / Fact or Fake</span><h3>Is it true?</h3><p>One statement on screen. You pick a side, and chat types 1 or 2.</p><div class="keys" aria-hidden="true"><span class="key b">1</span><span class="key o">2</span></div></li>
+          <li><span class="num">02 / Odd One Out</span><h3>Which one doesn't belong?</h3><p>Four things, one misfit. Chat types A to D.</p><div class="keys" aria-hidden="true"><span class="key b">A</span><span class="key o">B</span><span class="key s">C</span><span class="key l">D</span></div></li>
+          <li><span class="num">03 / Mix</span><h3>A bit of both.</h3><p>Shuffled together. Good for longer streams.</p><div class="keys" aria-hidden="true"><span class="key b">1</span><span class="key o">2</span><span class="sep"></span><span class="key b">A</span><span class="key o">B</span><span class="key s">C</span><span class="key l">D</span></div></li>
         </ol>
-        <p class="launchHow">Viewers don't need an account: their first answer in chat counts. <a class="guideLink" href="/guide">Streamer guide</a> · <a class="guideLink" href="/today">Today's top channels</a> · <a class="guideLink" href="/solo">Play the daily challenge</a></p>
+        <p class="launchHow">Viewers don't need an account: their first answer in chat counts. <a class="guideLink" href="/guide">Streamer guide</a> · <a class="guideLink" href="/today">Today's top channels</a></p>
+        <div class="ribbed homeDaily" id="homeDaily">
+          <canvas class="rGlow" aria-hidden="true"></canvas><canvas class="rEdges" aria-hidden="true"></canvas><div class="rDim" aria-hidden="true"></div>
+          <div class="dIn slab">
+            <div class="dText">
+              <p class="eyebrow">Daily challenge</p>
+              <h2>No stream? Ten questions. Same for everyone.</h2>
+              <p>A new set every day at midnight Eastern. Points for being right, fast and on a streak.</p>
+              <a class="btn copper" href="/solo">Play today's challenge</a>
+            </div>
+            <div class="dots well" aria-hidden="true"><i class="b"></i><i class="b"></i><i class="o"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="o"></i><i class="b"></i><i class="b"></i><i class="b"></i></div>
+          </div>
+        </div>
         <div class="soon" aria-labelledby="soonTitle">
           <p class="eyebrow">In testing · more on the way</p>
           <h2 class="soonTitle" id="soonTitle">Coming soon.</h2>

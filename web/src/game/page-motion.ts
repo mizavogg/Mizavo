@@ -1,4 +1,4 @@
-/* Mizavo — the moving glass background behind the settings and results screens.
+/* Mizavo — the moving glass background behind the settings, game and results screens (3D ribs since Nov 11).
    The same idea as the launch screen (copper light drifting behind vertical glass ribs),
    without the MIZAVO cut-out, and dimmer (decided Nov 7) so the settings stay easy to read.
    It only moves on the settings and results screens: during a round it stops, so the stream stays calm.
@@ -40,14 +40,28 @@ function paintLight(t: number): void {
     [[0, 'rgba(74,71,62,.6)'], [1, 'rgba(74,71,62,0)']]);
 }
 
-/** The light seen through the ribs: each rib shows a slightly squeezed slice of what's behind it. */
+/** The light seen through the ribs, the 3D glass (Nov 11): each rib is a small curved lens, so the light
+ *  behind it is magnified and flipped across the rib, plus a highlight line that picks up its color. */
+const STRIPS = 8;
 function paintGlow(): void {
-  const g = glowCv.getContext('2d')!, k = light.width / (W + BLEED * 2);
-  g.clearRect(0, 0, glowCv.width, glowCv.height);
+  const g = glowCv.getContext('2d')!, k = light.width / (W + BLEED * 2), lw = light.width, h = glowCv.height;
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  g.clearRect(0, 0, glowCv.width, h);
   for (const r of ribs) {
-    const sw = r.w / r.k * k, sx = (r.x + r.w / 2) * k - sw / 2;
-    g.drawImage(light, Math.max(0, sx), 0, sw, light.height, r.x * LIGHT_SCALE, 0, r.w * LIGHT_SCALE, glowCv.height);
+    const cx = r.x + r.w / 2;
+    for (let i = 0; i < STRIPS; i++) {
+      const u = ((i + 0.5) / STRIPS) * 2 - 1, bend = Math.sin(u * Math.PI / 2);
+      const sc = cx - bend * r.w * 0.62 * r.k, sw = Math.max(0.6, (r.w / STRIPS) * (0.42 + 0.5 * Math.abs(u)));
+      let sx = (sc - sw / 2) * k; sx = Math.min(Math.max(0, sx), lw - sw * k);
+      g.drawImage(light, sx, 0, sw * k, light.height, (r.x + (i / STRIPS) * r.w) * LIGHT_SCALE, 0, (r.w / STRIPS) * LIGHT_SCALE + 0.6, h);
+    }
   }
+  g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6;
+  for (const r of ribs) {
+    const hx = r.x + r.w * 0.24, hw = Math.max(1.2, r.w * 0.12);
+    g.drawImage(light, Math.max(0, (hx - 1) * k), 0, Math.max(1, hw * k), light.height, hx * LIGHT_SCALE, 0, hw * LIGHT_SCALE, h);
+  }
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 }
 
 function measure(): void {
@@ -60,16 +74,18 @@ function measure(): void {
   ribs = [];
   let x = 0, seed = 7;   // same rib pattern as the launch screen
   const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-  while (x < lw) { const w = Math.round(10 + rand() * 8); ribs.push({ x, w, k: 1.15 + rand() * 0.45 }); x += w; }
+  while (x < lw) { const w = Math.round(14 + rand() * 10); ribs.push({ x, w, k: 1.15 + rand() * 0.45 }); x += w; }
   const e = edgesCv.getContext('2d')!;
   e.setTransform(dpr, 0, 0, dpr, 0, 0); e.clearRect(0, 0, W, H);
   for (const r of ribs) {
     const rx = r.x - BLEED;
     if (rx + r.w < 0 || rx > W) continue;
+    // a rounded rod: dark at both edges, a soft glint near the left, deeper shade on the right, a groove between
     const g = e.createLinearGradient(rx, 0, rx + r.w, 0);
-    g.addColorStop(0, 'rgba(242,232,220,.08)'); g.addColorStop(0.25, 'rgba(242,232,220,.015)');
-    g.addColorStop(0.5, 'rgba(0,0,0,0)'); g.addColorStop(0.8, 'rgba(0,0,0,.05)'); g.addColorStop(1, 'rgba(0,0,0,.14)');
+    g.addColorStop(0, 'rgba(0,0,0,.34)'); g.addColorStop(0.08, 'rgba(242,232,220,.05)'); g.addColorStop(0.2, 'rgba(242,232,220,.13)');
+    g.addColorStop(0.3, 'rgba(242,232,220,.02)'); g.addColorStop(0.55, 'rgba(0,0,0,0)'); g.addColorStop(0.84, 'rgba(0,0,0,.14)'); g.addColorStop(1, 'rgba(0,0,0,.42)');
     e.fillStyle = g; e.fillRect(rx, 0, r.w, H);
+    e.fillStyle = 'rgba(0,0,0,.45)'; e.fillRect(rx + r.w - 0.6, 0, 0.6, H);
   }
   ready = true;
 }

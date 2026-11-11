@@ -2,9 +2,12 @@
    A big MIZAVO wordmark cut out of ribbed, frosted glass, with warm copper light
    drifting slowly behind it. Built from four canvases:
      light  (offscreen) soft moving blobs of copper/charcoal light, drawn small for speed
-     gGlow  the light seen through vertical glass ribs (each rib shows a squeezed slice)
-     gEdges a fixed sheen on each rib's edges
-     gCut   the letters: the light, brighter, shown only inside "MIZAVO", with a thin ivory rim
+     gGlow  the light seen through vertical glass ribs. Each rib is a small curved lens (like a glass rod):
+            across the rib the light behind it is magnified and flipped, and a highlight line picks up its color
+     gEdges each rib's rounded shading (dark at both edges, a soft glint near the left) and the groove between ribs
+     gCut   the letters, cut through thick glass: brighter light inside "MIZAVO", a shaded top wall, a lit
+            bottom wall, a bright upper-left edge, and a soft shadow the glass casts around them
+   (3D glass chosen Nov 11, 2026.)
    The animation pauses when the screen is hidden, off-screen, or the viewer prefers reduced motion. */
 import { $ } from '../lib/dom';
 
@@ -18,7 +21,7 @@ let resizeObs: ResizeObserver | null = null, viewObs: IntersectionObserver | nul
 let ribs: { x: number; w: number; k: number }[] = [];
 let W = 0, H = 0, dpr = 1;
 let light: HTMLCanvasElement, glowCv: HTMLCanvasElement, edgesCv: HTMLCanvasElement, cutCv: HTMLCanvasElement;
-let wordMask: HTMLCanvasElement, wordRim: HTMLCanvasElement, word = { size: 0, x: 0, y: 0 };
+let wordMask: HTMLCanvasElement, wordRim: HTMLCanvasElement, wordShadow: HTMLCanvasElement, word = { size: 0, x: 0, y: 0 };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 /** One soft oval of light. x, y, rx, ry are fractions of the canvas size. */
@@ -49,15 +52,32 @@ function paintLight(t: number): void {
     [[0, 'rgba(56,65,63,.6)'], [1, 'rgba(56,65,63,0)']]);
 }
 
-/** The light seen through the ribs: each rib shows a slightly squeezed slice of what's behind it. */
+/** The light seen through the ribs. Each rib is drawn as thin strips that sample the light like a cylinder
+ *  lens (magnified and flipped, bending harder near the edges), then a highlight a quarter of the way across
+ *  adds back the light behind it, so the shine glows copper as the light drifts. */
+const STRIPS = 8;
 function paintGlow(): void {
   const g = glowCv.getContext('2d')!, w = glowCv.width, h = glowCv.height;
-  const k = light.width / (W + BLEED * 2);
+  const k = light.width / (W + BLEED * 2), lw = light.width;
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
   g.clearRect(0, 0, w, h);
   for (const r of ribs) {
-    const sw = r.w / r.k * k, sx = (r.x + r.w / 2) * k - sw / 2;
-    g.drawImage(light, Math.max(0, sx), 0, sw, light.height, r.x * LIGHT_SCALE, 0, r.w * LIGHT_SCALE, h);
+    const cx = r.x + r.w / 2;
+    for (let i = 0; i < STRIPS; i++) {
+      const u = ((i + 0.5) / STRIPS) * 2 - 1;                      // -1 left edge .. 1 right edge
+      const bend = Math.sin(u * Math.PI / 2);
+      const sc = cx - bend * r.w * 0.62 * r.k;                     // flipped and spread: a convex lens
+      const sw = Math.max(0.6, (r.w / STRIPS) * (0.42 + 0.5 * Math.abs(u)));
+      let sx = (sc - sw / 2) * k; sx = Math.min(Math.max(0, sx), lw - sw * k);
+      g.drawImage(light, sx, 0, sw * k, light.height, (r.x + (i / STRIPS) * r.w) * LIGHT_SCALE, 0, (r.w / STRIPS) * LIGHT_SCALE + 0.6, h);
+    }
   }
+  g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.75;
+  for (const r of ribs) {
+    const hx = r.x + r.w * 0.24, hw = Math.max(1.2, r.w * 0.12);
+    g.drawImage(light, Math.max(0, (hx - 1) * k), 0, Math.max(1, hw * k), light.height, hx * LIGHT_SCALE, 0, hw * LIGHT_SCALE, h);
+  }
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 }
 
 /** The letters: brighter light, clipped to "MIZAVO", with the rim and inner shadow on top. */
@@ -72,11 +92,13 @@ function paintCut(): void {
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.globalCompositeOperation = 'destination-in';
   g.drawImage(wordMask, 0, 0);
+  g.globalCompositeOperation = 'destination-over';
+  g.drawImage(wordShadow, 0, 0);                    // the thick glass's soft shadow around the letters
   g.globalCompositeOperation = 'source-over';
   g.drawImage(wordRim, 0, 0);
 }
 
-/** Pre-draw the word shapes once per resize: a mask, plus an inner shadow and a thin ivory rim. */
+/** Pre-draw the word shapes once per resize: a mask, the walls of the cut, its edges, and the cast shadow. */
 function buildWord(): void {
   const blank = () => { const c = document.createElement('canvas'); c.width = cutCv.width; c.height = cutCv.height; return c; };
   const text = (g: CanvasRenderingContext2D, dx = 0, dy = 0) => {
@@ -85,6 +107,9 @@ function buildWord(): void {
     g.textAlign = 'center'; g.textBaseline = 'alphabetic';
     g.fillText('MIZAVO', word.x + dx, word.y + dy);
     g.setTransform(1, 0, 0, 1, 0, 0);
+  };
+  const minus = (g: CanvasRenderingContext2D, dx: number, dy: number) => {
+    g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000'; text(g, dx, dy); g.globalCompositeOperation = 'source-over';
   };
   wordMask = blank();
   const m = wordMask.getContext('2d')!;
@@ -97,18 +122,26 @@ function buildWord(): void {
   const r = wordRim.getContext('2d')!;
   r.fillStyle = '#fff'; text(r);
   r.globalCompositeOperation = 'source-in';
-  r.shadowColor = 'rgba(8,9,10,.7)';
-  r.shadowBlur = Math.max(6, word.size * 0.06) * dpr;
-  r.shadowOffsetY = Math.max(1, word.size * 0.012) * dpr;
+  r.shadowColor = 'rgba(5,6,7,.85)';
+  r.shadowBlur = Math.max(6, word.size * 0.09) * dpr;
+  r.shadowOffsetY = Math.max(1, word.size * 0.03) * dpr;
   r.drawImage(hole, 0, 0);
   r.shadowColor = 'transparent';
-  // rim: the word nudged 1px in 8 directions, minus the word itself = a thin outline
-  const rim = blank(), rg = rim.getContext('2d')!;
-  rg.fillStyle = 'rgba(242,232,220,.42)';
-  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]]) text(rg, dx, dy);
-  rg.globalCompositeOperation = 'destination-out'; rg.fillStyle = '#000'; text(rg);
   r.globalCompositeOperation = 'source-over';
-  r.drawImage(rim, 0, 0);
+  const th = Math.max(1.5, word.size * 0.012);   // glass thickness
+  const layer = (color: string, dx: number, dy: number, cutDx: number, cutDy: number, cut2?: [number, number]) => {
+    const c = blank(), g = c.getContext('2d')!;
+    g.fillStyle = color; text(g, dx, dy); minus(g, cutDx, cutDy); if (cut2) minus(g, cut2[0], cut2[1]);
+    r.drawImage(c, 0, 0);
+  };
+  layer('rgba(245,239,230,.75)', 0, 0, 0, -th, [-th * 0.4, -th * 0.4]);  // bottom wall of the cut catches light
+  layer('rgba(0,0,0,.55)', 0, 0, 0, th * 1.2);                           // top wall in shade
+  layer('rgba(245,239,230,.6)', -0.9, -0.9, 0, 0);                        // glass edge: bright upper-left
+  layer('rgba(245,239,230,.14)', 0.9, 0.9, 0, 0);                         // and dim lower-right
+  wordShadow = blank();
+  const sg = wordShadow.getContext('2d')!;
+  sg.shadowColor = 'rgba(0,0,0,.55)'; sg.shadowBlur = word.size * 0.08 * dpr; sg.shadowOffsetY = word.size * 0.025 * dpr;
+  sg.fillStyle = '#000'; text(sg); minus(sg, 0, 0);
 }
 
 function frame(t: number): void {
@@ -128,20 +161,26 @@ function measure(): void {
   cutCv.width = Math.round(W * dpr); cutCv.height = Math.round(H * dpr);
   edgesCv.width = Math.round(W * dpr); edgesCv.height = Math.round(H * dpr);
   ribs = [];
-  // ribs 10–18px wide; a fixed seed so they look the same on every visit
+  // ribs 14–24px wide (wide enough for the curve to show); a fixed seed so they look the same on every visit
   let x = 0, seed = 7;
   const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-  while (x < lw) { const w = Math.round(10 + rand() * 8); ribs.push({ x, w, k: 1.15 + rand() * 0.45 }); x += w; }
+  while (x < lw) { const w = Math.round(14 + rand() * 10); ribs.push({ x, w, k: 1.15 + rand() * 0.45 }); x += w; }
   const e = edgesCv.getContext('2d')!;
   e.setTransform(dpr, 0, 0, dpr, 0, 0); e.clearRect(0, 0, W, H);
   for (const r of ribs) {
     const rx = r.x - BLEED;
     if (rx + r.w < 0 || rx > W) continue;
+    // a rounded rod: dark at both edges, a soft glint near the left, deeper shade on the right
     const g = e.createLinearGradient(rx, 0, rx + r.w, 0);
-    g.addColorStop(0, 'rgba(242,232,220,.1)'); g.addColorStop(0.25, 'rgba(242,232,220,.02)');
-    g.addColorStop(0.5, 'rgba(0,0,0,0)'); g.addColorStop(0.8, 'rgba(0,0,0,.05)'); g.addColorStop(1, 'rgba(0,0,0,.16)');
+    g.addColorStop(0, 'rgba(0,0,0,.34)'); g.addColorStop(0.08, 'rgba(242,232,220,.05)'); g.addColorStop(0.2, 'rgba(242,232,220,.13)');
+    g.addColorStop(0.3, 'rgba(242,232,220,.02)'); g.addColorStop(0.55, 'rgba(0,0,0,0)'); g.addColorStop(0.84, 'rgba(0,0,0,.14)'); g.addColorStop(1, 'rgba(0,0,0,.42)');
     e.fillStyle = g; e.fillRect(rx, 0, r.w, H);
+    e.fillStyle = 'rgba(0,0,0,.45)'; e.fillRect(rx + r.w - 0.6, 0, 0.6, H);   // the fine groove between ribs
   }
+  // light falls off toward the top and bottom of the pane
+  const v = e.createLinearGradient(0, 0, 0, H);
+  v.addColorStop(0, 'rgba(0,0,0,.18)'); v.addColorStop(0.35, 'rgba(0,0,0,0)'); v.addColorStop(0.75, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.22)');
+  e.fillStyle = v; e.fillRect(0, 0, W, H);
   // the word fills 76% of the width, at most 30% of the height (and never over 320px)
   const c = cutCv.getContext('2d')!;
   c.font = WORD_FONT;

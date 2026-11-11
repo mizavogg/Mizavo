@@ -6,6 +6,7 @@ import { api, friendly, type Channel } from './api';
 import { startLoop, binAt } from './arena';
 import { disconnectTwitch } from './chat';
 import { startLaunch, stopLaunch } from './launch';
+import { startHome } from './homeround';
 import { initPageMotion } from './page-motion';
 import { initStreamerMode } from './streamer-mode';
 import { openReport } from './report';
@@ -217,3 +218,4 @@ $('#logoLink').onclick = async (e) => {
 };
 startLoop();
 initPageMotion();
+startHome();   // homepage round card + glass panels (they only animate while on screen)

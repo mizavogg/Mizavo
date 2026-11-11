@@ -274,23 +274,24 @@ function draw(): void {
     if (right && lift) ctx.translate(0, -lift);
     ctx.globalAlpha = wrong ? .35 : 1;
     rr(b.x, b.y, b.w, b.h, RADIUS);
+    // a well cut into the glass (Nov 11): dark inside, shaded along the top inner edge, lit along the bottom
     const well = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
-    well.addColorStop(0, 'rgba(232,226,214,.16)'); well.addColorStop(1, 'rgba(232,226,214,.08)');
-    ctx.fillStyle = 'rgba(18,21,22,.55)'; ctx.fill();   // dark tint first, then the frosted sheen
+    well.addColorStop(0, 'rgba(0,0,0,.35)'); well.addColorStop(0.12, 'rgba(0,0,0,0)'); well.addColorStop(1, 'rgba(232,226,214,.03)');
+    ctx.fillStyle = 'rgba(6,8,9,.6)'; ctx.fill();
     ctx.fillStyle = well; ctx.fill();
     ctx.save(); ctx.clip();
     const gl = ctx.createRadialGradient(b.x + b.w / 2, b.y + b.h, 0, b.x + b.w / 2, b.y + b.h, Math.max(b.w, b.h) * 0.8);
     gl.addColorStop(0, hexA(col, right ? .38 : .20 + pulse * .22)); gl.addColorStop(1, hexA(col, 0));
     ctx.fillStyle = gl; ctx.fillRect(b.x, b.y, b.w, b.h);
-    const lip = ctx.createLinearGradient(0, b.y, 0, b.y + 18);       // light catching the top edge of the glass
-    lip.addColorStop(0, 'rgba(242,232,220,.14)'); lip.addColorStop(1, 'rgba(242,232,220,0)');
-    ctx.fillStyle = lip; ctx.fillRect(b.x, b.y, b.w, 18);
+    const lip = ctx.createLinearGradient(0, b.y + b.h - 3, 0, b.y + b.h);   // light catching the bottom inner edge
+    lip.addColorStop(0, 'rgba(245,239,230,0)'); lip.addColorStop(1, 'rgba(245,239,230,.16)');
+    ctx.fillStyle = lip; ctx.fillRect(b.x, b.y + b.h - 3, b.w, 3);
     ctx.restore();
     rr(b.x + .5, b.y + .5, b.w - 1, b.h - 1, RADIUS);
     ctx.lineWidth = right ? 2 : 1;
     // the streamer's pick stays secret until the reveal, so chat can't copy it
     const showPick = R.pick === i && S.phase === 'reveal';
-    ctx.strokeStyle = right ? col : showPick ? hexA(SAND, .65) : pulse > .05 ? hexA(col, .2 + pulse * .45) : hexA(PAPER, .20);
+    ctx.strokeStyle = right ? col : showPick ? hexA(SAND, .65) : pulse > .05 ? hexA(col, .2 + pulse * .45) : 'rgba(0,0,0,.35)';
     ctx.stroke();
     if (right && revealAt && !reducedMotion()) {
       // a soft ring of light that grows out from the right bin once
