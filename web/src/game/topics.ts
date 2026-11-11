@@ -67,7 +67,7 @@ function render(): void {
 }
 
 function note(): void {
-  const rounds = +$<HTMLSelectElement>('#rounds').value || 10;
+  const rounds = +$<HTMLSelectElement>('#rounds').value || 5;
   const cats = pickedCategories();
   const warn = $('#topicWarn');
   if (!counts || !cats) {
