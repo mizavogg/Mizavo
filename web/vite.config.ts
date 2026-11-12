@@ -10,8 +10,11 @@ import { readFileSync } from 'node:fs';
 function pageTransition(): Plugin {
   const css =
     '.fxLayer{position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden}' +
-    // the cover: Mizavo ink with a soft copper glow behind the logo
-    '.fxVeil{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse 45% 40% at 50% 50%,rgba(183,105,53,.2),rgba(183,105,53,0) 70%),#121516}' +
+    // the cover: Mizavo ink with a soft copper glow behind the logo. The glow fades over many steps (so no rings show)
+    // and a faint film grain on top breaks up any banding that's left.
+    '.fxVeil{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse 62% 58% at 50% 50%,rgba(183,105,53,.21) 0%,rgba(183,105,53,.185) 12%,rgba(183,105,53,.15) 24%,'+
+      'rgba(183,105,53,.112) 36%,rgba(183,105,53,.076) 48%,rgba(183,105,53,.046) 60%,rgba(183,105,53,.024) 72%,rgba(183,105,53,.009) 85%,rgba(183,105,53,0) 100%),#121516}' +
+    '.fxVeil::after{content:"";position:absolute;inset:0;opacity:.09;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27160%27 height=%27160%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%27.9%27 numOctaves=%272%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E")}' +
     // arriving: a hole opens from the center (its radius --hole grows), soft-edged, following the balls out
     '.fxVeil.hole{-webkit-mask-image:radial-gradient(circle at 50% 50%,transparent var(--hole),#000 calc(var(--hole) + 40px));mask-image:radial-gradient(circle at 50% 50%,transparent var(--hole),#000 calc(var(--hole) + 40px))}' +
     // the ring of balls around the logo; it turns slowly while the next page loads
