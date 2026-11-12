@@ -1,10 +1,11 @@
 /* Mizavo — page transition "Pop & scatter, covered" (Nov 11, 2026).
-   1. Click a link to another Mizavo page: colored balls pop out into a ring around the Mizavo logo while the
-      screen goes dark behind them, then the browser goes to the new page.
+   1. Click a link to another Mizavo page: the logo pops up in the center and colored balls burst out into a ring
+      behind it, while the dark cover grows out of the center with them until it covers the page; then the browser
+      goes to the new page.
    2. The new page starts with that same picture (dark screen, logo, ring of balls), and the ring slowly turns
       while the page loads underneath, so nothing is ever seen loading in.
-   3. Once the page is fully loaded (images, fonts, the glass effects' first frame), the balls burst outward,
-      the logo fades and the cover clears.
+   3. Once the page is fully loaded (images, fonts, the glass effects' first frame), the balls burst outward and
+      a hole opens in the cover from the center, following them, so the page appears from the middle out.
    Every motion goes one way (no grow-and-shrink), so nothing pulses. vite.config.ts copies this file into the
    <head> of every page at build time (the logo is built in), so the cover is up on the very first frame.
    Not used for other sites, new tabs, downloads, same-page links, reloads, the back button, or with
@@ -19,6 +20,9 @@
   var N = 16, R = 118;
   var SIZES = [22, 17, 26, 19, 24, 16, 21, 27, 18, 23, 20, 25, 17, 22, 26, 19];   // fixed, so both pages match
   var html = document.documentElement;
+  var holeOK = false;   // the opening hole needs an animatable length; older browsers just fade instead
+  try { CSS.registerProperty({ name: '--hole', syntax: '<length>', inherits: false, initialValue: '0px' }); holeOK = true; }
+  catch (e) { holeOK = !!(window.CSS && CSS.supports && CSS.supports('mask-image', 'radial-gradient(#000,#000)')) && e && e.name === 'InvalidModificationError'; }
 
   function build() {
     var layer = document.createElement('div'); layer.className = 'fxLayer'; layer.setAttribute('aria-hidden', 'true');
@@ -64,7 +68,12 @@
         }
         jobs.push(A.logo.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.1)' }],
           { duration: 300, easing: 'ease-in', fill: 'forwards' }).finished);
-        jobs.push(A.veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: 120, easing: 'ease-out', fill: 'forwards' }).finished);
+        if (holeOK) {   // a hole opens from the center and follows the balls out
+          A.veil.classList.add('hole');
+          jobs.push(A.veil.animate([{ '--hole': '0px' }, { '--hole': far + 'px' }], { duration: BURST_MS + 80, easing: 'cubic-bezier(.3,.55,.4,1)', fill: 'forwards' }).finished);
+        } else {
+          jobs.push(A.veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: 120, easing: 'ease-out', fill: 'forwards' }).finished);
+        }
         var gone = function () { A.layer.remove(); };
         Promise.all(jobs).then(gone, gone);
         setTimeout(gone, BURST_MS + 600);
@@ -95,7 +104,10 @@
     e.preventDefault(); leaving = true;
     var L = build();
     (document.body || html).appendChild(L.layer);
-    L.veil.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, easing: 'ease-out', fill: 'forwards' });
+    var reach = Math.sqrt(innerWidth * innerWidth + innerHeight * innerHeight) / 2 + 20;
+    L.veil.style.opacity = '1';   // the dark cover grows out of the center with the balls
+    L.veil.animate([{ clipPath: 'circle(0px at 50% 50%)' }, { clipPath: 'circle(' + reach + 'px at 50% 50%)' }],
+      { duration: POP_MS, easing: 'cubic-bezier(.33,0,.2,1)', fill: 'forwards' });
     L.logo.animate([{ opacity: 0, transform: 'scale(.86)' }, { opacity: 1, transform: 'scale(1)' }], { duration: POP_MS, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
     for (var i = 0; i < L.balls.length; i++) {
       var b = L.balls[i];

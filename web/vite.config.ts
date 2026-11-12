@@ -12,6 +12,8 @@ function pageTransition(): Plugin {
     '.fxLayer{position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden}' +
     // the cover: Mizavo ink with a soft copper glow behind the logo
     '.fxVeil{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse 45% 40% at 50% 50%,rgba(183,105,53,.2),rgba(183,105,53,0) 70%),#121516}' +
+    // arriving: a hole opens from the center (its radius --hole grows), soft-edged, following the balls out
+    '.fxVeil.hole{-webkit-mask-image:radial-gradient(circle at 50% 50%,transparent var(--hole),#000 calc(var(--hole) + 40px));mask-image:radial-gradient(circle at 50% 50%,transparent var(--hole),#000 calc(var(--hole) + 40px))}' +
     // the ring of balls around the logo; it turns slowly while the next page loads
     '.fxRing{position:absolute;left:50%;top:50%;width:0;height:0}' +
     '.fxRing.spin{animation:fxSpin 7s linear infinite}' +
