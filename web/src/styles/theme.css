@@ -159,11 +159,7 @@ a.logo:hover{opacity:.85}
 .siteNav .navLogin:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
 @media(max-width:820px){ .siteNav .navLogin{order:-1;margin:0 6px 0 4px;flex:none;font-size:13px;padding:6px 12px;min-height:32px} }
 
-/* ---------- page transition: "Pop & scatter" (src/lib/pagefx-head.js, added to every page's <head> at build) ---------- */
-/* The browser fades the old page out; the head script covers the new page, plays the balls + logo, then clears. */
-@view-transition{navigation:auto}
-::view-transition-group(root){animation-duration:.2s}
-@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+/* page transition: the cover sheet (src/lib/pagefx-head.js, added to every page's <head> at build) */
 
 /* ===================== glass refinements (Nov 11, 2026) =====================
    One small set of materials, taken from the 3D hero glass, used across the site:
