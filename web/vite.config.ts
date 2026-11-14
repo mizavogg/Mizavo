@@ -9,6 +9,8 @@ import { readFileSync } from 'node:fs';
     so the animation starts on the first frame instead of waiting for the page's code to download. */
 function pageTransition(): Plugin {
   const css =
+    // the moment the cover starts opening: new compositing layers for the frosted panels, so Safari redraws their backdrop
+    '.fxRepaint .slab,.fxRepaint .btn.ghost,.fxRepaint .score,.fxRepaint .sfxBtn{will-change:transform}' +
     '.fxLayer{position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden}' +
     // the cover: Mizavo ink with a soft copper glow behind the logo. The glow fades over many steps (so no rings show)
     // and a faint film grain on top breaks up any banding that's left.

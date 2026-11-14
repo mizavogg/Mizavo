@@ -22,6 +22,9 @@
   var POP_MS = 340, BURST_MS = 560, MIN_HOLD = 160, MAX_HOLD = 3000, KEY = 'mzCover';
   var COLORS = ['#7F95AD', '#B76935', '#F2E8DC', '#8FB39A', '#A99BC9', '#E7C39B'];
   var N = 16, R = 118;
+  // The cover is 99% solid, never 100%: Safari stops drawing frosted-glass panels hidden behind a fully solid layer
+  // and doesn't bring them back until the layer is removed, so they showed flat grey while the cover opened (Nov 14).
+  var VEIL = '0.99';
   var SIZES = [22, 17, 26, 19, 24, 16, 21, 27, 18, 23, 20, 25, 17, 22, 26, 19];   // fixed, so both pages match
   var html = document.documentElement;
   var holeOK = false;   // the opening hole needs an animatable length; older browsers just fade instead
@@ -45,7 +48,7 @@
   }
   var at = function (b, d) { return 'translate(' + (Math.cos(b._a) * d).toFixed(1) + 'px,' + (Math.sin(b._a) * d).toFixed(1) + 'px)'; };
   function settled(F) {   // the picture both pages share: dark screen, logo, ring of balls
-    F.veil.style.opacity = '1'; F.logo.style.opacity = '1';
+    F.veil.style.opacity = VEIL; F.logo.style.opacity = '1';
     for (var i = 0; i < F.balls.length; i++) F.balls[i].style.transform = at(F.balls[i], R);
   }
 
@@ -61,7 +64,7 @@
     var A = build(), t0 = performance.now(), done = false, hold = MIN_HOLD;
     if (arriving) { settled(A); A.ring.classList.add('spin'); }
     else {   // dark from the first frame; the logo and balls pop out into the ring, then it turns while the page loads
-      A.veil.style.opacity = '1'; hold = POP_MS + 260;
+      A.veil.style.opacity = VEIL; hold = POP_MS + 260;
       A.logo.animate([{ opacity: 0, transform: 'scale(.86)' }, { opacity: 1, transform: 'scale(1)' }], { duration: POP_MS, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
       for (var k = 0; k < A.balls.length; k++) {
         var bb = A.balls[k];
@@ -76,6 +79,7 @@
     var burst = function () {
       if (done) return; done = true;
       setTimeout(function () {
+        html.classList.add('fxRepaint');   // give the glass panels fresh layers so Safari redraws what's behind them
         var jobs = [];
         for (var i = 0; i < A.balls.length; i++) {
           var b = A.balls[i];
@@ -89,7 +93,7 @@
           // glass panels as flat grey under a masked or blended layer (Nov 14). The glow sheet fades away under it.
           var hole = document.createElement('div'); hole.className = 'fxHole';
           A.layer.insertBefore(hole, A.ring);
-          A.veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
+          A.veil.animate([{ opacity: VEIL }, { opacity: 0 }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
           jobs.push(hole.animate([{ '--hole': '0px' }, { '--hole': far + 'px' }], { duration: BURST_MS + 80, easing: 'cubic-bezier(.3,.55,.4,1)', fill: 'forwards' }).finished);
         } else {
           jobs.push(A.veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: 120, easing: 'ease-out', fill: 'forwards' }).finished);
@@ -130,7 +134,7 @@
     var L = build();
     (document.body || html).appendChild(L.layer);
     var reach = Math.sqrt(innerWidth * innerWidth + innerHeight * innerHeight) / 2 + 20;
-    L.veil.style.opacity = '1';   // the dark cover grows out of the center with the balls
+    L.veil.style.opacity = VEIL;   // the dark cover grows out of the center with the balls
     L.veil.animate([{ clipPath: 'circle(0px at 50% 50%)' }, { clipPath: 'circle(' + reach + 'px at 50% 50%)' }],
       { duration: POP_MS, easing: 'cubic-bezier(.33,0,.2,1)', fill: 'forwards' });
     L.logo.animate([{ opacity: 0, transform: 'scale(.86)' }, { opacity: 1, transform: 'scale(1)' }], { duration: POP_MS, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
