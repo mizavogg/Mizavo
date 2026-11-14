@@ -27,12 +27,22 @@
   var VEIL = '0.99';
   var SIZES = [22, 17, 26, 19, 24, 16, 21, 27, 18, 23, 20, 25, 17, 22, 26, 19];   // fixed, so both pages match
   var html = document.documentElement;
+  var standalone = false;
+  try { standalone = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches; } catch (e) {}
   var holeOK = false;   // the opening hole needs an animatable length; older browsers just fade instead
   try { CSS.registerProperty({ name: '--hole', syntax: '<length>', inherits: false, initialValue: '0px' }); holeOK = true; }
   catch (e) { holeOK = !!(window.CSS && CSS.supports && CSS.supports('mask-image', 'radial-gradient(#000,#000)')) && e && e.name === 'InvalidModificationError'; }
 
   function build() {
     var layer = document.createElement('div'); layer.className = 'fxLayer'; layer.setAttribute('aria-hidden', 'true');
+    // Home-screen app (iPhone): while a new page starts, iOS briefly reports the window height without the status bar,
+    // then corrects it, so a cover centered on the window jumped for a frame (Nov 14). The screen's height never
+    // changes, so size the cover by that instead; both pages then put the logo in exactly the same spot.
+    if (standalone) {   // iPhones report the screen in portrait even when turned sideways
+      var land = false; try { land = matchMedia('(orientation: landscape)').matches; } catch (e) {}
+      var sh = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+      layer.style.bottom = 'auto'; layer.style.height = sh + 'px';
+    }
     var veil = document.createElement('div'); veil.className = 'fxVeil';
     var ring = document.createElement('div'); ring.className = 'fxRing';
     var balls = [];
