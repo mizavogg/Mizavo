@@ -493,3 +493,9 @@ body[data-phase=setup] .pageGlass{position:fixed;height:auto;bottom:0;-webkit-ma
 .warmLink small{display:block;color:var(--muted);font-size:13px;line-height:1.45;margin-top:2px}
 .warmLink small a{color:var(--paper)}
 .warmBtns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* opening while logged in (index.html boot check): show the settings screen right away, dimmed and not clickable,
+   until the server confirms the login and the saved settings are in. Then it fades up. */
+html.boot #setup{display:block!important;opacity:.45;pointer-events:none}
+html.boot #game,html.boot #final{display:none!important}
+#setup{transition:opacity .25s ease-out}

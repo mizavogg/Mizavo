@@ -19,7 +19,10 @@ const MODE_NAME = { ff: 'Fact or Fake', ooo: 'Odd One Out', mix: 'Mix' } as cons
 export function show3(id: 'setup' | 'game' | 'final'): void {
   for (const s of ['setup', 'game', 'final']) show($('#' + s), s === id);
 }
-export function setPhase(p: typeof S.phase): void { S.phase = p; document.body.dataset.phase = p; }
+export function setPhase(p: typeof S.phase): void {
+  S.phase = p; document.body.dataset.phase = p;
+  document.documentElement.classList.remove('boot');   // the real screen is known now (see the boot check in index.html)
+}
 /** Header score. animate: roll up with a pop (after a reveal); otherwise set straight away (new game, resume). */
 function updateScore(animate = false): void {
   if (animate) { countTo($('#sMe'), S.me); countTo($('#sCh'), S.chat, { quiet: true }); return; }

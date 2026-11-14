@@ -74,6 +74,13 @@
 <link rel="stylesheet" href="/src/styles/game.css">
 </head>
 <body data-phase="gate">
+<script>
+/* Logged in already? Open straight on the settings screen instead of flashing the logged-out launch screen.
+   Supabase keeps the login in this browser under sb-<project>-auth-token. The screen stays dimmed and
+   untouchable (html.boot) until the server confirms the login and loads the channel's settings;
+   if the login turns out to be expired, the normal launch screen takes over (flow.ts setPhase clears boot). */
+try { if (localStorage.getItem('sb-puhnuwstlujkvevsromj-auth-token')) { document.documentElement.classList.add('boot'); document.body.dataset.phase = 'setup'; } } catch (e) {}
+</script>
 <div class="pageGlass" aria-hidden="true"></div>
 <div class="app">
 <div class="main">
