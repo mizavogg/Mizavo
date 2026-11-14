@@ -10,6 +10,10 @@ let on = store.get(KEY) !== '0';                 // on by default
 const pics = new Map<string, HTMLImageElement | null>();   // login -> loaded picture (null: none)
 const queue = new Set<string>();
 let timer = 0, broken = false;
+let warmupKey: string | null = null;   // the Starting Soon panel isn't logged in: it shows its warm-up code instead
+
+/** Warm-up panel only: let the picture service know this page is a real channel's warm-up. */
+export function setPictureKey(code: string | null): void { warmupKey = code; }
 
 export const picturesOn = () => on;
 export function setPictures(v: boolean): void { on = v; store.set(KEY, v ? '1' : '0'); }
@@ -30,7 +34,7 @@ async function flush(): Promise<void> {
   batch.forEach((l) => { queue.delete(l); pics.set(l, null); });   // asked once per page load
   if (queue.size) timer = window.setTimeout(flush, 350);
   try {
-    const { data, error } = await supabase.functions.invoke('twitch-avatars', { body: { logins: batch } });
+    const { data, error } = await supabase.functions.invoke('twitch-avatars', { body: warmupKey ? { logins: batch, warmup: warmupKey } : { logins: batch } });
     if (error) { if (/401|not_logged_in/.test(String(error.message))) broken = true; return; }
     const got = (data?.pictures || {}) as Record<string, string | null>;
     for (const [login, url] of Object.entries(got)) {

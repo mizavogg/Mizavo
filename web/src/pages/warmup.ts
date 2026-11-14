@@ -2,16 +2,17 @@
    Streamers add this page once as an OBS Browser Source on their "starting soon" scene. Nobody is logged in
    here: the secret code in the link tells the server which channel it is. While the scene shows, chat plays
    on its own, on a loop:
-     20 seconds to answer (each viewer's first answer counts) → the answer and a one-line explanation (~6 s) → next.
+     35 seconds to answer (each viewer's first answer counts; long enough for stream delay) → the answer and a one-line explanation (~6 s) → next.
    The server hands out one question at a time and only reveals the answer once time is up. It scores the
    answers onto the channel's main viewer board (warm-ups aren't streamer games: no record, no today board).
    After 3 rounds in a row with no answers it pauses; the next answer typed in chat starts it again.
-   Silent: OBS never clicks the page, so the browser never allows sound. Balls are plain (Twitch pictures need a login). */
+   Silent on purpose: OBS never clicks the page, so the browser never plays sound. Balls show chatters' Twitch pictures. */
 import { $, el } from '../lib/dom';
 import { rpc } from '../lib/supabase';
 import { S, OPT_COLORS, type RoundType, type Round } from '../game/state';
 import { layout, resetArena, startLoop, popWrong, setFitHeight } from '../game/arena';
 import { connectTwitch, onAnyChat, parseVote } from '../game/chat';
+import { setPictureKey } from '../game/avatars';
 
 interface Start { warmup_id: string; login: string; display_name: string; seconds: number }
 interface WQ { idx: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; ends_at: string }
@@ -23,7 +24,7 @@ const EMPTY_LIMIT = 3;      // rounds in a row with no answers before pausing
 const code = (new URLSearchParams(location.search).get('k') || '').trim().toLowerCase();
 
 let warmup: Start | null = null;
-let empty = 0, timer = 0, deadline = 0, total = 20000, busy = false;
+let empty = 0, timer = 0, deadline = 0, total = 35000, busy = false;
 
 type State = 'loading' | 'vote' | 'reveal' | 'idle' | 'error';
 function setState(s: State): void { document.body.dataset.state = s; }
@@ -49,6 +50,7 @@ async function start(): Promise<void> {
   }
   total = warmup.seconds * 1000;
   $('#wSub').textContent = `Chat warm-up · ${warmup.display_name}`;
+  setPictureKey(code);   // chatters' Twitch pictures on their balls, like the real game
   connectTwitch(warmup.login);
   setFitHeight(fitArena, 0.16);
   startLoop();

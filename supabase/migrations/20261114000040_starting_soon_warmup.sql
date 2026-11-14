@@ -6,7 +6,7 @@
 -- Aiden's decisions (Nov 13):
 --   * warm-up questions count against the channel's no-repeat rule (channel_seen)
 --   * viewer points go on the channel's main viewer board (viewer_scores), same points rule as real games
---   * 20-second rounds; the panel pauses itself after 3 rounds in a row with no answers (client side)
+--   * 20-second rounds (changed to 35 in migration 41); the panel pauses itself after 3 rounds in a row with no answers (client side)
 -- Warm-ups have no streamer pick, so they are not games: no sessions row, nothing on the streamer's record
 -- or the "top channels today" board.
 -- Trust: the server hands out one question at a time, never before the last one's time is up, and only
