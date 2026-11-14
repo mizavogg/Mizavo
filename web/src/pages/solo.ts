@@ -2,7 +2,9 @@
    Logged in: today's 10 questions, the same for everyone; the database scores every answer and
    enforces the 15-second limit. One game a day.
    Guests: yesterday's challenge (nothing saved), so playing as a guest can't spoil today's.
-   During the closed test, only invited players and admins can play today's; guests can still play yesterday's. */
+   During the closed test, only invited players and admins can play today's; guests can still play yesterday's.
+   Family logins (Nov 13; made on the admin page, log in at /family): play today's like everyone else, then
+   unlimited practice games. Practice is never on a board, never repeats a question and never uses today's. */
 import { $, el, show } from '../lib/dom';
 import { rpc, supabase, loginWithTwitch } from '../lib/supabase';
 import { plural } from '../lib/boards';
@@ -20,6 +22,7 @@ interface Q { date?: string; idx: number; rounds: number; type: RoundType; categ
 interface Answer { idx: number; correct_position: number; explanation: string; correct: boolean; late?: boolean; points_gained?: number; points?: number; score?: number; streak?: number; is_last: boolean; state?: State }
 interface State { date: string; next_reset_at: string; state: 'new' | 'playing' | 'done'; next_idx: number | null; points: number; correct: number; best_streak: number; rank: number | null; players_today: number; results?: boolean[] }
 interface Info { closed_test: boolean; today: string; next_reset_at: string; guest_ready: boolean }
+interface PState { state: 'new' | 'playing' | 'done'; next_idx: number | null; points: number; correct: number; best_streak: number; results: boolean[]; games_done: number; daily_done: boolean }
 
 const api = {
   info: () => rpc<Info>('solo_info'),
@@ -29,6 +32,11 @@ const api = {
   answer: (i: number, c: number | null) => rpc<Answer>('solo_answer', { p_idx: i, p_choice: c }),
   guestRound: (i: number) => rpc<Q>('guest_round', { p_idx: i }),
   guestAnswer: (i: number, c: number | null) => rpc<Answer>('guest_answer', { p_idx: i, p_choice: c }),
+  familyMe: () => rpc<{ username: string; login: string; display_name: string }>('family_me'),
+  practiceStatus: () => rpc<PState>('practice_status'),
+  practiceStart: () => rpc<PState>('practice_start'),
+  practiceRound: (i: number) => rpc<Q>('practice_round', { p_idx: i }),
+  practiceAnswer: (i: number, c: number | null) => rpc<Answer & { state?: PState }>('practice_answer', { p_idx: i, p_choice: c }),
 };
 
 /* ---------- state ---------- */
@@ -41,6 +49,9 @@ let deadline = 0, total = 15000, timer = 0;
 let gScore = 0, gPts = 0, gStreak = 0, gBest = 0;     // guest totals (local only)
 let gResults: boolean[] = [], gDate = '';              // guest right/wrong per round, and which day it was
 let lastState: State | null = null;
+let family = false;       // logged in with a family login (not Twitch)
+let practice = false;     // playing a practice game right now
+let pState: PState | null = null;
 
 /* ---------- helpers ---------- */
 function err(msg: string | null): void { const e = $('#err'); e.textContent = msg || ''; show(e, !!msg); }
@@ -52,6 +63,10 @@ function friendly(e: unknown): string {
   if (code === 'no_challenge') return "There's no guest challenge yet. Check back tomorrow, or log in to play today's.";
   if (code === 'already_played') return "You've already played today's challenge.";
   if (code === 'not_enough_questions') return "Today's challenge isn't ready. Try again in a few minutes.";
+  if (code === 'daily_first') return "Play today's challenge first. Then practice unlocks.";
+  if (code === 'practice_empty') return "You've played every practice question there is. Amazing! More are coming soon.";
+  if (code === 'family_off') return 'This login has been turned off. Ask the person who gave it to you.';
+  if (code === 'practice_off') return 'Practice is only open to family logins for now.';
   return 'Something went wrong: ' + m;
 }
 function untilReset(iso: string): string {
@@ -124,12 +139,17 @@ function showResult(s: State): void {
 }
 
 function doneScreen(s: State): void {
-  lastState = s;
+  lastState = s; practice = false; show($('#edition'), false);
   show($('#scoreboard'), false);
+  const share = shareBtn(shareMessage(s.date, s.results || [], s.correct, s.points, s.best_streak), family ? 'ghost' : 'primary');
+  const open = family && pState?.state === 'playing';
+  const actions = family
+    ? [btn(open ? `Continue practice (round ${pState!.next_idx})` : 'Practice more', 'primary', () => beginPractice()), share, link('Leaderboards', 'ghost', '/today')]
+    : [share, link('Leaderboards', 'ghost', '/today'), link('Play against your chat', 'ghost', '/')];
   intro("Today's challenge · done", s.correct >= 8 ? 'Sharp. Very sharp.' : s.correct >= 5 ? 'Nicely played.' : 'Tough one today.',
-    `Your score is saved to the solo board. The next challenge starts in ${untilReset(s.next_reset_at)} (midnight Eastern time).`,
-    [shareBtn(shareMessage(s.date, s.results || [], s.correct, s.points, s.best_streak)),
-     link('Leaderboards', 'ghost', '/today'), link('Play against your chat', 'ghost', '/')]);
+    `Your score is saved to the solo board. The next challenge starts in ${untilReset(s.next_reset_at)} (midnight Eastern time).`
+      + (family ? ' Until then, practice as much as you like: practice rounds are always new questions and never go on the boards.' : ''),
+    actions);
   showResult(s);
   showStanding($('#standing'), { date: s.date });
 }
@@ -137,9 +157,16 @@ function doneScreen(s: State): void {
 async function loggedIn(name: string): Promise<void> {
   $('#whoName').textContent = name; show($('#who'), true);
   try {
-    const ch = await rpc<{ login: string }>('ensure_my_channel');
-    rememberLogin(ch.login);
+    if (family) {   // family login: no Twitch channel page, so no "My page" link
+      const me = await api.familyMe();
+      $('#whoName').textContent = me.display_name;
+      rememberLogin(null);
+    } else {
+      const ch = await rpc<{ login: string }>('ensure_my_channel');
+      rememberLogin(ch.login);
+    }
     const s = await api.status();
+    if (family && s.state === 'done') pState = await api.practiceStatus();
     lastState = s;
     if (s.state === 'done') return doneScreen(s);
     if (s.state === 'playing') {
@@ -180,6 +207,32 @@ async function loggedOut(): Promise<void> {
     actions, `New challenge every day at midnight Eastern time (in ${untilReset(info.next_reset_at)}).`);
 }
 
+/* ---------- practice (family logins) ---------- */
+async function beginPractice(): Promise<void> {
+  if (busy) return; busy = true; err(null);
+  try {
+    const s = await api.practiceStart();
+    pState = s; practice = true; guest = false;
+    $('#edition').textContent = 'Practice · not on the boards'; show($('#edition'), true);
+    setScore(s.correct, s.points); show($('#scoreboard'), true);
+    idx = s.next_idx || 1;
+    await loadRound();
+  } catch (e) { practice = false; err(friendly(e)); }
+  finally { busy = false; }
+}
+
+function practiceDone(s: PState): void {
+  practice = false; show($('#edition'), false); show($('#scoreboard'), false);
+  intro('Practice · done', `${s.correct} out of 10.`,
+    "Practice scores don't go on the boards. Every practice round uses questions you haven't seen yet.",
+    [btn('Practice again', 'primary', () => beginPractice()),
+     btn("Today's results", 'ghost', () => { if (lastState) doneScreen(lastState); })],
+    s.games_done === 1 ? 'Your first practice game is done.' : `${plural(s.games_done, 'practice game')} played.`);
+  const r = $('#result'); r.replaceChildren(stat(`${s.correct}/10`, 'Right'), stat(s.points.toLocaleString('en-US'), 'Points', true), stat(String(s.best_streak), 'Best streak'));
+  show(r, true);
+  celebrate(s.correct);
+}
+
 /* ---------- playing ---------- */
 async function begin(): Promise<void> {
   if (busy) return; busy = true; err(null);
@@ -201,7 +254,7 @@ function beginGuest(): void {
 }
 
 async function loadRound(): Promise<void> {
-  q = guest ? await api.guestRound(idx) : await api.round(idx);
+  q = guest ? await api.guestRound(idx) : practice ? await api.practiceRound(idx) : await api.round(idx);
   if (guest && q.date) gDate = q.date;
   phase = 'vote'; document.body.dataset.phase = 'vote';
   show($('#intro'), false); show($('#round'), true); show($('#explain'), false); show($('#hint'), true);
@@ -248,7 +301,7 @@ async function choose(i: number | null): Promise<void> {
   $('#opts').classList.add('locked');
   if (i != null) ($('#opts').children[i] as HTMLElement).classList.add('picked');
   let a: Answer;
-  try { a = guest ? await api.guestAnswer(idx, i) : await api.answer(idx, i); }
+  try { a = guest ? await api.guestAnswer(idx, i) : practice ? await api.practiceAnswer(idx, i) : await api.answer(idx, i); }
   catch (e) { busy = false; intro("Today's challenge", 'Hmm.', '', [btn('Try again', 'ghost', () => location.reload())]); err(friendly(e)); return; }
   busy = false;
 
@@ -269,7 +322,7 @@ async function choose(i: number | null): Promise<void> {
   const meta = el('span', 'meta' + (a.correct ? ' good' : ''), verdict);
   $('#exText').replaceChildren(tag, ' ' + a.explanation, meta);
   $('#nextBtn').replaceChildren(a.is_last ? 'See results' : 'Next', el('kbd', null, 'Enter'));
-  if (a.state) lastState = a.state;
+  if (a.state) { if (practice) pState = a.state as unknown as PState; else lastState = a.state; }
   show($('#hint'), false); show($('#explain'), true);
 }
 
@@ -283,6 +336,11 @@ async function next(): Promise<void> {
 }
 
 async function finish(): Promise<void> {
+  if (practice) {
+    const s = pState && pState.state === 'done' ? pState : await api.practiceStatus();
+    pState = s;
+    return practiceDone(s);
+  }
   if (guest) {
     show($('#scoreboard'), false);
     intro("Yesterday's challenge · guest", `${gScore} out of 10.`,
@@ -297,13 +355,14 @@ async function finish(): Promise<void> {
     return;
   }
   const s = lastState && lastState.state === 'done' ? lastState : await api.status();
+  if (family) { try { pState = await api.practiceStatus(); } catch { pState = null; } }
   doneScreen(s);
   celebrate(s.correct);
 }
 
 /* ---------- wiring ---------- */
 $('#nextBtn').onclick = next;
-$('#logoutBtn').onclick = async () => { await supabase.auth.signOut(); location.reload(); };
+$('#logoutBtn').onclick = async () => { await supabase.auth.signOut(); if (family) location.href = '/family'; else location.reload(); };
 document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (phase === 'vote' && q) {
@@ -329,6 +388,7 @@ supabase.auth.onAuthStateChange((event, session) => {
   setTimeout(() => {
     if (!session) return loggedOut();
     const meta = session.user.user_metadata || {};
+    family = !!session.user.app_metadata?.family;
     loggedIn(meta.nickname || meta.name || meta.preferred_username || 'Player');
   }, 0);
 });

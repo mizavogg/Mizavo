@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- tab + search icon (favicon): the Mizavo M logo -->
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+<link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#151820">
+<title>Mizavo — Family login</title>
+<!-- hidden page: kept out of search engines; not linked from anywhere on the site -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/theme.css">
+<link rel="stylesheet" href="/src/styles/solo.css">
+</head>
+<body data-phase="intro">
+<div class="topbar">
+<header class="mast">
+  <a class="logo" href="/">Mizavo</a>
+  <nav class="siteNav" data-page="family" aria-label="Mizavo"></nav>
+</header>
+</div>
+<div class="wrap">
+  <section class="card ribbed" id="intro">
+    <canvas class="rGlow" aria-hidden="true"></canvas><canvas class="rEdges" aria-hidden="true"></canvas><div class="rDim" aria-hidden="true"></div>
+    <div class="cardIn slab">
+    <span class="sticker">Family login</span>
+    <h1>Log in to play.</h1>
+    <p id="famText">Use the username and password you were given. You'll play today's daily challenge, then you can keep practicing.</p>
+    <form class="famForm" id="famForm" novalidate>
+      <label class="famFld">Username<input id="famUser" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" required></label>
+      <label class="famFld">Password<input id="famPass" type="password" autocomplete="current-password" maxlength="72" required></label>
+      <p class="err hidden" id="err" role="alert"></p>
+      <div class="row"><button class="btn primary" type="submit" id="famBtn">Log in</button></div>
+    </form>
+    <div class="row hidden" id="famDone"></div>
+    </div>
+  </section>
+  <footer class="foot"><a href="/">mizavo</a> · <a href="/today">Leaderboards</a></footer>
+</div>
+<script type="module" src="/src/pages/family.ts"></script>
+</body>
+</html>

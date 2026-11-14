@@ -69,6 +69,7 @@ export function friendly(e: unknown): string {
     case 'not_invited': return "Mizavo is in a closed test, and this channel isn't on the invite list yet.";
     case 'already_reported': return "You've already reported this question. Thanks, it's in the queue.";
     case 'no_channel': return 'Your Mizavo channel isn\'t set up yet. Try logging out and back in.';
+    case 'family_account': return 'Family logins can play the daily challenge and practice (at /solo). Playing against a Twitch chat needs a Twitch login.';
     case 'channel_conflict': return 'This Twitch channel is linked to a different Mizavo login.';
     case 'game_not_found': case 'game_over': return 'That game has already ended.';
     default: return 'Something went wrong: ' + msg;

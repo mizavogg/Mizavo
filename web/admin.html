@@ -78,6 +78,16 @@
       </form>
       <p class="formErr hidden" id="invErr" role="alert"></p>
       <div id="inviteList"></div>
+
+      <h3 class="invHead">Family logins <small>a username + password for people too young for Twitch. They play the daily challenge and practice; they can't host games</small></h3>
+      <form class="inviteAdd famAdd" id="famForm" novalidate>
+        <label class="fld">Username<input id="famUser" maxlength="20" placeholder="e.g. Doc" autocomplete="off" spellcheck="false"></label>
+        <label class="fld">Password <small>(6+ characters)</small><input id="famPass" maxlength="72" autocomplete="new-password" spellcheck="false"></label>
+        <label class="fld">Name on the boards <small>(blank = username)</small><input id="famBoard" maxlength="20" autocomplete="off"></label>
+        <button class="btn primary small" type="submit" id="famAddBtn">Make login</button>
+      </form>
+      <p class="formErr hidden" id="famErr" role="alert"></p>
+      <div id="famList"></div>
     </div>
   </section>
 </div>

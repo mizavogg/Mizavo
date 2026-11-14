@@ -109,3 +109,9 @@
   background:radial-gradient(ellipse 50% 60% at 70% 30%,rgba(183,105,53,.16),rgba(183,105,53,0) 70%),radial-gradient(ellipse 40% 50% at 20% 40%,rgba(127,149,173,.08),rgba(127,149,173,0) 70%)}
 @media (prefers-reduced-motion:reduce){.opt{transition:none}.opt:active{transform:none}}
 @media (prefers-reduced-transparency:reduce){.stat,.standing,.opt,.explain,.chip{background:#1b1f21;-webkit-backdrop-filter:none;backdrop-filter:none}}
+
+/* family login page (family.html, Nov 13) */
+.famForm{display:flex;flex-direction:column;gap:12px;max-width:360px;margin-top:6px}
+.famFld{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.famFld input{background:var(--well);border:1px solid var(--rule2);border-radius:12px;padding:12px 14px;font-size:16px;color:var(--paper);text-transform:none;letter-spacing:0;width:100%}
+.famFld input:focus{outline:none;border-color:var(--orange-hi)}

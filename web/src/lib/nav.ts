@@ -38,7 +38,8 @@ function render(): void {
   // admins only: a shortcut to the admin page (the admin page still checks admin rights on the server)
   if (loggedIn && store.get('mz_admin') === '1') add('admin', 'Admin', '/admin');
   // logged out: a login button right in the bar, so it's never hidden under a webcam overlay
-  if (known && !loggedIn) {
+  // (not on the family login page, which has its own username + password form)
+  if (known && !loggedIn && page !== 'family') {
     const b = el('button', 'navLogin'); b.type = 'button';
     b.innerHTML = TWITCH_ICON; b.append('Log in');
     b.title = 'Log in with Twitch';

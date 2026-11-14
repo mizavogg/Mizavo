@@ -48,6 +48,7 @@ export default defineConfig({
         today: 'today.html',
         channel: 'channel.html',
         solo: 'solo.html',
+        family: 'family.html',
       },
     },
   },

@@ -511,6 +511,7 @@ let inviteOnly = true;
 
 async function renderInvites() {
   renderLinks();
+  renderFamily();
   const list = $('#inviteList');
   list.replaceChildren(el('p', 'empty', 'Loading invites…'));
   let data: InviteList;
@@ -630,6 +631,68 @@ $('#linkForm').onsubmit = async (e) => {
     renderLinks();
   } catch (ex) { fail('Could not make the link: ' + (ex as Error).message); }
   finally { btn.disabled = false; }
+};
+
+/* ---------- family logins (Nov 13): username + password accounts for people too young for Twitch ---------- */
+interface FamilyLogin { user_id: string; username: string; board_name: string; active: boolean; created_at: string; dailies: number; practice: number; last_played: string | null }
+const FAMILY_URL = window.location.origin + '/family';
+
+async function renderFamily() {
+  const box = $('#famList');
+  let rows: FamilyLogin[];
+  try { rows = await rpc<FamilyLogin[]>('admin_list_family_logins'); }
+  catch (e) { box.replaceChildren(el('p', 'err', 'Could not load family logins: ' + (e as Error).message)); return; }
+  if (!rows.length) { box.replaceChildren(el('p', 'empty', 'No family logins yet.')); return; }
+  const ul = el('ul', 'list links');
+  for (const f of rows) {
+    const li = el('li', f.active ? null : 'off'), q = el('div', 'q');
+    q.append(el('span', null, f.username));
+    q.append(el('div', 'sub', `on the boards as ${f.board_name} · ${f.dailies} daily · ${f.practice} practice · ${f.active ? 'on' : 'off'}`
+      + (f.last_played ? ` · last played ${day(f.last_played)}` : ' · not played yet')));
+    q.append(el('div', 'url', FAMILY_URL));
+    const tags = el('div', 'tags');
+    const copy = el('button', 'btn ghost small', 'Copy page link');
+    copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(FAMILY_URL); toast('Copied. Send it with their username and password.', false, 3000); }
+      catch { window.prompt('Copy this link:', FAMILY_URL); }
+    };
+    const pw = el('button', 'btn ghost small', 'New password');
+    pw.onclick = async () => {
+      const p = window.prompt(`New password for ${f.username} (6+ characters):`, '');
+      if (p == null) return;
+      try { await rpc('admin_set_family_password', { p_user: f.user_id, p_password: p }); toast(`Password changed for ${f.username}.`, false, 3000); }
+      catch (e) { toast(/bad_password/.test((e as Error).message) ? 'Passwords need 6 to 72 characters.' : 'Could not change it: ' + (e as Error).message, false, 4000); }
+    };
+    const tog = el('button', 'btn ghost small' + (f.active ? ' retire' : ''), f.active ? 'Turn off' : 'Turn on');
+    tog.onclick = async () => {
+      if (f.active && !await confirmBox(`Turn off ${f.username}?`, "They are logged out straight away and can't log back in. Their scores stay. You can turn it back on any time.", 'Turn off')) return;
+      try { await rpc('admin_set_family_active', { p_user: f.user_id, p_active: !f.active }); renderFamily(); }
+      catch (e) { toast('Could not change it: ' + (e as Error).message, false, 4000); }
+    };
+    tags.append(copy, pw, tog);
+    li.append(q, tags); ul.append(li);
+  }
+  box.replaceChildren(ul);
+}
+
+$('#famForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const user = val('#famUser').trim(), pass = val('#famPass'), board = val('#famBoard').trim();
+  const err = $('#famErr'); show(err, false);
+  const fail = (m: string) => { err.textContent = m; show(err, true); };
+  if (!/^[A-Za-z0-9_]{2,20}$/.test(user)) return fail('Usernames are 2 to 20 letters, numbers or underscores (no spaces).');
+  if (pass.length < 6) return fail('Passwords need at least 6 characters.');
+  if (board && board.length < 2) return fail('The board name needs at least 2 characters (or leave it blank).');
+  const btn = $<HTMLButtonElement>('#famAddBtn'); btn.disabled = true;
+  try {
+    const r = await rpc<{ username: string }>('admin_create_family_login', { p_username: user, p_password: pass, p_board_name: board || null });
+    ['#famUser', '#famPass', '#famBoard'].forEach((s) => ($<HTMLInputElement>(s).value = ''));
+    toast(`Made ${r.username}. Send them ${FAMILY_URL} with the username and password.`, false, 4000);
+    renderFamily();
+  } catch (ex) {
+    const m = (ex as Error).message;
+    fail(/username_taken/.test(m) ? 'That username is already used.' : 'Could not make the login: ' + m);
+  } finally { btn.disabled = false; }
 };
 
 /* ---------- keyboard shortcuts (laptop) ---------- */
