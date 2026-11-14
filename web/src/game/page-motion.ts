@@ -92,14 +92,17 @@ function measure(): void {
 
 const shouldMove = () => !!host && MOVING_PHASES.has(document.body.dataset.phase || '') && !document.hidden && !reduceMotion.matches;
 
+/** The light drifts slowly, so 30 frames a second looks the same as 60 and halves the work (Nov 14). */
+let lastPaint = -1e9;
 function frame(t: number): void {
-  paintLight(t); paintGlow();
+  if (t - lastPaint >= 32) { lastPaint = t; paintLight(t); paintGlow(); }
   if (shouldMove()) raf = requestAnimationFrame(frame);
 }
 
 /** Draw now, and keep moving only if this screen should move. */
 function kick(): void {
   cancelAnimationFrame(raf);
+  lastPaint = -1e9;   // always draw right away (a resize clears the canvases)
   if (!host || !ready) return;
   if (MOVING_PHASES.has(document.body.dataset.phase || '')) raf = requestAnimationFrame(frame);
 }

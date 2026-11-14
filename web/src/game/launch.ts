@@ -20,6 +20,7 @@ let raf = 0, running = false, visible = true, ready = false;
 let resizeObs: ResizeObserver | null = null, viewObs: IntersectionObserver | null = null;
 let ribs: { x: number; w: number; k: number }[] = [];
 let W = 0, H = 0, dpr = 1;
+let lightCut: HTMLCanvasElement;   // the light with the letters' color boost, at the light's small size
 let light: HTMLCanvasElement, glowCv: HTMLCanvasElement, edgesCv: HTMLCanvasElement, cutCv: HTMLCanvasElement;
 let wordMask: HTMLCanvasElement, wordRim: HTMLCanvasElement, wordShadow: HTMLCanvasElement, word = { size: 0, x: 0, y: 0 };
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -86,9 +87,7 @@ function paintCut(): void {
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.globalCompositeOperation = 'source-over';
   g.clearRect(0, 0, W, H);
-  g.filter = 'saturate(1.45) brightness(1.2) contrast(1.1)';
-  g.drawImage(light, -BLEED, -BLEED, W + BLEED * 2, H + BLEED * 2);
-  g.filter = 'none';
+  g.drawImage(lightCut, -BLEED, -BLEED, W + BLEED * 2, H + BLEED * 2);
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.globalCompositeOperation = 'destination-in';
   g.drawImage(wordMask, 0, 0);
@@ -144,8 +143,20 @@ function buildWord(): void {
   sg.fillStyle = '#000'; text(sg); minus(sg, 0, 0);
 }
 
+/** The letters' brighter light: the color boost runs on the small light image (it's blurry anyway), not the
+    full-size canvas, which is about 16x less work per frame on a phone (Nov 14). */
+function paintLightCut(): void {
+  const g = lightCut.getContext('2d')!;
+  g.clearRect(0, 0, lightCut.width, lightCut.height);
+  g.filter = 'saturate(1.45) brightness(1.2) contrast(1.1)';
+  g.drawImage(light, 0, 0);
+  g.filter = 'none';
+}
+
+/** The light drifts slowly, so 30 frames a second looks the same as 60 and halves the work (Nov 14). */
+let lastPaint = -1e9;
 function frame(t: number): void {
-  paintLight(t); paintGlow(); paintCut();
+  if (t - lastPaint >= 32) { lastPaint = t; paintLight(t); paintLightCut(); paintGlow(); paintCut(); }
   if (running && visible && !reduceMotion.matches) raf = requestAnimationFrame(frame);
 }
 
@@ -157,6 +168,8 @@ function measure(): void {
   dpr = Math.min(2, window.devicePixelRatio || 1);
   const lw = W + BLEED * 2, lh = H + BLEED * 2;
   light.width = Math.round(lw * LIGHT_SCALE); light.height = Math.round(lh * LIGHT_SCALE);
+  lightCut = lightCut || document.createElement('canvas');
+  lightCut.width = light.width; lightCut.height = light.height;
   glowCv.width = light.width; glowCv.height = light.height;
   cutCv.width = Math.round(W * dpr); cutCv.height = Math.round(H * dpr);
   edgesCv.width = Math.round(W * dpr); edgesCv.height = Math.round(H * dpr);
@@ -195,6 +208,7 @@ function measure(): void {
 /** (Re)start the animation loop. With reduced motion it draws one still frame. */
 function kick(): void {
   cancelAnimationFrame(raf);
+  lastPaint = -1e9;   // always draw right away (a resize clears the canvases)
   if (ready) raf = requestAnimationFrame(frame);
 }
 

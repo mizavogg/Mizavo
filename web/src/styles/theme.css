@@ -14,7 +14,7 @@
   /* text */
   --paper:#F2E8DC;              /* cream: main text, primary button */
   --muted:#B3ADA3;              /* secondary text (passes 4.5:1 on --bg) */
-  --dim:#7E7A72;
+  --dim:#99938A;                /* small labels: passes 4.5:1 on the page, panels and glass (was #7E7A72, Nov 14) */
   /* accents (muted, never neon) */
   --blue:#7F95AD; --blue-hi:#A9BCD0;
   --orange:#B76935; --orange-hi:#E09A62;
