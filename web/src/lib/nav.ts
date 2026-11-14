@@ -6,6 +6,7 @@ import { supabase, loginWithTwitch } from './supabase';
 import { channelUrl } from './boards';
 import { trackView } from './track';
 import { initApp } from './app';
+import { canOfferApp, initInstall, openInstall } from './install';
 
 /** Mizavo's Ko-fi page. Empty = every support link stays hidden. Paste the full link here to turn them on. */
 export const SUPPORT_URL = 'https://ko-fi.com/mizavo';
@@ -46,6 +47,11 @@ function render(): void {
     b.innerHTML = TWITCH_ICON; b.append('Log in');
     b.title = 'Log in with Twitch';
     b.onclick = async () => { try { await loginWithTwitch(); } catch { b.textContent = 'Login failed. Try again'; } };
+    nav.append(b);
+  }
+  // phones (not already in the app): one tap to put Mizavo on the home screen
+  if (canOfferApp()) {
+    const b = el('button', 'navApp', 'Get the app'); b.type = 'button'; b.onclick = () => { openInstall(); };
     nav.append(b);
   }
   if (SUPPORT_URL) {
@@ -91,7 +97,8 @@ function wireFamilyDoor(): void {
 }
 
 export function initNav(): void {
-  initApp(); render(); wireSupport(); wireFamilyDoor(); trackView();
+  initApp(); initInstall(); window.addEventListener('mz-install', render);
+  render(); wireSupport(); wireFamilyDoor(); trackView();
   supabase.auth.getSession().then(({ data }) => {
     loggedIn = !!data.session; known = true;
     if (!loggedIn) { store.remove('mz_login'); store.remove('mz_admin'); }

@@ -16,6 +16,7 @@ import { showStanding } from '../lib/standing';
 import { initSound, sfx, buzz } from '../lib/sound';
 import { countTo } from '../lib/countup';
 import { ribbedGlass } from '../lib/ribbed';
+import { initRemind } from '../lib/remind';
 
 type RoundType = 'ff' | 'ooo';
 interface Q { date?: string; idx: number; rounds: number; type: RoundType; category: string; statement?: string; items?: string[]; seconds: number; shown_at?: string; ends_at?: string }
@@ -373,6 +374,7 @@ document.addEventListener('keydown', (e) => {
 
 initNav();
 initSound();
+initRemind();
 { // the intro card's window of moving ribbed glass (Nov 11)
   const card = document.getElementById('intro')!;
   ribbedGlass(card, card.querySelector<HTMLCanvasElement>('.rGlow')!, card.querySelector<HTMLCanvasElement>('.rEdges')!, 9, (blob, _w, _h, s, c) => {

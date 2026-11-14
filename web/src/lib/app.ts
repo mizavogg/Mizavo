@@ -10,6 +10,8 @@ export function initApp(): void {
   if (started) return;
   started = true;
   document.addEventListener('touchstart', () => {}, { passive: true });
+  // the service worker only shows daily challenge reminders; it never caches pages (public/sw.js)
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
   const bar = document.createElement('div');
   bar.className = 'netBar';

@@ -244,3 +244,23 @@ h1 .skel.skTitle{height:.85em;width:min(420px,70%);border-radius:14px;margin-top
 .skel.skLine.short{width:min(320px,60%);margin-top:12px}
 .skel.skBtn{height:48px;width:200px;border-radius:999px}
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* "Get the app" (lib/install.ts): nav pill + the steps sheet */
+.siteNav .navApp{display:inline-flex;align-items:center;min-height:34px;padding:7px 13px;border-radius:999px;font:600 13px var(--sans);white-space:nowrap;color:var(--paper);
+  background:linear-gradient(180deg,rgba(242,232,220,.14),rgba(242,232,220,.04));box-shadow:inset 0 1px 0 rgba(245,239,230,.3),inset 0 -1px 0 rgba(0,0,0,.35);transition:transform .1s ease-out}
+.siteNav .navApp:active{transform:scale(.95)}
+.appSheet{margin:auto auto calc(16px + env(safe-area-inset-bottom));width:min(440px,calc(100% - 24px));padding:22px 20px 18px;border:0;border-radius:22px;color:var(--paper);
+  background:#1b1f21;box-shadow:inset 1px 1px 0 rgba(245,239,230,.22),0 30px 70px -20px #000}
+.appSheet::backdrop{background:rgba(8,10,11,.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.appSheet h3{font-family:var(--serif);font-weight:500;font-size:26px;letter-spacing:-.02em}
+.appSheet .sub{color:var(--muted);font-size:14px;margin-top:6px;line-height:1.5}
+.appSheet ol{margin:16px 0 18px 20px;display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.5}
+.appSheet ol svg{vertical-align:-3px;color:var(--blue-hi)}
+.appSheet ol small{display:block;color:var(--muted);font-size:12px}
+.appSheet .btn{width:100%;justify-content:center}
+
+/* daily challenge reminders box (lib/remind.ts) */
+.remind{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:18px;padding:14px 16px;border-radius:18px;font-size:14px;line-height:1.45;color:var(--muted);
+  background:linear-gradient(180deg,rgba(242,232,220,.07),rgba(242,232,220,.02));box-shadow:inset 0 1px 0 rgba(245,239,230,.14)}
+.remind span{flex:1 1 220px}
+@media(max-width:820px){ .siteNav .navApp{order:-1;flex:none;margin-right:4px} }
