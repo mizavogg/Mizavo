@@ -85,8 +85,12 @@
         jobs.push(A.logo.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.1)' }],
           { duration: 300, easing: 'ease-in', fill: 'forwards' }).finished);
         if (holeOK) {   // a hole opens from the center and follows the balls out
-          A.veil.classList.add('hole');
-          jobs.push(A.veil.animate([{ '--hole': '0px' }, { '--hole': far + 'px' }], { duration: BURST_MS + 80, easing: 'cubic-bezier(.3,.55,.4,1)', fill: 'forwards' }).finished);
+          // Drawn as a plain gradient (no mask, no blend mode) on its own sheet: Safari draws the page's frosted
+          // glass panels as flat grey under a masked or blended layer (Nov 14). The glow sheet fades away under it.
+          var hole = document.createElement('div'); hole.className = 'fxHole';
+          A.layer.insertBefore(hole, A.ring);
+          A.veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease-out', fill: 'forwards' });
+          jobs.push(hole.animate([{ '--hole': '0px' }, { '--hole': far + 'px' }], { duration: BURST_MS + 80, easing: 'cubic-bezier(.3,.55,.4,1)', fill: 'forwards' }).finished);
         } else {
           jobs.push(A.veil.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: 120, easing: 'ease-out', fill: 'forwards' }).finished);
         }
