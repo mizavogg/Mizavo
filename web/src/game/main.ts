@@ -11,6 +11,7 @@ import { initPageMotion } from './page-motion';
 import { initStreamerMode } from './streamer-mode';
 import { openReport } from './report';
 import { initPublicSwitch } from './community';
+import { initWarmupLink } from './warmuplink';
 import { initNav, rememberLogin } from '../lib/nav';
 import {
   confirmBox, endUnfinished, goHome, next, pick, quitGame, resumeGame, revealNow,
@@ -200,6 +201,7 @@ $<HTMLInputElement>('#pics').checked = picturesOn();
 $<HTMLInputElement>('#pics').onchange = (e) => setPictures((e.target as HTMLInputElement).checked);
 initStreamerMode();
 initPublicSwitch();
+initWarmupLink();
 initNav();
 // keep More options open if something in it is switched on
 if ($<HTMLInputElement>('#streamer').checked) $<HTMLDetailsElement>('#moreOpts').open = true;

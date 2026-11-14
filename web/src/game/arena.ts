@@ -89,13 +89,17 @@ function drawFace(x: number, y: number, r: number, color: string, img: HTMLImage
   ctx.beginPath(); ctx.arc(x, y, r - 0.5, 0, Math.PI * 2); ctx.stroke();
 }
 
+/** Optional: a page can decide the arena's height itself (the warm-up panel fills whatever space is left). */
+let fitHeight: (() => number) | null = null, poolShare = 0.38;
+export function setFitHeight(fn: (() => number) | null, share = 0.38): void { fitHeight = fn; poolShare = share; }
+
 /** Size the canvas to the page and work out where the bins go. */
 export function layout(): void {
   const w = $('#arena').clientWidth;
   const n = S.R ? S.R.opts.length : 2;
   cards = w < 560;
   document.body.classList.toggle('cards', cards);
-  const h = cards ? clamp(Math.round(window.innerHeight * (n === 4 ? 0.5 : 0.42)), n === 4 ? 290 : 250, 430) : clamp(Math.round(window.innerHeight * 0.46), 260, 460);
+  const h = fitHeight ? Math.max(140, Math.round(fitHeight())) : cards ? clamp(Math.round(window.innerHeight * (n === 4 ? 0.5 : 0.42)), n === 4 ? 290 : 250, 430) : clamp(Math.round(window.innerHeight * 0.46), 260, 460);
   DPR = Math.min(2, window.devicePixelRatio || 1);
   W = w; H = h;
   cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR); cv.style.height = h + 'px';
@@ -109,7 +113,7 @@ export function layout(): void {
     return;
   }
   const gap = window.innerWidth < 820 ? 14 : 24;
-  const bw = (W - gap * (n - 1)) / n, top = Math.round(H * 0.38);
+  const bw = (W - gap * (n - 1)) / n, top = Math.round(H * poolShare);
   bins = Array.from({ length: n }, (_, i) => ({ x: i * (bw + gap), y: top, w: bw, h: H - top - 4 }));
   pool = { x: W * 0.12, y: 10, w: W * 0.76, h: top - 30 };
 }

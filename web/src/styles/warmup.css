@@ -1,0 +1,64 @@
+/* Mizavo — the Starting Soon warm-up panel (warmup.html), an OBS Browser Source.
+   The page itself is see-through, so the panel sits on top of the streamer's own Starting Soon art.
+   One frosted Ink & Cream glass panel fills the source; the streamer sizes and places it in OBS. */
+html,body.warmupPage{background:transparent!important;margin:0;height:100%;overflow:hidden}
+body.warmupPage{padding:12px;box-sizing:border-box}
+.wPanel{position:relative;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding:20px 24px 16px;
+  border-radius:28px;color:var(--paper);
+  background:linear-gradient(160deg,rgba(30,34,36,.86),rgba(16,19,20,.9));
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border:1px solid rgba(242,232,220,.14);box-shadow:0 1px 0 rgba(255,240,225,.08) inset,0 30px 60px -20px rgba(0,0,0,.75)}
+.wHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.wTitle{display:flex;align-items:baseline;gap:10px;font-size:20px}
+.wTitle b{font-family:var(--serif);font-weight:500;font-size:28px;letter-spacing:-.02em}
+.wSub{color:var(--muted);font-size:15px;font-weight:500}
+.wDot{width:10px;height:10px;border-radius:50%;background:var(--orange-hi);box-shadow:0 0 12px var(--orange-hi);align-self:center;animation:wBlink 1.6s ease-in-out infinite}
+@keyframes wBlink{50%{opacity:.35}}
+.wRight{display:flex;align-items:center;gap:12px}
+.wChip{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:rgba(242,232,220,.08);border:1px solid rgba(242,232,220,.14);color:var(--paper)}
+.wChip:empty{display:none}
+.wClock{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 30%,#e9a46e,#b76935 60%,#7d4724);box-shadow:inset 0 1px 0 rgba(255,230,200,.6),0 8px 18px -6px rgba(0,0,0,.7)}
+.wClock b{font-size:22px;font-weight:700;color:#1b0f07;font-variant-numeric:tabular-nums}
+.wClock.low{background:radial-gradient(circle at 35% 30%,#ef9f8c,#d9826e 60%,#93473a)}
+body[data-state=reveal] .wClock,body[data-state=idle] .wClock{visibility:hidden}
+.wBody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:18px}
+.wMain{min-width:0;display:flex;flex-direction:column}
+.wStatement{font-family:var(--serif);font-weight:500;font-size:clamp(22px,3.3vw,40px);line-height:1.08;letter-spacing:-.02em;margin-bottom:12px;min-height:1.1em}
+.wMain .arena{position:relative;flex:1;min-height:0}
+.wMain #cv{display:block;width:100%;position:absolute;left:0;bottom:0}
+.wTimer{height:7px;border-radius:999px;background:rgba(6,8,9,.58);box-shadow:inset 0 2px 4px rgba(0,0,0,.7);overflow:hidden;margin-bottom:12px}
+.wTimer i{display:block;height:100%;border-radius:999px;transform-origin:left;background:linear-gradient(180deg,#e9a46e,#b76935 60%,#93552c);box-shadow:0 0 12px rgba(183,105,53,.6)}
+.wTimer.low i{background:var(--pink)}
+.wExplain{margin:10px 0 0;font-size:15px;line-height:1.4;color:var(--muted);min-height:1.4em}
+.wExplain b{display:inline-block;color:#121516;font-weight:700;font-size:13px;padding:2px 10px;border-radius:999px;margin-right:8px}
+.wExplain .n{color:var(--paper);font-weight:600}
+.wSide{border-left:1px solid rgba(242,232,220,.1);padding-left:18px;min-width:0}
+.wSide h3{margin:0 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.wTop{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:w}
+.wTop li{counter-increment:w;display:flex;align-items:baseline;gap:8px;font-size:16px;font-weight:600;min-width:0}
+.wTop li::before{content:counter(w) ".";color:var(--orange-hi);font-variant-numeric:tabular-nums;width:1.4em;flex:none}
+.wTop li .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.wTop li .pt{color:var(--muted);font-weight:500;font-size:14px;font-variant-numeric:tabular-nums}
+.wTop li.empty{color:var(--muted);font-weight:500;font-size:14px}
+.wTop li.empty::before{content:none}
+.wFoot{display:flex;align-items:center;gap:14px;font-size:15px;color:var(--muted)}
+.wFoot kbd{font-family:var(--sans);font-weight:700;font-size:.9em;color:var(--paper);background:rgba(242,232,220,.1);border:1px solid rgba(242,232,220,.2);border-radius:6px;padding:1px 7px}
+.wFoot .pill{margin-left:auto;font-size:12px;opacity:.75}
+.wFoot .pill:not(.err){visibility:hidden}   /* only shown when chat can't be reached */
+.wFoot .pill i{display:none}
+.wBrand{font-weight:700;color:var(--paper);letter-spacing:.02em}
+/* paused / problem: a calm card over the panel */
+.wIdle{position:absolute;inset:76px 24px 54px;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;
+  border-radius:20px;background:rgba(14,17,18,.6)}
+.wIdle b{font-family:var(--serif);font-weight:500;font-size:clamp(26px,3.6vw,44px);letter-spacing:-.02em}
+.wIdle p{margin:0;font-size:18px;color:var(--muted);max-width:34em;line-height:1.45}
+body[data-state=idle] .wIdle,body[data-state=loading] .wIdle,body[data-state=error] .wIdle{display:flex}
+body[data-state=idle] .wBody,body[data-state=loading] .wBody,body[data-state=error] .wBody{visibility:hidden}
+/* narrow sources: the top list moves under the round */
+@media (max-width:820px){
+  .wBody{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+  .wSide{border-left:0;padding-left:0;border-top:1px solid rgba(242,232,220,.1);padding-top:10px}
+  .wTop{flex-direction:row;flex-wrap:wrap;gap:6px 16px}
+  .wTop li{font-size:14px}
+}

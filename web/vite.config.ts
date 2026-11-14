@@ -49,6 +49,7 @@ export default defineConfig({
         channel: 'channel.html',
         solo: 'solo.html',
         family: 'family.html',
+        warmup: 'warmup.html',
       },
     },
   },

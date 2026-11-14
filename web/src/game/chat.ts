@@ -35,6 +35,10 @@ export function onChat(m: ChatMessage): void {
   addLabel(m.name, col, o.to!.x, hidden ? o.to!.y - 12 : bins[choice].y - 6);
 }
 
+/** Extra listener for every chat message (the warm-up panel uses it to wake up when paused). */
+let extra: ((m: ChatMessage) => void) | null = null;
+export function onAnyChat(fn: ((m: ChatMessage) => void) | null): void { extra = fn; }
+
 /* ---------- Twitch: anonymous, read-only chat (no login, no bot account) ---------- */
 const TW = { ws: null as WebSocket | null, ch: '', want: false, retry: 0 };
 
@@ -63,7 +67,7 @@ function openWS(): void {
       if (!line) continue;
       if (line.startsWith('PING')) { ws.send('PONG :tmi.twitch.tv'); continue; }
       if (line.includes(' JOIN #')) { setStatus('#' + TW.ch + (S.demo ? ' + demo' : ''), 'on'); continue; }
-      const m = parseIRC(line); if (m) onChat(m);
+      const m = parseIRC(line); if (m) { onChat(m); extra?.(m); }
     }
   };
   ws.onclose = () => {

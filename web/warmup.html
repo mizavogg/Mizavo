@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- the Starting Soon warm-up: an OBS Browser Source (transparent page, one glass panel). Opened with ?k=<channel's secret code> -->
+<meta name="robots" content="noindex, nofollow">
+<title>Mizavo — Starting Soon warm-up</title>
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/theme.css">
+<link rel="stylesheet" href="/src/styles/warmup.css">
+</head>
+<body class="warmupPage" data-state="loading">
+<main class="wPanel" id="panel">
+  <header class="wHead">
+    <div class="wTitle"><span class="wDot"></span><b>Starting soon</b><span class="wSub" id="wSub">Chat warm-up</span></div>
+    <div class="wRight">
+      <span class="wChip" id="wMode"></span>
+      <div class="wClock" id="wClock"><b id="wSec">20</b></div>
+    </div>
+  </header>
+
+  <div class="wBody">
+    <section class="wMain">
+      <div class="wStatement" id="wStatement"></div>
+      <div class="arena" id="arena">
+        <div class="wTimer" id="wTimer"><i id="wTimerBar"></i></div>
+        <canvas id="cv"></canvas>
+      </div>
+      <p class="wExplain" id="wExplain"></p>
+    </section>
+    <aside class="wSide">
+      <h3>Top this warm-up</h3>
+      <ol class="wTop" id="wTop"><li class="empty">First right answer takes the lead</li></ol>
+    </aside>
+  </div>
+
+  <!-- paused (nobody answering) or a problem with the link -->
+  <div class="wIdle" id="wIdle">
+    <b id="wIdleTitle">Chat warm-up</b>
+    <p id="wIdleText">Getting ready…</p>
+  </div>
+
+  <footer class="wFoot">
+    <span id="wHow">Type <kbd>1</kbd> or <kbd>2</kbd> in chat</span>
+    <span class="pill" id="status"><i></i><span id="statusTxt"></span></span>
+    <span class="wBrand">mizavo.gg</span>
+  </footer>
+</main>
+<script type="module" src="/src/pages/warmup.ts"></script>
+</body>
+</html>
