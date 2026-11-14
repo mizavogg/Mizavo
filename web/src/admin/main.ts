@@ -6,11 +6,13 @@
 import { supabase, rpc, loginWithTwitch } from '../lib/supabase';
 import { $, el, show } from '../lib/dom';
 import { REPORT_REASONS, type ReportReason } from '../lib/reasons';
+import { store } from '../lib/dom';
+import { renderAnalytics } from './analytics';
 
 /* ---------- constants ---------- */
 const UNDO_MS = 5000;   // approving waits this long before saving, so a mis-tap can be undone
 type Status = 'draft' | 'approved' | 'retired';
-type Tab = Status | 'reports' | 'invites';
+type Tab = Status | 'reports' | 'invites' | 'analytics';
 interface Question {
   id: string; mode: 'ff' | 'ooo'; payload: { statement?: string; items?: string[] }; answer: boolean | number;
   explanation: string; difficulty: 1 | 2 | 3; category: string; fact_key: string; source_url: string;
@@ -71,6 +73,8 @@ async function boot(session: { user: { user_metadata?: Record<string, string> } 
   }
   if (run !== A.bootRun) return;
   show($('#gate'), false); show($('#app'), true);
+  // this device belongs to an admin: don't count its visits in Analytics, even when logged out
+  store.set('mz_notrack', '1');
   renderStats();
   await loadDrafts();
 }
@@ -117,6 +121,8 @@ async function setTab(tab: Tab) {
   show($('#listPane'), tab === 'approved' || tab === 'retired');
   show($('#reportsPane'), tab === 'reports');
   show($('#invitesPane'), tab === 'invites');
+  show($('#analyticsPane'), tab === 'analytics');
+  if (tab === 'analytics') return renderAnalytics($('#analyticsPane'));
   if (tab === 'draft') return renderCard();
   if (tab === 'reports') return renderReports();
   if (tab === 'invites') return renderInvites();

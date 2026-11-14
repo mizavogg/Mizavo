@@ -133,3 +133,51 @@ input[type=radio]{accent-color:var(--yellow);width:20px;height:20px;flex:none}
   .list li{grid-template-columns:1fr}
   .list .tags{justify-content:flex-start}
 }
+
+/* ---------- Analytics tab (Nov 13) ---------- */
+.anBarTop{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:6px}
+.anBarTop .spacer{flex:1}
+.anRange{display:flex;gap:6px;flex-wrap:wrap}
+.anRange .btn.sel{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.anSec{margin-bottom:12px}
+.anTiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.anTile .v{font-size:28px;font-variant-numeric:tabular-nums}
+.anTile .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.anChart{background:var(--panel);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--raise);padding:12px 14px 10px;margin-bottom:14px}
+.anChartHead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.anChartTitle{font-size:13px;font-weight:600}
+.anChartMax{font-size:12px;color:var(--muted)}
+.anPlot{display:grid;grid-template-columns:repeat(var(--n),1fr);align-items:end;height:140px;border-bottom:1px solid var(--rule2);
+  background:linear-gradient(to top,var(--rule) 1px,transparent 1px) 0 0/100% 50%}
+.anCol{height:100%;display:flex;align-items:flex-end;justify-content:center;padding:0 1px;cursor:default;min-width:0}
+.anCol:focus-visible{outline:2px solid var(--yellow);outline-offset:-1px;border-radius:4px}
+.anBar{display:block;width:100%;max-width:26px;background:var(--orange);border-radius:4px 4px 0 0;transition:background .12s}
+.anCol:hover .anBar,.anCol:focus-visible .anBar{background:var(--orange-hi)}
+.anAxis{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+.anTip{position:absolute;z-index:50;pointer-events:none;opacity:0;transition:opacity .1s;background:var(--ink3);border:1px solid var(--rule2);
+  border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.5;color:var(--paper);box-shadow:0 12px 26px -10px rgba(0,0,0,.8);white-space:nowrap}
+.anTip.on{opacity:1}
+.anTip div{color:var(--muted)}
+.anGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:14px}
+.anGrid.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.anList{background:var(--panel);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--raise);padding:12px 14px;min-width:0}
+.anList + .anList{margin-top:0}
+.anSec > .anList{margin-top:12px}
+.anListTitle{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.anRow{position:relative;display:flex;justify-content:space-between;gap:10px;padding:5px 8px;margin:2px 0;font-size:13px;border-radius:6px;overflow:hidden}
+.anFill{position:absolute;left:0;top:0;bottom:0;background:rgba(127,149,173,.20);border-radius:6px}
+.anName,.anVal{position:relative;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.anVal{font-weight:600;font-variant-numeric:tabular-nums;flex:none}
+.anEmpty{font-size:13px;color:var(--muted);line-height:1.5}
+.anTableWrap{overflow-x:auto}
+.anTable{border-collapse:collapse;width:100%;font-size:13px}
+.anTable th{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule2);white-space:nowrap}
+.anTable td{padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+.anTable .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.anTable tr:last-child td{border-bottom:0}
+.anSec > .anTableWrap{background:var(--panel);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--raise);padding:6px 8px}
+.anLeft{position:relative;display:inline-flex;justify-content:flex-end;width:90px;padding:1px 6px;border-radius:5px;overflow:hidden}
+.anLeftFill{position:absolute;left:0;top:0;bottom:0;background:rgba(183,105,53,.35);border-radius:5px}
+.anLeft b{position:relative;font-weight:600}
+.anFoot{font-size:12px;color:var(--muted);margin-top:18px;line-height:1.5}
+@media (max-width:560px){.anTiles{grid-template-columns:repeat(2,minmax(0,1fr))}.anTile .v{font-size:24px}.anPlot{height:110px}.anGrid.two{grid-template-columns:1fr}}
