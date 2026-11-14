@@ -79,7 +79,11 @@
    Supabase keeps the login in this browser under sb-<project>-auth-token. The screen stays dimmed and
    untouchable (html.boot) until the server confirms the login and loads the channel's settings;
    if the login turns out to be expired, the normal launch screen takes over (flow.ts setPhase clears boot). */
-try { if (localStorage.getItem('sb-puhnuwstlujkvevsromj-auth-token')) { document.documentElement.classList.add('boot'); document.body.dataset.phase = 'setup'; } } catch (e) {}
+document.documentElement.classList.add('fxWait');   // the opening cover waits until the first real screen is set
+try {
+  // logged in, or just back from Twitch login (?code=...): settings screen, not the launch screen
+  if (localStorage.getItem('sb-puhnuwstlujkvevsromj-auth-token') || /[?&]code=/.test(location.search)) { document.documentElement.classList.add('boot'); document.body.dataset.phase = 'setup'; }
+} catch (e) {}
 </script>
 <div class="pageGlass" aria-hidden="true"></div>
 <div class="app">

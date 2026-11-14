@@ -8,8 +8,12 @@
       a hole opens in the cover from the center, following them, so the page appears from the middle out.
    Every motion goes one way (no grow-and-shrink), so nothing pulses. vite.config.ts copies this file into the
    <head> of every page at build time (the logo is built in), so the cover is up on the very first frame.
-   Not used for other sites, new tabs, downloads, same-page links, reloads, the back button, or with
-   reduce-motion on. If anything goes wrong, the cover always clears itself within 3 seconds. Silent. */
+   4. Opening Mizavo (typing the address, a bookmark, the home-screen icon, a link from another site, a reload):
+      the logo and ring pop up on a dark screen right away, then open the same way once the page is ready (Nov 14).
+   A page can ask the cover to wait longer by putting the class "fxWait" on <html> (the Play page does this until it
+   knows whether to show the launch screen or the settings screen). Not used for new tabs opened from Mizavo links
+   kept in memory, the back button, the OBS warm-up page, or with reduce-motion on. If anything goes wrong, the cover
+   always clears itself within 3 seconds. Silent. */
 (function () {
   var reduce = false;
   try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -48,13 +52,25 @@
   /* ---------- arriving: start covered, ring turning, then burst once the page is fully loaded ---------- */
   var arriving = false;
   try { arriving = sessionStorage.getItem(KEY) === '1'; sessionStorage.removeItem(KEY); } catch (e) {}
-  if (arriving) {
-    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-    if (nav && nav.type !== 'navigate') arriving = false;   // reloads and back/forward don't get the cover
-  }
-  if (arriving) {
-    var A = build(), t0 = performance.now(), done = false;
-    settled(A); A.ring.classList.add('spin');
+  var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+  var navType = nav ? nav.type : 'navigate';
+  if (arriving && navType !== 'navigate') arriving = false;   // back/forward from memory: no cover
+  // opening Mizavo fresh (or reloading): the same cover, popping in first. Never on the OBS warm-up overlay.
+  var opening = !arriving && (navType === 'navigate' || navType === 'reload') && !/^\/warmup/.test(location.pathname);
+  if (arriving || opening) {
+    var A = build(), t0 = performance.now(), done = false, hold = MIN_HOLD;
+    if (arriving) { settled(A); A.ring.classList.add('spin'); }
+    else {   // dark from the first frame; the logo and balls pop out into the ring, then it turns while the page loads
+      A.veil.style.opacity = '1'; hold = POP_MS + 260;
+      A.logo.animate([{ opacity: 0, transform: 'scale(.86)' }, { opacity: 1, transform: 'scale(1)' }], { duration: POP_MS, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
+      for (var k = 0; k < A.balls.length; k++) {
+        var bb = A.balls[k];
+        bb.style.opacity = '1';
+        bb.animate([{ transform: at(bb, 24) + ' scale(.3)', opacity: 0 }, { transform: at(bb, R) + ' scale(1)', opacity: 1 }],
+          { duration: POP_MS - 40, delay: k * 6, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
+      }
+      setTimeout(function () { for (var j = 0; j < A.balls.length; j++) A.balls[j].getAnimations().forEach(function (an) { an.commitStyles(); an.cancel(); }); A.ring.classList.add('spin'); }, POP_MS + 60);
+    }
     html.appendChild(A.layer);   // <body> doesn't exist yet; <html> does
     var far = Math.sqrt(innerWidth * innerWidth + innerHeight * innerHeight) * 0.65;
     var burst = function () {
@@ -77,11 +93,16 @@
         var gone = function () { A.layer.remove(); };
         Promise.all(jobs).then(gone, gone);
         setTimeout(gone, BURST_MS + 600);
-      }, Math.max(0, MIN_HOLD - (performance.now() - t0)));
+      }, Math.max(0, hold - (performance.now() - t0)));
     };
-    var ready = function () {   // fully loaded, fonts ready, then two frames so the glass effects have drawn
+    var ready = function () {   // fully loaded, fonts ready, the page says it's ready, then two frames so the glass effects have drawn
       var fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-      fonts.then(function () { requestAnimationFrame(function () { requestAnimationFrame(burst); }); }, burst);
+      var pageReady = new Promise(function (res) {
+        if (!html.classList.contains('fxWait')) return res();
+        new MutationObserver(function (m, o) { if (!html.classList.contains('fxWait')) { o.disconnect(); res(); } })
+          .observe(html, { attributes: true, attributeFilter: ['class'] });
+      });
+      Promise.all([fonts, pageReady]).then(function () { requestAnimationFrame(function () { requestAnimationFrame(burst); }); }, burst);
     };
     if (document.readyState === 'complete') ready(); else window.addEventListener('load', ready, { once: true });
     setTimeout(burst, MAX_HOLD);   // safety net: never leave the cover up

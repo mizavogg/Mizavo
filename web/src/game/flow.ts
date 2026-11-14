@@ -21,7 +21,7 @@ export function show3(id: 'setup' | 'game' | 'final'): void {
 }
 export function setPhase(p: typeof S.phase): void {
   S.phase = p; document.body.dataset.phase = p;
-  document.documentElement.classList.remove('boot');   // the real screen is known now (see the boot check in index.html)
+  document.documentElement.classList.remove('boot', 'fxWait');   // the real screen is known now: settle, and let the opening cover lift (see index.html)
 }
 /** Header score. animate: roll up with a pop (after a reveal); otherwise set straight away (new game, resume). */
 function updateScore(animate = false): void {
