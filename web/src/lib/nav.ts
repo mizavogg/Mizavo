@@ -62,8 +62,34 @@ function wireSupport(): void {
 const TWITCH_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3v15h5v3l3-3h4l5-5V3z"/><line x1="11" y1="8" x2="11" y2="12"/><line x1="16" y1="8" x2="16" y2="12"/></svg>';
 
 let loggedIn = false, known = false;   // known: the login check has finished (avoids the button flashing)
+/** Secret door to the family login page (Nov 13): tap "mizavo" in the footer twice quickly.
+    One tap still does what it always did (the link goes home), after a short wait to see if a second tap comes.
+    Navigation goes through a hidden link, so the page transition still plays. */
+function wireFamilyDoor(): void {
+  const word = document.querySelector<HTMLElement>('footer.foot > a:first-child, footer.foot > span:first-child');
+  if (!word) return;
+  word.classList.add('famDoor');
+  const go = (href: string) => {
+    const a = document.createElement('a'); a.href = href; a.hidden = true;
+    document.body.append(a); a.click(); a.remove();
+  };
+  let taps = 0, timer = 0;
+  word.addEventListener('click', (e) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;   // new tab etc.: leave it alone
+    e.preventDefault();
+    e.stopPropagation();   // this click isn't a page change yet
+    clearTimeout(timer);
+    if (++taps >= 2) { taps = 0; go('/family'); return; }
+    timer = window.setTimeout(() => {
+      taps = 0;
+      const home = word.getAttribute('href');
+      if (home) go(home);   // one tap: the normal link (a plain-text "mizavo" does nothing)
+    }, 350);
+  });
+}
+
 export function initNav(): void {
-  render(); wireSupport();
+  render(); wireSupport(); wireFamilyDoor();
   supabase.auth.getSession().then(({ data }) => {
     loggedIn = !!data.session; known = true;
     if (!loggedIn) { store.remove('mz_login'); store.remove('mz_admin'); }

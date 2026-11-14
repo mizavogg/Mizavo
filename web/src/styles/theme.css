@@ -200,3 +200,6 @@ a.logo:hover{opacity:.85}
 .ribbed .rGlow{top:-20px;left:-20px;width:calc(100% + 40px);height:calc(100% + 40px);filter:blur(2.5px) saturate(1.1)}
 .ribbed .rEdges{top:0;left:0;width:100%;height:100%}
 .ribbed .rDim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,17,18,.78),rgba(14,17,18,.35))}
+
+/* footer "mizavo": the double-tap door to the family login (no zoom or text selection on a quick double tap) */
+.famDoor{touch-action:manipulation;-webkit-user-select:none;user-select:none;cursor:pointer}
