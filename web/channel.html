@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- tab + search icon (favicon): the Mizavo M logo -->
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
 <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#151820">
+<!-- phone app: "Add to Home Screen" opens Mizavo full-screen with its own icon -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mizavo">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Mizavo — Channel</title>
 <meta name="description" content="A Twitch channel's record against its chat on Mizavo, and its top viewers.">
 <!-- link previews (LinkedIn, Discord, X, iMessage) -->
@@ -38,8 +44,8 @@
 
   <section class="hero">
     <span class="sticker" id="kicker">Streamer vs chat</span>
-    <h1 id="title">Loading…</h1>
-    <p id="lede"></p>
+    <h1 id="title"><span class="skel skTitle" aria-hidden="true"></span><span class="vh">Loading…</span></h1>
+    <p id="lede"><span class="skel skLine" aria-hidden="true"></span><span class="skel skLine short" aria-hidden="true"></span></p>
     <div class="stats hidden" id="stats"></div>
   </section>
 

@@ -5,6 +5,7 @@ import { el, store } from './dom';
 import { supabase, loginWithTwitch } from './supabase';
 import { channelUrl } from './boards';
 import { trackView } from './track';
+import { initApp } from './app';
 
 /** Mizavo's Ko-fi page. Empty = every support link stays hidden. Paste the full link here to turn them on. */
 export const SUPPORT_URL = 'https://ko-fi.com/mizavo';
@@ -90,7 +91,7 @@ function wireFamilyDoor(): void {
 }
 
 export function initNav(): void {
-  render(); wireSupport(); wireFamilyDoor(); trackView();
+  initApp(); render(); wireSupport(); wireFamilyDoor(); trackView();
   supabase.auth.getSession().then(({ data }) => {
     loggedIn = !!data.session; known = true;
     if (!loggedIn) { store.remove('mz_login'); store.remove('mz_admin'); }

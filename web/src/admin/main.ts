@@ -8,6 +8,8 @@ import { $, el, show } from '../lib/dom';
 import { REPORT_REASONS, type ReportReason } from '../lib/reasons';
 import { store } from '../lib/dom';
 import { renderAnalytics } from './analytics';
+import { initApp } from '../lib/app';
+initApp();
 
 /* ---------- constants ---------- */
 const UNDO_MS = 5000;   // approving waits this long before saving, so a mis-tap can be undone

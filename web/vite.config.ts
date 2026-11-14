@@ -50,6 +50,7 @@ export default defineConfig({
         solo: 'solo.html',
         family: 'family.html',
         warmup: 'warmup.html',
+        notfound: '404.html',
       },
     },
   },

@@ -40,8 +40,12 @@ async function loadSolo(): Promise<void> {
 
 async function load(): Promise<void> {
   try { await Promise.all([loadChannels(), loadPlayers(), loadSolo()]); err(null); }
-  catch { err("Couldn't load the boards. Check your connection; this page retries every minute."); }
+  catch {
+    err("Couldn't load the boards. Check your connection; this page retries every minute.");
+    document.querySelectorAll('ol.board').forEach((ol) => { if (ol.querySelector('.skelRow')) ol.replaceChildren(emptyRow("Couldn't load yet.")); });
+  }
 }
 initNav();
 load();
 setInterval(() => { if (!document.hidden) load(); }, 60_000);
+window.addEventListener('online', () => load());   // back online: refresh right away
