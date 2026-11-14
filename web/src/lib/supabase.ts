@@ -19,7 +19,8 @@ export async function rpc<T>(name: string, args?: Record<string, unknown>): Prom
 export async function loginWithTwitch(): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'twitch',
-    options: { redirectTo: window.location.origin + window.location.pathname },
+    // channel:bot = "allow Mizavo's chat bot in your chat", so the server can read answers (trusted scoring, Nov 14)
+    options: { redirectTo: window.location.origin + window.location.pathname, scopes: 'channel:bot' },
   });
   if (error) throw new Error(error.message);
 }

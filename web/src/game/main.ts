@@ -2,7 +2,7 @@
 import { $, show, store } from '../lib/dom';
 import { supabase, loginWithTwitch } from '../lib/supabase';
 import { S, type Mode } from './state';
-import { api, friendly, type Channel } from './api';
+import { api, chatServer, friendly, type Channel } from './api';
 import { startLoop, binAt } from './arena';
 import { disconnectTwitch } from './chat';
 import { startLaunch, stopLaunch } from './launch';
@@ -15,7 +15,7 @@ import { initWarmupLink } from './warmuplink';
 import { initNav, rememberLogin } from '../lib/nav';
 import {
   confirmBox, endUnfinished, goHome, next, pick, quitGame, resumeGame, revealNow,
-  setMode, setPhase, setupError, show3, startGame, summary,
+  setMode, setPhase, setupError, setTrust, show3, startGame, summary,
 } from './flow';
 import { setTopicPick } from './topics';
 import { initSound } from '../lib/sound';
@@ -118,6 +118,7 @@ async function enterSetup(name: string): Promise<void> {
     const access = await api.access();
     if (!access.can_play) return enterGate(undefined, access.login ?? ch.login, inviteProblem);   // closed test, not invited yet
     applySettings(ch);
+    setTrust(trustKnown ?? !!ch.chat_ok);   // "Re-connect Twitch" box until the bot is approved
   } catch (e) {
     return enterGate(friendly(e));
   }
@@ -126,7 +127,14 @@ async function enterSetup(name: string): Promise<void> {
 }
 
 let authRun = 0;
+/** Right after a Twitch login, the session briefly carries Twitch's token: ask the server whether this streamer
+    approved "Mizavo's bot in your chat" (the token is checked once, never stored). */
+let trustKnown: boolean | null = null;
 supabase.auth.onAuthStateChange((event, session) => {
+  if (session?.provider_token && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+    const t = session.provider_token;
+    chatServer.check(t).then((r) => { trustKnown = r.chat_ok; setTrust(r.chat_ok); });
+  }
   if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
   const run = ++authRun;
   setTimeout(() => {           // run outside the auth callback, as Supabase recommends
@@ -145,6 +153,7 @@ function selectMode(m: Mode): void {
 }
 document.querySelectorAll<HTMLElement>('.mode').forEach((b) => b.onclick = () => selectMode(b.dataset.mode as Mode));
 
+$('#trustBtn').onclick = async () => { try { await loginWithTwitch(); } catch { /* stays on the setup screen */ } };
 $('#loginBtn').onclick = async () => {
   try { await loginWithTwitch(); } catch (e) { $('#gateMsg').textContent = 'Login failed: ' + (e as Error).message; show($('#gateMsg'), true); }
 };

@@ -180,10 +180,11 @@ try {
           </div>
         </details>
         <p class="err hidden" id="setupErr" role="alert"></p>
+        <div class="trust hidden" id="trustBox"><span><b>Turn on trusted scoring.</b> Re-connect Twitch once to allow Mizavo's chat bot. Until then, your games don't count on the public leaderboards.</span><button class="btn copper small" type="button" id="trustBtn">Re-connect Twitch</button></div>
         <div class="startrow"><button class="btn primary" id="startBtn">Start game <kbd>Enter</kbd></button></div>
         <details class="howTo">
           <summary>How chat answers</summary>
-          <p class="note">Mizavo reads your Twitch chat without a bot and never posts in it. Fact or Fake: chat types <code>1</code> or <code>2</code>. Odd One Out: <code>A</code> to <code>D</code>. Each viewer's first answer counts. You pick with the number keys or by tapping. <a href="/guide">Streamer guide (OBS setup, tips) →</a></p>
+          <p class="note">Mizavo's chat bot (mizavobot) reads answers during games and never posts in chat. Fact or Fake: chat types <code>1</code> or <code>2</code>. Odd One Out: <code>A</code> to <code>D</code>. Each viewer's first answer counts. You pick with the number keys or by tapping. <a href="/guide">Streamer guide (OBS setup, tips) →</a></p>
         </details>
       </aside>
     </div>
@@ -191,6 +192,7 @@ try {
 
   <!-- GAME (also the logged-out preview) -->
   <section id="game">
+    <p class="gameNote hidden" id="gameNote" role="status"></p>
     <div class="gtop"><span class="chip" id="gMode"></span><span class="chip" id="gRound"></span><button class="btn ghost small quit" id="quitBtn">End game</button><div class="stamp" id="stamp"><b id="tnum"></b><small>SEC</small></div></div>
     <span class="sticker" id="prompt"></span>
     <div class="statement" id="statement"></div>

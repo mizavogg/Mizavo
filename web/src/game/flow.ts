@@ -4,7 +4,7 @@
 import { $, el, show, store } from '../lib/dom';
 import { SITE_URL } from '../lib/site';
 import { S, OPT_COLORS, KEYS, SPHERE, type Mode, type Round, type Viewer } from './state';
-import { api, friendly, type ActiveGame, type RoundData, type ViewerResult } from './api';
+import { api, chatServer, friendly, type ActiveGame, type RoundData, type ViewerResult } from './api';
 import { dropStreamerBall, layout, popWrong, resetArena, sortPool } from './arena';
 import { clearBots, makeBots, scheduleBots } from './demo';
 import { connectTwitch, disconnectTwitch, setStatus } from './chat';
@@ -64,6 +64,28 @@ function resetGame(session: string, isTest: boolean, doubleFinal: boolean, light
   show($('#scoreboard'), true); show($('#testTag'), isTest); updateScore();
 }
 
+/* ---------- trusted scoring (Nov 14): the server reads chat through Mizavo's bot ---------- */
+/** Show or hide the "Re-connect Twitch" box on the setup screen. */
+export function setTrust(ok: boolean): void { show($('#trustBox'), !ok); }
+/** Ask the server to read this game's chat. Real games only; test games keep simulated chat in the browser. */
+async function startServerChat(session: string, isTest: boolean): Promise<void> {
+  if (isTest) return;
+  const reading = $<HTMLInputElement>('#channel').value.trim().replace(/^#/, '').toLowerCase();
+  const mine = store.get('mz_login');
+  if (reading && mine && reading !== mine) {   // reading someone else's chat: the bot only reads your own channel
+    showNote("Scores this game aren't verified: Mizavo can only verify your own channel's chat.");
+    return;
+  }
+  const r = await chatServer.start(session);
+  if (r.verified) return;
+  if (r.reason === 'reconnect') setTrust(false);
+  showNote("Scores this game aren't verified: re-connect Twitch on the setup screen so they count on the leaderboards.");
+}
+function showNote(text: string): void {
+  const n = $('#gameNote'); n.textContent = text; show(n, true);
+  setTimeout(() => show(n, false), 9000);
+}
+
 export async function startGame(): Promise<void> {
   if (S.busy) return;
   readSettings(); setupError(null);
@@ -71,6 +93,7 @@ export async function startGame(): Promise<void> {
   try {
     const g = await api.start(S.mode, S.rounds, S.secs, S.blind, S.demo, S.double, S.lightning, pickedCategories());
     connectChat();
+    await startServerChat(g.session_id, g.is_test);   // a few seconds at most; the first question waits for it
     resetGame(g.session_id, g.is_test, !!g.double_final, g.lightning_at ?? null);
     S.idx = 1;
     try { await loadRound(); } catch (e) { showRoundError(friendly(e), loadRound); }
@@ -115,6 +138,7 @@ export async function endUnfinished(): Promise<void> {
   const ok = await confirmBox('End that game?', "It won't count, and its questions stay used for your channel.", 'End it');
   if (!ok) return;
   try { await api.abandon(g.session_id); } catch (e) { setupError(friendly(e)); }
+  chatServer.stop(g.session_id);
   pendingResume = null; show($('#resumeBox'), false); setupError(null);
 }
 
@@ -125,6 +149,7 @@ export async function quitGame(): Promise<void> {
   if (!ok) return;
   clearInterval(S.timer); clearBots();
   try { await api.abandon(S.session); } catch { /* already over: fine */ }
+  chatServer.stop(S.session);
   S.session = null; goHome();
 }
 export function goHome(): void {
@@ -405,6 +430,7 @@ async function finish(): Promise<void> {
       today = `Across Mizavo today: chat beat the streamer in ${f.today.chat_won_pct ?? 0}% of ${f.today.games_finished} games.`;
     }
   } catch (e) { today = 'Your result could not be saved: ' + friendly(e); }
+  chatServer.stop(S.session!);   // stop reading chat (a cleanup job also closes anything left over)
   S.session = null;
 
   $('#edition').textContent = 'Final results';

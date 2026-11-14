@@ -1,12 +1,12 @@
 /* Mizavo — the game's calls to the database, with their exact shapes.
    Every call runs as the logged-in streamer; the database checks they own the game. */
-import { rpc } from '../lib/supabase';
+import { supabase, rpc } from '../lib/supabase';
 import type { Mode, RoundType } from './state';
 import type { ReportReason } from '../lib/reasons';
 import type { GameRecord, ViewerRow } from '../lib/boards';
 
 export interface Channel {
-  channel_id: string; login: string; display_name: string; is_admin: boolean;
+  channel_id: string; login: string; display_name: string; is_admin: boolean; chat_ok?: boolean;
   settings: { mode?: Mode; rounds?: number; seconds?: number; blind?: boolean; double?: boolean; lightning?: boolean; categories?: string[] } | null;
 }
 export interface Started { session_id: string; game_number: number; rounds: number; seconds: number; blind: boolean; is_test: boolean; double_final: boolean; lightning_at: number | null; categories?: string[]; filled_from_other?: number }
@@ -37,6 +37,19 @@ export interface Community {
 
 export interface Access { invite_only: boolean; can_play: boolean; login: string | null }
 export interface Redeemed { status: 'joined' | 'already' | 'inactive' | 'full' }
+
+/** The server-side chat reader (Edge Function twitch-chat). Never throws: problems just mean "not verified". */
+async function chatFn<T>(body: Record<string, unknown>, fallback: T): Promise<T> {
+  try {
+    const { data, error } = await supabase.functions.invoke('twitch-chat', { body });
+    return error || !data ? fallback : (data as T);
+  } catch { return fallback; }
+}
+export const chatServer = {
+  start: (session: string) => chatFn<{ verified: boolean; reason?: string }>({ action: 'start', session }, { verified: false, reason: 'error' }),
+  stop: (session: string) => { void chatFn({ action: 'stop', session }, null); },
+  check: (providerToken: string) => chatFn<{ chat_ok: boolean }>({ action: 'check', provider_token: providerToken }, { chat_ok: false }),
+};
 
 export const api = {
   ensureChannel: () => rpc<Channel>('ensure_my_channel'),
