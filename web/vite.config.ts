@@ -51,6 +51,7 @@ export default defineConfig({
         family: 'family.html',
         warmup: 'warmup.html',
         notfound: '404.html',
+        privacy: 'privacy.html',
       },
     },
   },
