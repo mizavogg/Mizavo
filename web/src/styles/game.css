@@ -79,8 +79,7 @@ body[data-phase=gate] .logo{color:var(--ivory)}
   .soonMini li{flex-direction:column;gap:2px}
   .soonMini li span{text-align:left}
 }
-.foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:40px var(--edge);background:var(--char);color:#8e918f;font-size:15px}
-.foot span:first-child{color:#c9c3b8}
+.launch .foot{margin-top:0;border-top:0;padding:40px var(--edge);background:var(--char)}   /* homepage: the footer is a full-width band */
 @media(prefers-reduced-motion:reduce){
   .glass{animation:none}
 }

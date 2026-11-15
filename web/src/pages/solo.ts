@@ -68,6 +68,7 @@ function friendly(e: unknown): string {
   if (code === 'practice_empty') return "You've played every practice question there is. Amazing! More are coming soon.";
   if (code === 'family_off') return 'This login has been turned off. Ask the person who gave it to you.';
   if (code === 'practice_off') return 'Practice is only open to family logins for now.';
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(m)) return "Couldn't reach Mizavo. Check your connection and try again.";
   return 'Something went wrong: ' + m;
 }
 function untilReset(iso: string): string {

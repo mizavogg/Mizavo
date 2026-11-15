@@ -86,6 +86,8 @@ export function friendly(e: unknown): string {
     case 'family_account': return 'Family logins can play the daily challenge and practice (at /solo). Playing against a Twitch chat needs a Twitch login.';
     case 'channel_conflict': return 'This Twitch channel is linked to a different Mizavo login.';
     case 'game_not_found': case 'game_over': return 'That game has already ended.';
-    default: return 'Something went wrong: ' + msg;
+    default:
+      if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) return "Couldn't reach Mizavo. Check your connection and try again.";
+      return 'Something went wrong: ' + msg;
   }
 }
