@@ -222,8 +222,8 @@ function startRound(): void {
     b.onclick = () => pick(i); box.append(b);
   });
   $('#hint').innerHTML = R.type === 'ff'
-    ? 'Chat: type <code>1</code> for Fact or <code>2</code> for Fake. <span class="more">Your first answer counts.</span>'
-    : 'Chat: type <code>A</code>, <code>B</code>, <code>C</code> or <code>D</code>. <span class="more">Your first answer counts.</span>';
+    ? 'Chat: type <code>1</code> for Fact or <code>2</code> for Fake. <span class="more">Your first answer counts. Same as last time? Type <code>11</code>.</span>'
+    : 'Chat: type <code>A</code>, <code>B</code>, <code>C</code> or <code>D</code>. <span class="more">Your first answer counts. Same as last time? Type <code>AA</code>.</span>';
   show($('#below'), true); show($('#explain'), false);
   $('#banner').className = 'banner'; $('#callout').className = 'callout';
   S.deadline = Date.now() + S.secs * 1000;

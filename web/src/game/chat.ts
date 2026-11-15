@@ -8,13 +8,21 @@ export interface ChatMessage { id: string | null; login: string; name: string; c
 /** Turn a chat message into an option number, or null if it isn't a vote. */
 export function parseVote(text: string, type: RoundType): number | null {
   const t = String(text).trim().toLowerCase().replace(/^!(?:vote|v)\s*/, '');
+  if (t.length > 12) return null;
+  // Twitch blocks the exact same message twice in 30 seconds, so a repeat answer can carry a little extra:
+  // "11", "1.", "1!" count as 1 and "AA", "b!" as A/B. Same rules as the server (migration 50).
+  const m = t.match(/^([a-z]+|[0-9]+)(?:[^a-z0-9].*)?$/);
+  if (!m) return null;
+  let w = m[1];
+  if (/^(.)\1+$/.test(w)) w = w[0];
   if (type === 'ff') {
-    if (/^(1|fact|true|real|yes|t)$/.test(t)) return 0;
-    if (/^(2|fake|false|cap|no)$/.test(t)) return 1;
+    if (/^(1|fact|true|real|yes|t)$/.test(w)) return 0;
+    if (/^(2|fake|false|cap|no)$/.test(w)) return 1;
     return null;
   }
-  const m = t.match(/^([a-d1-4])$/); if (!m) return null;
-  return /[a-d]/.test(m[1]) ? m[1].charCodeAt(0) - 97 : +m[1] - 1;
+  if (/^[a-d]$/.test(w)) return w.charCodeAt(0) - 97;
+  if (/^[1-4]$/.test(w)) return +w - 1;
+  return null;
 }
 
 /** A chat message arrived: count it as a vote if it is one.
