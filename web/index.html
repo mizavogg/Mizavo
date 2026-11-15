@@ -135,8 +135,9 @@ try {
         </div>
         <label class="f chatField hidden" id="chatField">Twitch chat to read<input id="channel" placeholder="e.g. yourchannel" autocomplete="off" spellcheck="false"></label>
         <div class="form">
-          <label class="f">Rounds<select id="rounds"><option selected>5</option><option>10</option><option>15</option><option>20</option></select></label>
-          <label class="f">Seconds per round<select id="secs"><option>10</option><option>15</option><option>20</option><option selected>30</option></select></label>
+          <!-- the hidden selects hold the values; game/segpick.ts draws the tap buttons -->
+          <div class="segF"><span id="roundsLbl">Rounds</span><label class="segSel">Rounds<select id="rounds" tabindex="-1" aria-hidden="true"><option selected>5</option><option>10</option><option>15</option><option>20</option></select></label></div>
+          <div class="segF"><span id="secsLbl">Seconds per round</span><label class="segSel">Seconds per round<select id="secs" tabindex="-1" aria-hidden="true"><option>10</option><option>15</option><option>20</option><option selected>30</option></select></label></div>
         </div>
         <div class="topics" role="group" aria-labelledby="topicLabel">
           <div class="tHead"><span id="topicLabel">Topics</span><span id="topicNote"></span></div>

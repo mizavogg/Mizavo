@@ -20,6 +20,8 @@ import {
 import { setTopicPick } from './topics';
 import { initSound } from '../lib/sound';
 import { picturesOn, setPictures } from './avatars';
+import { initSegs, syncSegs } from './segpick';
+initSegs();
 
 /* ---------- invite links: ?invite=CODE ----------
    The code is kept in the browser while the visitor goes through Twitch login
@@ -78,6 +80,7 @@ function applySettings(ch: Channel): void {
   if (typeof st.blind === 'boolean') $<HTMLInputElement>('#blind').checked = st.blind;
   if (typeof st.double === 'boolean') $<HTMLInputElement>('#double').checked = st.double;
   if (typeof st.lightning === 'boolean') $<HTMLInputElement>('#lightning').checked = st.lightning;
+  syncSegs();
   setTopicPick(st.categories);
   const saved = store.get('hm_channel');
   $<HTMLInputElement>('#channel').value = saved != null && saved !== '' ? saved : ch.login;

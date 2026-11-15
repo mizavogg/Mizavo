@@ -513,3 +513,17 @@ body.closedTest .loginFine{display:none}
 .trust span{flex:1 1 200px}
 .trust b{color:var(--paper)}
 .gameNote{margin:0 0 10px;padding:9px 14px;border-radius:12px;font-size:13px;color:var(--orange-hi);background:rgba(224,154,98,.08);box-shadow:inset 0 0 0 1px rgba(224,154,98,.22)}
+
+/* ---- Rounds + Seconds: tap selectors (game/segpick.ts, Nov 15). A sunken track with a raised, glossy pill that slides ---- */
+.segF{display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:500;color:var(--muted)}
+.segSel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.seg{position:relative;display:grid;grid-template-columns:repeat(var(--n),1fr);padding:4px;border-radius:999px;background:var(--well);box-shadow:var(--sink)}
+.seg .thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--n));border-radius:999px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(242,232,220,.20),rgba(242,232,220,.07));
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 -1px 0 rgba(0,0,0,.25) inset,0 8px 16px -8px #000;
+  transition:transform .22s cubic-bezier(.3,1.3,.5,1)}
+.seg button{position:relative;z-index:1;min-height:44px;border-radius:999px;font-size:16px;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums;transition:color .15s}
+.seg button:hover{color:var(--muted)}
+.seg button.on{color:var(--paper)}
+.seg button:focus-visible{outline:2px solid var(--yellow);outline-offset:-2px}
+@media (prefers-reduced-motion:reduce){.seg .thumb{transition:none}}
