@@ -4,13 +4,13 @@
 a{color:var(--blue-hi)} a:hover{color:var(--paper)}
 .mast a.logo{color:var(--paper);text-decoration:none}
 .mast .btn{text-decoration:none;display:inline-flex;align-items:center}
-.hero h1{font-weight:600;font-size:clamp(36px,5.5vw,58px);line-height:1.04;letter-spacing:-.035em;margin-top:16px}
+.hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(40px,6vw,64px);line-height:1.02;letter-spacing:-.03em;margin-top:16px}
 .hero p{margin-top:14px;font-size:16px;line-height:1.6;color:var(--muted);max-width:640px}
 .toc{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 8px}
 .toc a{font-size:14px;font-weight:500;border:1px solid var(--rule2);border-radius:999px;padding:8px 14px;color:var(--paper);text-decoration:none}
 .toc a:hover{border-color:var(--paper)}
 .step{border-top:1px solid var(--rule);margin-top:34px;padding-top:18px;scroll-margin-top:12px}
-.step h2{font-weight:600;font-size:clamp(24px,3.6vw,34px);letter-spacing:-.02em;display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.step h2{font-family:var(--serif);font-weight:500;font-size:clamp(26px,3.6vw,34px);line-height:1.1;letter-spacing:-.02em;display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .step h2 .n{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0%,var(--paper) 42%,#7E848F 100%);box-shadow:0 4px 8px rgba(0,0,0,.5);color:var(--ink);font-size:18px;flex:none}
 .step p{font-size:15px;line-height:1.65;margin-top:10px;max-width:720px}
 .step code{background:var(--well);border:1px solid var(--rule2);border-radius:6px;color:var(--paper);padding:1px 8px;font-weight:600}
