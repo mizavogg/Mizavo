@@ -1,11 +1,10 @@
 # Mizavo
 
-A browser game for Twitch streamers: the streamer plays against their own chat on worldwide general-knowledge questions (Fact or Fake, Odd One Out). Every chat vote becomes a dot that drops into its answer.
+A free browser trivia game. Twitch streamers play against their own chat on worldwide general-knowledge questions (Fact or Fake, Odd One Out), and every chat answer drops in as a ball. There's also a daily challenge: 10 questions, the same for everyone in the world.
 
 The name comes from the Arabic word *mizan* (ميزان): balance, scale, measuring instrument.
 
-Live site: https://mizavo.mizavogg.workers.dev
-Admi site: https://mizavo.mizavogg.workers.dev/admi
+Live site: https://mizavo.gg
 
 ## Repo layout
 
@@ -14,7 +13,9 @@ web/                    the website (Vite + TypeScript)
   index.html            game page: logged-out preview, setup, game, results
   admin.html            admin page: review drafts, retire live questions, handle reports, manage closed-test invites; import batches; download the bank
   guide.html            streamer setup guide (login, OBS, chat commands, reporting)
-  src/styles/           theme.css (shared Night Edition look), game.css, admin.css
+  solo.html, today.html, channel.html, privacy.html, warmup.html, family.html, 404.html
+                        daily challenge, leaderboards, channel pages, privacy & terms, Starting Soon panel, family login, not found
+  src/styles/           theme.css (shared Ink & Cream look) plus one stylesheet per page
   src/lib/              supabase.ts (database connection + login), dom.ts (small helpers)
   src/game/
     main.ts             login, settings, buttons and keys: everything starts here
@@ -22,7 +23,7 @@ web/                    the website (Vite + TypeScript)
     api.ts              the game's database calls, with their exact shapes
     state.ts            the shared game state and types
     arena.ts            vote dots, bins, physics, canvas drawing
-    chat.ts             reading votes from Twitch chat (anonymous, read-only)
+    chat.ts             reading answers from Twitch chat in the browser (the server also reads chat, through mizavobot)
     demo.ts             simulated viewers (games with them are saved as test games)
     attract.ts          the looping preview shown to logged-out visitors
     streamer-mode.ts    clear space on the right for a webcam + chat overlay
@@ -33,7 +34,8 @@ pipeline/               content pipeline (Python + pandas): builds and checks dr
   mizavo_pipeline/      rules, checks, templates, report
   tests/                tests for the checks
 supabase/
-  migrations/           database: tables, game API, pool builder, admin tools, Twitch login, test games
+  migrations/           database: every change, numbered, all applied live
+  functions/            Edge Functions: twitch-chat, twitch-avatars, send-reminders, twitch-bot-connect
 docs/
   decisions.md          product decisions, in order
 ```
