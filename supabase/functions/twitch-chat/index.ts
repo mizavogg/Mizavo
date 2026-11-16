@@ -6,6 +6,7 @@
 //       start  { session }        ask Twitch to send this channel's chat (read as mizavobot) while the game runs
 //       stop   { session }        stop it (game over)
 //       check  { provider_token } right after Twitch login: did this streamer approve "Mizavo's bot in your chat"?
+//       ping                      the settings screen wakes this function early, so Start is fast (Nov 15)
 //     and pg_cron:  sweep          close any leftover subscriptions (needs the schedule's password)
 // No user tokens are stored. Twitch is asked with Mizavo's own app token (TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET secrets).
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -100,14 +101,9 @@ async function startChat(channelId: string, session: string): Promise<Response> 
   if (r.status !== 202) return json({ verified: false, reason: 'twitch_' + r.status });
   const sub = (await r.json()).data?.[0]?.id as string;
   await db.rpc('chat_set_sub', { p_session: session, p_sub: sub, p_ok: true });
-  // wait (up to ~5 s) for Twitch to confirm our address, so the first round's answers aren't missed
-  for (let i = 0; i < 10; i++) {
-    const g = await helix('GET', HELIX + '?id=' + encodeURIComponent(sub));
-    const st = g.ok ? (await g.json()).data?.[0]?.status : null;
-    if (st === 'enabled') return json({ verified: true });
-    await new Promise((res) => setTimeout(res, 500));
-  }
-  return json({ verified: true, pending: true });
+  // Nov 15: answer right away. Twitch confirms our address on its own within about a second, long before chat
+  // has read the first question; waiting here for 'enabled' made every game start 2-4 s slower.
+  return json({ verified: true });
 }
 async function removeChannelSubs(channelId: string): Promise<void> {
   const r = await helix('GET', HELIX + '?type=channel.chat.message&user_id=' + encodeURIComponent((await config()).bot_id ?? ''));
@@ -128,6 +124,10 @@ Deno.serve(async (req) => {
   if (twitchType) return fromTwitch(req, twitchType);
 
   const body = await req.json().catch(() => ({}));
+  if (body.action === 'ping') {   // the settings screen wakes this function up before Start, and loads Twitch's token + our settings
+    await Promise.all([config(), appToken()]).catch(() => null);
+    return json({ ok: true });
+  }
   if (body.action === 'sweep') {   // pg_cron: close subscriptions of games that are over
     if (req.headers.get('x-cron-key') !== (await config()).cron_key) return json({ error: 'forbidden' }, 403);
     const { data } = await db.rpc('chat_subs_to_close');

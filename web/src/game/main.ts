@@ -134,10 +134,10 @@ async function enterSetup(name: string): Promise<void> {
 let authRun = 0;
 /** Right after a Twitch login, the session briefly carries Twitch's token: ask the server whether this streamer
     approved "Mizavo's bot in your chat" (the token is checked once, never stored). */
-let trustKnown: boolean | null = null;
+let trustKnown: boolean | null = null, checkedToken = '';
 supabase.auth.onAuthStateChange((event, session) => {
-  if (session?.provider_token && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-    const t = session.provider_token;
+  if (session?.provider_token && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session.provider_token !== checkedToken) {
+    const t = checkedToken = session.provider_token;   // both events can carry the same token: check it once
     chatServer.check(t).then((r) => { trustKnown = r.chat_ok; setTrust(r.chat_ok); });
   }
   if (event !== 'INITIAL_SESSION' && event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return;
@@ -168,6 +168,9 @@ $('#logoutBtn').onclick = async () => {
 };
 $('#channel').onchange = () => { store.set('hm_channel', $<HTMLInputElement>('#channel').value.trim().replace(/^#/, '').toLowerCase()); showChat(false); };
 $('#startBtn').onclick = startGame;
+// a streamer who sat on the settings screen a while: wake the chat reader again as they head for Start
+let warmedAt = Date.now();
+$('#startBtn').addEventListener('pointerenter', () => { if (Date.now() - warmedAt > 120_000) { warmedAt = Date.now(); chatServer.warm(); } });
 $('#resumeBtn').onclick = resumeGame;
 $('#endOldBtn').onclick = endUnfinished;
 $('#quitBtn').onclick = quitGame;

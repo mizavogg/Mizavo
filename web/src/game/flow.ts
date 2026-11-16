@@ -158,6 +158,7 @@ export function goHome(): void {
   S.R = null; show($('#scoreboard'), false); show($('#testTag'), false);
   $('#edition').textContent = 'Streamer vs chat';
   setPhase('setup'); show3('setup');
+  chatServer.warm();   // wake the chat reader now, so Start doesn't wait for it to boot
   checkActiveGame();
   loadSetupCommunity();
   refreshTopics();

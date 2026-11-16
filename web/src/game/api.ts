@@ -49,6 +49,8 @@ export const chatServer = {
   start: (session: string) => chatFn<{ verified: boolean; reason?: string }>({ action: 'start', session }, { verified: false, reason: 'error' }),
   stop: (session: string) => { void chatFn({ action: 'stop', session }, null); },
   check: (providerToken: string) => chatFn<{ chat_ok: boolean }>({ action: 'check', provider_token: providerToken }, { chat_ok: false }),
+  /** Wake the server function while the streamer is on the settings screen, so Start doesn't wait for it to boot. */
+  warm: () => { void chatFn({ action: 'ping' }, null); },
 };
 
 export const api = {
