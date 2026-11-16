@@ -6,6 +6,7 @@ import { SITE_URL } from '../lib/site';
 import { S, OPT_COLORS, KEYS, SPHERE, type Mode, type Round, type Viewer } from './state';
 import { api, chatServer, friendly, type ActiveGame, type RoundData, type ViewerResult } from './api';
 import { dropStreamerBall, layout, popWrong, resetArena, sortPool } from './arena';
+import { fitStatement } from './fit';
 import { clearBots, makeBots, scheduleBots } from './demo';
 import { connectTwitch, disconnectTwitch, setStatus } from './chat';
 import { loadFinalCommunity, loadSetupCommunity } from './community';
@@ -163,7 +164,7 @@ export function goHome(): void {
 }
 
 /* ---------- a round ---------- */
-function buildRound(d: RoundData): Round {
+export function buildRound(d: RoundData): Round {
   const opts = d.type === 'ff' ? ['Fact', 'Fake'] : (d.items || []);
   return {
     idx: d.idx, type: d.type, category: d.category,
@@ -201,7 +202,7 @@ async function loadRound(): Promise<void> {
   startRound();
 }
 
-function startRound(): void {
+export function startRound(): void {
   const R = S.R!;
   resetArena();
   setPhase('vote'); layout();
@@ -222,9 +223,14 @@ function startRound(): void {
     b.onclick = () => pick(i); box.append(b);
   });
   $('#hint').innerHTML = R.type === 'ff'
-    ? 'Chat: type <code>1</code> for Fact or <code>2</code> for Fake. <span class="more">Your first answer counts. Same as last time? Type <code>11</code>.</span>'
-    : 'Chat: type <code>A</code>, <code>B</code>, <code>C</code> or <code>D</code>. <span class="more">Your first answer counts. Same as last time? Type <code>AA</code>.</span>';
+    ? 'Chat: type <code>1</code> for Fact or <code>2</code> for Fake. <span class="more">Your first answer counts.</span>'
+    : 'Chat: type <code>A</code>, <code>B</code>, <code>C</code> or <code>D</code>. <span class="more">Your first answer counts.</span>';
+  // from round 2 on: Twitch blocks the exact same message twice in 30 s, so tell chat how to repeat an answer
+  const tip = $('#repeatTip');
+  tip.innerHTML = R.type === 'ff' ? 'Same answer as last round? Type <code>11</code> or <code>22</code>.' : 'Same answer as last round? Type <code>AA</code>, <code>BB</code>…';
+  show(tip, R.idx > 1);
   show($('#below'), true); show($('#explain'), false);
+  fitStatement(); layout();   // the question shrinks to fit, then the ball area takes the height that's left
   $('#banner').className = 'banner'; $('#callout').className = 'callout';
   S.deadline = Date.now() + S.secs * 1000;
   lastSec = -1;

@@ -526,3 +526,28 @@ body.closedTest .loginFine{display:none}
 .seg button.on{color:var(--paper)}
 .seg button:focus-visible{outline:2px solid var(--yellow);outline-offset:-2px}
 @media (prefers-reduced-motion:reduce){.seg .thumb{transition:none}}
+
+/* repeat-answer tip under the question (Nov 15), from round 2 on */
+.repeatTip{margin-top:8px;font-size:14px;color:var(--muted)}
+.repeatTip code{font-family:var(--sans);font-weight:600;font-size:.92em;background:#f2e8dc14;border:1px solid var(--rule2);color:var(--paper);padding:1px 7px;border-radius:6px}
+@media(max-width:600px){.repeatTip{margin-top:4px;font-size:12px}}
+
+/* ---- short windows (laptops, 720p OBS captures): a round fits without scrolling (Nov 15) ----
+   Only during a round, only on screens wider than a phone and under 820px tall. Tall screens are unchanged. */
+@media (min-width:601px) and (max-height:820px){
+  body:is([data-phase=loading],[data-phase=vote],[data-phase=sorting],[data-phase=reveal]) .topbar{padding-top:calc(10px + env(safe-area-inset-top))}
+  body:is([data-phase=loading],[data-phase=vote],[data-phase=sorting],[data-phase=reveal]) .mast{padding-bottom:10px;margin-bottom:10px}
+  #game .gtop{margin-bottom:6px}
+  #game .stamp{width:52px;height:52px}
+  #game .stamp b{font-size:21px}
+  #game #prompt{display:none}                 /* the chip already says Fact or Fake / Odd One Out */
+  #game .statement{margin-top:4px}
+  #game .repeatTip{margin-top:6px;font-size:13px}
+  #game .arena{margin-top:12px}
+  #game .timer{margin-bottom:10px}
+  #game .opt{min-height:48px;padding:8px 12px}
+  #game .opts{margin-top:6px;gap:16px}
+  #game .below{margin-top:10px;padding-top:10px}
+  #game .below .btn{min-height:40px;padding:8px 16px}
+  #game .playAt{margin-top:8px}
+}

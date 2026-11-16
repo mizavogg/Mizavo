@@ -3,6 +3,7 @@
 import { $, clamp, show, store } from '../lib/dom';
 import { S } from './state';
 import { layout } from './arena';
+import { fitStatement } from './fit';
 
 const ZONE_MIN = 12, ZONE_MAX = 45, GAME_MIN_PX = 720;
 const ZONE = { on: store.get('mz_stream') === '1', pct: clamp(+(store.get('mz_zone') || 25) || 25, ZONE_MIN, ZONE_MAX) };
@@ -18,7 +19,7 @@ function applyZone(): void {
   document.body.classList.toggle('streaming', ZONE.on && fits);
   show($('#zoneCtl'), ZONE.on && fits);
   show($('#zoneNote'), ZONE.on && !fits);
-  if (S.R && S.phase !== 'setup' && S.phase !== 'final') layout();
+  if (S.R && S.phase !== 'setup' && S.phase !== 'final') { fitStatement(); layout(); }
 }
 function setZonePct(p: number, save: boolean): void {
   ZONE.pct = clamp(Math.round(p), ZONE_MIN, Math.max(ZONE_MIN, zoneMax()));

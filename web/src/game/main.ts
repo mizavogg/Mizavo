@@ -22,6 +22,8 @@ import { initSound } from '../lib/sound';
 import { picturesOn, setPictures } from './avatars';
 import { initSegs, syncSegs } from './segpick';
 initSegs();
+import { initFit } from './fit';
+initFit();
 
 /* ---------- invite links: ?invite=CODE ----------
    The code is kept in the browser while the visitor goes through Twitch login
