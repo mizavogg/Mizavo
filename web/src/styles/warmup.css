@@ -5,9 +5,9 @@ html,body.warmupPage{background:transparent!important;margin:0;height:100%;overf
 body.warmupPage{padding:12px;box-sizing:border-box}
 .wPanel{position:relative;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding:20px 24px 16px;
   border-radius:28px;color:var(--paper);
-  background:linear-gradient(160deg,rgba(30,34,36,.86),rgba(16,19,20,.9));
-  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
-  border:1px solid rgba(242,232,220,.14);box-shadow:0 1px 0 rgba(255,240,225,.08) inset,0 30px 60px -20px rgba(0,0,0,.75)}
+  /* solid (Nov 15): OBS can't blur the scene behind a browser source, so a see-through panel let the scene show through sharply */
+  background:radial-gradient(120% 90% at 0% 0%,rgba(183,105,53,.16),rgba(183,105,53,0) 55%),linear-gradient(160deg,#1e2224,#101314);
+  border:1px solid rgba(224,154,98,.22);box-shadow:0 1px 0 rgba(255,240,225,.08) inset,0 30px 60px -20px rgba(0,0,0,.75)}
 .wHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .wTitle{display:flex;align-items:baseline;gap:10px;font-size:20px}
 .wTitle b{font-family:var(--serif);font-weight:500;font-size:28px;letter-spacing:-.02em}
