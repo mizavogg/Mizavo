@@ -62,3 +62,7 @@ body[data-state=idle] .wBody,body[data-state=loading] .wBody,body[data-state=err
   .wTop{flex-direction:row;flex-wrap:wrap;gap:6px 16px}
   .wTop li{font-size:14px}
 }
+
+/* whose chat counts, named in the footer and on the pause card (Nov 15) */
+.wWho,.wIdle b.wWho{font-family:var(--sans);font-size:inherit;letter-spacing:0;color:var(--orange-hi);font-weight:700}
+#wIdleText kbd{font-family:var(--sans);font-weight:700;font-size:.9em;color:var(--paper);background:rgba(242,232,220,.1);border:1px solid rgba(242,232,220,.2);border-radius:6px;padding:1px 7px}

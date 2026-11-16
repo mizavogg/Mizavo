@@ -32,6 +32,9 @@ function idle(title: string, text: string, state: State = 'idle'): void {
   $('#wIdleTitle').textContent = title; $('#wIdleText').textContent = text; setState(state);
 }
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** "<b>jajoaiden</b>'s chat": the panel names whose chat counts (Nov 15: a tester typed in another channel's chat). */
+const esc = (t: string) => t.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+const whoseChat = () => `<b class="wWho">${esc(warmup?.display_name || warmup?.login || 'your')}</b>'s chat`;
 function code0(e: unknown): string { return (e instanceof Error ? e.message : String(e)).split(':')[0]; }
 
 /* ---------- start ---------- */
@@ -84,7 +87,7 @@ async function nextRound(): Promise<void> {
   resetArena();
   $('#wStatement').textContent = q.type === 'ff' ? R.statement : "Which one doesn't belong?";
   $('#wMode').textContent = q.type === 'ff' ? 'Fact or Fake' : 'Odd One Out';
-  $('#wHow').innerHTML = q.type === 'ff' ? 'Type <kbd>1</kbd> Fact or <kbd>2</kbd> Fake in chat' : 'Type <kbd>A</kbd> <kbd>B</kbd> <kbd>C</kbd> or <kbd>D</kbd> in chat';
+  $('#wHow').innerHTML = (q.type === 'ff' ? 'Type <kbd>1</kbd> Fact or <kbd>2</kbd> Fake in ' : 'Type <kbd>A</kbd> <kbd>B</kbd> <kbd>C</kbd> or <kbd>D</kbd> in ') + whoseChat();
   $('#wExplain').replaceChildren();
   setState('vote');
   layout();
@@ -145,7 +148,8 @@ function showTop(top: Top[]): void {
 let paused = false;
 function pause(): void {
   paused = true; S.phase = 'setup'; S.R = null;
-  idle('Chat warm-up', 'Type 1 in chat to start a round.');
+  idle('Chat warm-up', '');
+  $('#wIdleText').innerHTML = `Type <kbd>1</kbd> in ${whoseChat()} to start a round.`;
 }
 onAnyChat((m) => {
   if (!paused) return;
